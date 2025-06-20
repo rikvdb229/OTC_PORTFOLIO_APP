@@ -1,0 +1,141 @@
+/* ===== CSS CUSTOM PROPERTIES (VARIABLES) ===== */
+
+:root {
+  /* ===== COLUMN SYSTEM VARIABLES ===== */
+
+  /* Date columns - consistent across all tables */
+  --col-date-sm: 85px; /* Compact date display */
+  --col-date-md: 100px; /* Standard date display */
+  --col-date-lg: 115px; /* Extended date display */
+
+  /* Text columns - for fund names, descriptions */
+  --col-text-sm: 90px; /* Short text */
+  --col-text-md: 120px; /* Standard text */
+  --col-text-lg: 150px; /* Long text fields */
+  --col-text-xl: 180px; /* Extra long text */
+
+  /* Numeric columns - quantities, amounts */
+  --col-numeric-sm: 70px; /* Small numbers */
+  --col-numeric-md: 85px; /* Standard numbers */
+  --col-numeric-lg: 100px; /* Large numbers */
+  --col-numeric-xl: 115px; /* Extra large numbers */
+
+  /* Currency columns - monetary values */
+  --col-currency-sm: 90px; /* Small currency */
+  --col-currency-md: 110px; /* Standard currency */
+  --col-currency-lg: 130px; /* Large currency */
+  --col-currency-xl: 150px; /* Extra large currency */
+
+  /* Percentage columns */
+  --col-percentage-sm: 70px; /* Small percentage */
+  --col-percentage-md: 85px; /* Standard percentage */
+  --col-percentage-lg: 100px; /* Large percentage */
+
+  /* Action columns - buttons and controls */
+  --col-actions-sm: 120px; /* Compact actions */
+  --col-actions-md: 140px; /* Standard actions */
+  --col-actions-lg: 160px; /* Extended actions */
+
+  /* Special purpose columns */
+  --col-notes: 150px; /* Notes and comments */
+  --col-status: 100px; /* Status indicators */
+  --col-gap: 90px; /* Gap/period indicators */
+
+  /* ===== RESPONSIVE BREAKPOINTS ===== */
+  --col-mobile-factor: 0.85; /* Mobile reduction factor */
+  --col-tablet-factor: 0.92; /* Tablet reduction factor */
+
+  /* ===== COLOR SYSTEM ===== */
+
+  /* ===== COLOR SYSTEM ===== */
+
+  /* Primary Brand Colors - Official KBC Blue */
+  --color-primary: #1e88e5; /* Official KBC blue */
+  --color-primary-dark: #1976d2; /* Darker for hover states */
+  --color-primary-darker: #1565c0; /* Even darker for active states */
+  --color-primary-light: #e3f2fd; /* Light blue background */
+
+  /* Background Colors - Updated with KBC Blue */
+
+  /* Status Colors */
+  --color-success: #28a745;
+  --color-success-light: #20c997;
+  --color-danger: #dc3545;
+  --color-danger-dark: #c82333;
+  --color-warning: #ffc107;
+  --color-warning-dark: #856404;
+  --color-info: #17a2b8;
+
+  /* Neutral Colors */
+  --color-white: #ffffff;
+  --color-light: #f8f9fa;
+  --color-lighter: #e9ecef;
+  --color-gray: #6c757d;
+  --color-gray-dark: #495057;
+  --color-dark: #333333;
+
+  /* Background Colors - Updated with Official KBC Blue */
+  --bg-primary: linear-gradient(135deg, #1e88e5, #1976d2);
+  --bg-success: linear-gradient(135deg, #28a745, #20c997);
+  --bg-danger: linear-gradient(135deg, #dc3545, #c82333);
+
+  /* Border Colors */
+  --border-light: #e9ecef;
+  --border-medium: #ddd;
+  --border-primary: #007acc;
+
+  /* Text Colors */
+  --text-primary: #495057;
+  --text-secondary: #6c757d;
+  --text-muted: #999;
+  --text-light: #666;
+
+  /* ===== SPACING SYSTEM ===== */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 20px;
+  --spacing-xl: 30px;
+
+  /* ===== TYPOGRAPHY ===== */
+  --font-family-base: "Segoe UI", -apple-system, BlinkMacSystemFont,
+    "Helvetica Neue", Arial, sans-serif;
+  --font-family-mono: "Segoe UI", monospace;
+
+  --font-size-xs: 10px;
+  --font-size-sm: 11px;
+  --font-size-base: 12px;
+  --font-size-md: 13px;
+  --font-size-lg: 14px;
+  --font-size-xl: 16px;
+  --font-size-xxl: 18px;
+  --font-size-heading: 20px;
+  --font-size-large: 22px;
+  --font-size-title: 24px;
+
+  --font-weight-normal: 500;
+  --font-weight-medium: 600;
+  --font-weight-bold: 700;
+
+  /* ===== EFFECTS ===== */
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 10px 30px rgba(0, 0, 0, 0.3);
+
+  --border-radius-sm: 3px;
+  --border-radius-md: 4px;
+  --border-radius-lg: 6px;
+  --border-radius-xl: 8px;
+  --border-radius-xxl: 12px;
+
+  --transition-fast: 0.2s;
+  --transition-medium: 0.3s;
+
+  /* ===== Z-INDEX LAYERS ===== */
+  --z-dropdown: 1000;
+  --z-modal: 1001;
+  --z-notification: 1002;
+  --z-tooltip: 1003;
+  --z-window-controls: 10000;
+}

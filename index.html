@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>KBC Portfolio Tracker</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+      default-src 'self' 'unsafe-inline';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob:;
+      font-src 'self';
+      connect-src 'self';
+      object-src 'none';
+      base-uri 'self';
+    "
+    />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+    <link rel="stylesheet" href="styles/main.css" />
+  </head>
+  <body>
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="main-content">
+      <!-- MAIN HEADER - Always Sticky -->
+      <div class="main-header">
+        <header class="header">
+          <div class="header-brand">
+            <h1>KBC Portfolio Tracker</h1>
+          </div>
+          <div class="header-actions">
+            <!-- Add notification here BEFORE the Update Prices button -->
+            <div
+              id="priceUpdateNotification"
+              class="header-notification"
+              style="display: none"
+            >
+              <span class="notification-icon">⚠️</span>
+              <span class="notification-text">Prices not current</span>
+              <button id="dismissNotification" class="notification-dismiss">
+                &times;
+              </button>
+            </div>
+
+            <button id="updatePricesBtn" class="btn btn-primary">
+              📊 Update Prices
+            </button>
+            <button id="settingsToggle" class="btn btn-secondary">⚙️</button>
+          </div>
+        </header>
+
+        <!-- Navigation Tabs - SEAMLESS CONNECTION -->
+        <nav class="nav-tabs">
+          <button class="nav-tab active" data-tab="portfolio">Portfolio</button>
+          <button class="nav-tab" data-tab="evolution">Evolution</button>
+          <button class="nav-tab" data-tab="chart">Chart</button>
+          <button class="nav-tab" data-tab="sales-history">
+            Sales History
+          </button>
+          <button class="nav-tab" data-tab="grant-history">
+            Grant History
+          </button>
+        </nav>
+
+        <!-- Global Portfolio Stats - CONSISTENT SPACING -->
+        <div class="global-portfolio-header">
+          <div class="global-portfolio-stats">
+            <div class="stat-card">
+              <h4>Total Portfolio Value</h4>
+              <div id="totalPortfolioValue" class="stat-value">€ ---</div>
+              <div id="portfolioChange" class="stat-change">---</div>
+            </div>
+            <div class="stat-card">
+              <h4>Weighted Avg Return</h4>
+              <div id="totalReturnPercentage" class="stat-value">---%</div>
+              <small class="stat-note">Portfolio-wide performance</small>
+            </div>
+            <div class="stat-card">
+              <h4>Active Options</h4>
+              <div id="totalOptions" class="stat-value">---</div>
+            </div>
+            <div class="stat-card">
+              <h4>Last Update</h4>
+              <div id="lastPriceUpdate" class="stat-value">---</div>
+              <small class="stat-note">From CSV data</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB HEADERS - UPDATED STRUCTURE -->
+      <div class="tab-header">
+        <!-- Portfolio Tab Header - Action Buttons -->
+        <div
+          id="portfolio-tab-header"
+          class="portfolio-tab-header tab-header-content active"
+        >
+          <button id="addOptionsBtn" class="btn btn-primary">
+            ➕ Add Options
+          </button>
+        </div>
+
+        <!-- Evolution Tab Header - Time Controls -->
+        <div
+          id="evolution-tab-header"
+          class="controls-tab-header tab-header-content"
+        >
+          <button class="btn btn-small btn-secondary" data-days="30">
+            30 Days
+          </button>
+          <button class="btn btn-small btn-secondary" data-days="90">
+            90 Days
+          </button>
+          <button class="btn btn-small btn-secondary" data-days="365">
+            1 Year
+          </button>
+          <button class="btn btn-small btn-primary" data-days="all">
+            All Time
+          </button>
+        </div>
+
+        <!-- Chart Tab Header - Period Controls -->
+        <div
+          id="chart-tab-header"
+          class="controls-tab-header tab-header-content"
+        >
+          <button class="btn btn-small btn-secondary" data-period="30">
+            30 Days
+          </button>
+          <button class="btn btn-small btn-secondary" data-period="90">
+            90 Days
+          </button>
+          <button class="btn btn-small btn-secondary" data-period="365">
+            1 Year
+          </button>
+          <button class="btn btn-small btn-primary" data-period="all">
+            All Time
+          </button>
+        </div>
+
+        <!-- Sales History Tab Header - UPDATED WITH SUMMARY CARDS -->
+        <div
+          id="sales-history-tab-header"
+          class="summary-tab-header tab-header-content"
+        >
+          <div class="summary-cards">
+            <div class="summary-card">
+              <h4>Total Sold Value</h4>
+              <div id="totalSoldValue" class="summary-value">€ 0.00</div>
+            </div>
+            <div class="summary-card">
+              <h4>Options Sold</h4>
+              <div id="totalOptionsSold" class="summary-value">1,061</div>
+            </div>
+            <div class="summary-card">
+              <h4>Average Sale Price</h4>
+              <div id="averageSalePrice" class="summary-value">€ 16.20</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grant History Tab Header - UPDATED WITH SUMMARY CARDS -->
+        <div
+          id="grant-history-tab-header"
+          class="summary-tab-header tab-header-content"
+        >
+          <div class="summary-cards">
+            <div class="summary-card">
+              <h4>Total Grants</h4>
+              <div id="totalGrants" class="summary-value">14</div>
+            </div>
+            <div class="summary-card">
+              <h4>Total Options Granted</h4>
+              <div id="totalOptionsGranted" class="summary-value">9,569</div>
+            </div>
+            <div class="summary-card">
+              <h4>Still Active</h4>
+              <div id="activeGrants" class="summary-value">10</div>
+            </div>
+          </div>
+
+          <!-- Modern Toggle Filters -->
+          <div class="grant-modern-filters">
+            <div class="filter-toggle active" data-filter="active">
+              <span class="filter-label">Active</span>
+            </div>
+            <div class="filter-toggle active" data-filter="partially-sold">
+              <span class="filter-label">Partially Sold</span>
+            </div>
+            <div class="filter-toggle active" data-filter="sold">
+              <span class="filter-label">Sold</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Tab Content -->
+      <div id="portfolio-tab" class="tab-content active">
+        <div class="scrollable-content">
+          <div class="table-container">
+            <table id="portfolioTable" class="portfolio-table">
+              <thead>
+                <tr>
+                  <th colspan="5" class="group-header">Grant Information</th>
+                  <th colspan="4" class="group-header">
+                    Current Status and Performance
+                  </th>
+                  <th colspan="2" class="group-header">Status and Actions</th>
+                </tr>
+                <tr>
+                  <th class="sortable" data-sort="grant_date" width="7%">
+                    Grant Date
+                  </th>
+                  <th data-sort="fund_name" width="15%">Underlying</th>
+                  <th
+                    class="sortable"
+                    data-sort="quantity_remaining"
+                    width="7%"
+                  >
+                    Quantity
+                  </th>
+                  <th class="sortable" data-sort="amount_granted" width="9%">
+                    Amount Granted
+                  </th>
+                  <th width="9%">Tax Amount</th>
+                  <th class="sortable" data-sort="current_value" width="7%">
+                    Current Price
+                  </th>
+                  <th
+                    class="sortable"
+                    data-sort="current_total_value"
+                    width="9%"
+                  >
+                    Total Value
+                  </th>
+                  <th
+                    class="sortable"
+                    data-sort="profit_loss_vs_target"
+                    width="9%"
+                  >
+                    P&L vs Target
+                  </th>
+                  <th
+                    class="sortable"
+                    data-sort="current_return_percentage"
+                    width="7%"
+                  >
+                    Return %
+                  </th>
+                  <th data-sort="selling_status" width="6%">Status</th>
+                  <th width="15%">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="portfolioTableBody">
+                <!-- Portfolio data -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Evolution Tab Content -->
+      <div id="evolution-tab" class="tab-content">
+        <div class="scrollable-content">
+          <div class="table-container">
+            <table id="evolutionTable" class="evolution-table">
+              <thead>
+                <tr>
+                  <th colspan="2" class="group-header">Timeline Information</th>
+                  <th colspan="3" class="group-header">Portfolio Changes</th>
+                  <th colspan="1" class="group-header">Details & Notes</th>
+                </tr>
+                <tr>
+                  <th class="sortable" data-sort="date" width="10%">Date</th>
+                  <th class="sortable" data-sort="total_value" width="10%">
+                    Total Value
+                  </th>
+                  <th width="10%">Change from Previous</th>
+                  <th width="10%">% Change</th>
+                  <th width="10%">Days Gap</th>
+                  <th width="50%">Notes</th>
+                </tr>
+              </thead>
+              <tbody id="evolutionTableBody">
+                <!-- Evolution data -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Tab Content -->
+      <div id="chart-tab" class="tab-content">
+        <div class="scrollable-content">
+          <div class="chart-container" id="portfolioOverviewChart">
+            <canvas id="portfolioChart"></canvas>
+          </div>
+          <div class="chart-legend">
+            <!-- Chart legend -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales History Tab Content -->
+      <div id="sales-history-tab" class="tab-content">
+        <div class="scrollable-content">
+          <div class="table-container">
+            <table id="salesTable" class="sales-table">
+              <thead>
+                <tr>
+                  <th colspan="3" class="group-header">INFO</th>
+                  <th colspan="4" class="group-header">SALES OVERVIEW</th>
+                  <th colspan="2" class="group-header">ACTIONS & NOTES</th>
+                </tr>
+                <tr>
+                  <th class="sortable" data-sort="sale_date" width="7%">
+                    Sale Date
+                  </th>
+                  <th class="width" ="7%">Original Grant</th>
+                  <th width="20%">Underlying Fund</th>
+                  <th class="sortable" data-sort="quantity_sold" width="7%">
+                    Quantity Sold
+                  </th>
+                  <th class="sortable" data-sort="sale_price" width="7%">
+                    Sale Price
+                  </th>
+                  <th class="sortable" data-sort="total_sale_value" width="7%">
+                    Total Sale Value
+                  </th>
+                  <th class="sortable" data-sort="realized_pl" width="7%">
+                    Realized P&L
+                  </th>
+                  <th width="30%">Notes</th>
+                  <th width="5%">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="salesTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grant History Tab Content -->
+      <div id="grant-history-tab" class="tab-content">
+        <div class="scrollable-content">
+          <div class="table-container">
+            <table id="grantTable" class="grant-table">
+              <thead>
+                <tr>
+                  <th colspan="2" class="group-header">INFO</th>
+                  <th colspan="2" class="group-header">QUANTITIES</th>
+                  <th colspan="1" class="group-header">STATUS</th>
+                </tr>
+                <tr>
+                  <th class="sortable" data-sort="grant_date" width="20%">
+                    Grant Date
+                  </th>
+                  <th data-sort="fund_name" width="30%">Underlying Fund</th>
+                  <th class="sortable" data-sort="quantity" width="20%">
+                    Quantity Granted
+                  </th>
+                  <th
+                    class="sortable"
+                    data-sort="quantity_remaining"
+                    width="20%"
+                  >
+                    Quantity Remaining
+                  </th>
+                  <th data-sort="status" width="10%">Status</th>
+                </tr>
+              </thead>
+              <tbody id="grantTableBody">
+                <!-- Grant data -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings Sidebar -->
+    <div id="settingsSidebar" class="settings-sidebar">
+      <div class="settings-header">
+        <h3>Settings</h3>
+      </div>
+      <div class="settings-content">
+        <div class="setting-item">
+          <label for="targetPercentage">Target Percentage</label>
+          <div class="input-group">
+            <input
+              type="number"
+              id="targetPercentage"
+              min="1"
+              max="500"
+              value="65"
+            />
+            <span class="input-suffix">%</span>
+          </div>
+          <small class="form-help"
+            >Target return percentage for color coding</small
+          >
+        </div>
+
+        <div class="setting-item">
+          <label for="taxRate">Auto Tax Rate</label>
+          <div class="input-group">
+            <input type="number" id="taxRate" min="0" max="100" value="30" />
+            <span class="input-suffix">%</span>
+          </div>
+          <small class="form-help">Default tax rate for new options</small>
+          <small class="tax-info"
+            >💡 Tax appears as code 3510 on your payslip</small
+          >
+        </div>
+
+        <div class="setting-item">
+          <label for="currencySymbol">Currency Symbol</label>
+          <input type="text" id="currencySymbol" value="€" maxlength="3" />
+        </div>
+
+        <div class="setting-item">
+          <label class="checkbox-label">
+            <input type="checkbox" id="autoUpdatePrices" />
+            <span class="checkmark"></span>
+            Auto-update prices on startup
+          </label>
+          <small class="form-help"
+            >Automatically scrape latest prices when app starts</small
+          >
+        </div>
+
+        <div class="setting-item">
+          <label>Database Management</label>
+          <div class="database-actions">
+            <button id="exportDatabaseBtn" class="btn btn-secondary btn-full">
+              📤 Export Database
+            </button>
+            <button id="importDatabaseBtn" class="btn btn-secondary btn-full">
+              📥 Import Database
+            </button>
+            <button id="importMergeBtn" class="btn btn-secondary btn-full">
+              🔄 Merge Database
+            </button>
+          </div>
+          <small class="form-help"
+            >Backup your data or transfer between computers</small
+          >
+        </div>
+
+        <button id="saveSettingsBtn" class="btn btn-primary btn-full">
+          💾 Save Settings
+        </button>
+
+        <button
+          id="closeSettings"
+          class="btn btn-secondary btn-full"
+          style="margin-top: 10px"
+        >
+          ✕ Close Settings
+        </button>
+      </div>
+    </div>
+    <!-- Settings Overlay -->
+    <div id="settingsOverlay" class="settings-overlay"></div>
+
+    <!-- Update Prices Modal -->
+    <div id="updatePricesModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Updating Prices</h3>
+        </div>
+        <div class="modal-body">
+          <div class="progress-container">
+            <div class="progress-bar">
+              <div id="updateProgressBar" class="progress-fill"></div>
+            </div>
+            <div id="updateProgressText" class="progress-text">
+              Connecting...
+            </div>
+          </div>
+          <div class="update-status">
+            <div id="updateStatusOutput" class="status-output">
+              Starting price update process...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Add Options Modal -->
+    <div id="addOptionsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Add New Options</h3>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="grantDate">Grant Date</label>
+            <input type="date" id="grantDate" required />
+            <small class="form-help"
+              >Enter the grant date from your option plan</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="exercisePrice">Available Options</label>
+            <select id="exercisePrice" required disabled>
+              <option value="">First enter grant date...</option>
+            </select>
+            <small class="form-help" id="exercisePriceHelp">
+              Options will appear after entering grant date
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label for="quantity">Quantity Granted</label>
+            <input type="number" id="quantity" min="1" required />
+            <small class="form-help">Number must be a whole number</small>
+          </div>
+
+          <div class="tax-section">
+            <div class="tax-info">
+              <div class="tax-calculation">
+                <strong>Estimated Tax (Auto):</strong>
+                <span id="estimatedTax" class="tax-amount">€ 0.00</span>
+              </div>
+              <small class="tax-note"
+                >💡 This will appear as code 3510 on your payslip</small
+              >
+            </div>
+
+            <div class="form-group">
+              <label for="actualTaxAmount">Actual Tax Amount (Optional)</label>
+              <div class="input-group">
+                <span class="input-prefix">€</span>
+                <input
+                  type="number"
+                  id="actualTaxAmount"
+                  step="0.01"
+                  min="0"
+                  placeholder="Leave empty to use auto-calculated"
+                />
+              </div>
+              <small class="form-help">
+                Override auto-calculated tax if you know the exact amount
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelAddOptions" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button id="confirmAddOptions" class="btn btn-primary">
+            Add Options
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Merge Grants Modal -->
+    <div id="mergeGrantsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="mergeModalTitle">🔄 Merge Option Grants</h3>
+        </div>
+        <div class="modal-body">
+          <div
+            id="singleGrantMerge"
+            class="merge-warning"
+            style="display: none"
+          >
+            <p><strong>Existing Grant Found!</strong></p>
+            <p>You already have an option grant for:</p>
+            <div class="existing-grant-details">
+              <p>
+                <strong>Grant Date:</strong>
+                <span id="existingGrantDate">-</span>
+              </p>
+              <p>
+                <strong>Exercise Price:</strong>
+                <span id="existingExercisePrice">-</span>
+              </p>
+              <p>
+                <strong>Current Quantity:</strong>
+                <span id="existingQuantity">-</span> options
+              </p>
+            </div>
+            <p>You are trying to add:</p>
+            <div class="new-grant-details">
+              <p>
+                <strong>New Quantity:</strong>
+                <span id="newQuantitySingle">-</span> options
+              </p>
+            </div>
+          </div>
+
+          <div
+            id="multipleGrantsMerge"
+            class="merge-warning"
+            style="display: none"
+          >
+            <p><strong>Multiple Existing Grants Found!</strong></p>
+            <p>
+              You have multiple grants with the same grant date and exercise
+              price.
+            </p>
+            <p><strong>Select which grant to merge with:</strong></p>
+
+            <div id="existingGrantsList" class="existing-grants-list">
+              <!-- Populated dynamically -->
+            </div>
+
+            <div class="new-grant-details">
+              <p>
+                <strong>You are adding:</strong>
+                <span id="newQuantityMultiple">-</span> options
+              </p>
+            </div>
+          </div>
+
+          <div class="merge-options">
+            <p><strong>What would you like to do?</strong></p>
+
+            <div class="merge-choice">
+              <input
+                type="radio"
+                id="mergeGrants"
+                name="grantChoice"
+                value="merge"
+                checked
+              />
+              <label for="mergeGrants" id="mergeLabel">
+                <strong>Merge grants</strong>
+                <span id="mergeDetails">- Add to existing grant</span>
+              </label>
+            </div>
+
+            <div class="merge-choice">
+              <input
+                type="radio"
+                id="separateGrants"
+                name="grantChoice"
+                value="separate"
+              />
+              <label for="separateGrants">
+                <strong>Keep separate</strong> - Create a new separate grant
+                entry
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelMergeGrants" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button id="confirmMergeGrants" class="btn btn-primary">
+            Continue
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sell Options Modal -->
+    <div id="sellOptionsModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Sell Options</h3>
+        </div>
+        <div class="modal-body">
+          <div id="sellOptionDetails" class="option-details">
+            <!-- Populated dynamically -->
+          </div>
+
+          <div class="form-group">
+            <label for="quantityToSell">Quantity to Sell</label>
+            <input type="number" id="quantityToSell" min="1" required />
+            <small class="form-help" id="maxQuantityHelp"
+              >Maximum available: X options</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="salePrice">Sale Price per Option</label>
+            <div class="input-group">
+              <span class="input-prefix">€</span>
+              <input
+                type="number"
+                id="salePrice"
+                step="0.01"
+                min="0"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="saleNotes">Notes (Optional)</label>
+            <textarea
+              id="saleNotes"
+              rows="3"
+              placeholder="Add any notes about this sale..."
+            ></textarea>
+          </div>
+
+          <div class="tax-calculation-sell">
+            <h4>💰 Tax Allocation</h4>
+            <div class="tax-breakdown">
+              <div class="tax-line">
+                <span>Tax allocated to sold options:</span>
+                <span id="proportionalTax">€ 0.00</span>
+              </div>
+              <div class="tax-line">
+                <span>Total sale value:</span>
+                <span id="totalSaleValue">€ 0.00</span>
+              </div>
+              <div class="tax-line highlight">
+                <span>Net sale proceeds:</span>
+                <span id="netProceeds">€ 0.00</span>
+              </div>
+            </div>
+            <div class="tax-explanation">
+              <small>
+                <strong>ℹ️ Tax Explanation:</strong><br />
+                • Tax was already paid when options were granted<br />
+                • Selling reduces the tax amount on your remaining options<br />
+                • You receive the full sale value (no additional tax deduction)
+              </small>
+            </div>
+          </div>
+
+          <div class="sell-warning">
+            ⚠️ <strong>IMPORTANT:</strong> This only records the sale in your
+            portfolio. Actual selling must be done at
+            <a href="https://esop.kbc.be" target="_blank"
+              >https://esop.kbc.be</a
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelSellOptions" class="btn btn-secondary">
+            Cancel
+          </button>
+          <button id="confirmSellOptions" class="btn btn-danger">
+            💰 Record Sale
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Tax Modal -->
+    <div id="editTaxModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Tax Amount</h3>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="newTaxAmount">Tax Amount</label>
+            <div class="input-group">
+              <span class="input-prefix">€</span>
+              <input type="number" id="newTaxAmount" step="0.01" min="0" />
+            </div>
+          </div>
+          <div class="current-tax-info">
+            <p>
+              <strong>Auto-calculated (30%):</strong>
+              <span id="autoTaxAmount">€ 0.00</span>
+            </p>
+            <p>
+              <strong>Current tax:</strong>
+              <span id="currentTaxAmount">€ 0.00</span>
+            </p>
+            <small class="tax-note"
+              >💡 Tax appears as code 3510 on your payslip</small
+            >
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelEditTax" class="btn btn-secondary">Cancel</button>
+          <button id="confirmEditTax" class="btn btn-primary">
+            Update Tax
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option Info Modal -->
+    <div id="optionInfoModal" class="modal">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3 id="optionInfoTitle">Option Details</h3>
+        </div>
+        <div class="modal-body">
+          <div class="option-summary">
+            <!-- Populated dynamically -->
+          </div>
+          <div class="option-chart-container">
+            <canvas id="optionInfoChart"></canvas>
+          </div>
+          <div class="option-stats">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            class="btn btn-secondary"
+            onclick="portfolioApp.closeModals()"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚠️ Delete Portfolio Entry</h3>
+        </div>
+        <div class="modal-body">
+          <div class="delete-warning">
+            <p>
+              <strong
+                >You are about to permanently delete this portfolio
+                entry:</strong
+              >
+            </p>
+            <div class="delete-details">
+              <p>
+                <strong>Grant Date:</strong>
+                <span id="deleteGrantDate">-</span>
+              </p>
+              <p>
+                <strong>Quantity:</strong>
+                <span id="deleteQuantity">-</span> options
+              </p>
+              <p>
+                <strong>Exercise Price:</strong>
+                <span id="deleteExercisePrice">-</span>
+              </p>
+              <p>
+                <strong>Current Value:</strong>
+                <span id="deleteCurrentValue">-</span>
+              </p>
+            </div>
+            <div class="delete-note">
+              <p>
+                <strong>Note:</strong> This action is different from selling
+                options. This will completely remove the entry from your
+                portfolio as if it never existed.
+              </p>
+              <p><strong>⚠️ This action cannot be undone!</strong></p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+          <button id="confirmDelete" class="btn btn-danger">
+            🗑️ Delete Entry
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Edit Sale Modal -->
+    <div id="editSaleModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>✏️ Edit Sale Details</h3>
+        </div>
+        <div class="modal-body">
+          <!-- Sale Overview -->
+          <div class="sale-overview">
+            <h4>Sale Information</h4>
+            <div class="sale-summary">
+              <p>
+                <strong>Original Grant:</strong>
+                <span id="editSaleGrantDate">-</span>
+              </p>
+              <p>
+                <strong>Fund:</strong>
+                <span id="editSaleFundName">-</span>
+              </p>
+              <p>
+                <strong>Quantity Sold:</strong>
+                <span id="editSaleQuantity">-</span> options
+              </p>
+            </div>
+          </div>
+
+          <!-- Editable Fields -->
+          <div class="form-group">
+            <label for="editSaleDate">Sale Date</label>
+            <input type="date" id="editSaleDate" required />
+            <small class="form-help"
+              >Date when the sale occurred (cannot be in the future)</small
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="editSalePrice">Sale Price per Option</label>
+            <div class="input-group">
+              <span class="input-prefix">€</span>
+              <input
+                type="number"
+                id="editSalePrice"
+                step="0.01"
+                min="0.01"
+                required
+                placeholder="16.25"
+              />
+            </div>
+            <small class="form-help">Price per option when sold</small>
+          </div>
+
+          <div class="form-group">
+            <label for="editSaleNotes">Notes</label>
+            <textarea
+              id="editSaleNotes"
+              rows="3"
+              placeholder="Add any notes about this sale..."
+            ></textarea>
+            <small class="form-help">Optional notes about the sale</small>
+          </div>
+
+          <!-- Updated Calculations -->
+          <div class="sale-calculations">
+            <h4>💰 Updated Sale Summary</h4>
+            <div class="calculation-line">
+              <span>Total Sale Value:</span>
+              <span id="editTotalSaleValue">€ 0.00</span>
+            </div>
+            <div class="calculation-line">
+              <span>Realized P&L:</span>
+              <span id="editRealizedPL" class="currency">€ 0.00</span>
+            </div>
+          </div>
+
+          <div class="edit-warning">
+            ⚠️ <strong>Note:</strong> This only updates the sale record in your
+            portfolio.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelEditSale" class="btn btn-secondary">Cancel</button>
+          <button id="confirmEditSale" class="btn btn-primary">
+            Update Sale
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FOOTER - CENTERED STRUCTURE -->
+    <!-- FOOTER - POSITIONED AS FLEX ITEM -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="footer-text">
+          <span class="version-info" id="appVersion"
+            >KBC ESOP Portfolio Tracker v0.1</span
+          >
+          <span class="footer-divider">•</span>
+          <span class="footer-note" id="appStatus">Development Version</span>
+          <span class="footer-divider">•</span>
+          <span class="build-info" id="buildDate">Build: 2024-12-15</span>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Scripts at the very bottom -->
+    <script src="libs/chart.min.js"></script>
+    <script src="libs/chartjs-plugin-annotation.min.js"></script>
+    <script>
+      if (typeof Chart !== "undefined") {
+        Chart.register({
+          id: "annotation",
+        });
+        console.log("✅ Chart.js loaded with annotation support");
+      } else {
+        console.error("❌ Chart.js not loaded");
+      }
+    </script>
+
+    <!-- LOAD ALL UTILITIES IN CORRECT ORDER -->
+    <script src="utils/formatters.js"></script>
+    <script src="utils/config.js"></script>
+    <script src="utils/portfolio-calculations.js"></script>
+    <script src="utils/dom-helpers.js"></script>
+    <script src="utils/event-handlers.js"></script>
+    <script src="utils/ipc-communication.js"></script>
+    <script src="utils/chart-visualization.js"></script>
+    <!-- UI State Management MUST load before renderer.js -->
+    <script src="utils/ui-state-management.js"></script>
+    <script src="utils/app-helpers.js"></script>
+    <!-- LOAD MAIN APP LAST -->
+    <script src="renderer.js"></script>
+  </body>
+</html>

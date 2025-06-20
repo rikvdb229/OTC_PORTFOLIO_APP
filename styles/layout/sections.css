@@ -1,0 +1,101 @@
+/* ===== SECTION LAYOUT ===== */
+
+.section {
+  background: var(--color-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.section-header h2 {
+  margin: 0;
+  color: var(--color-dark);
+  font-size: var(--font-size-heading);
+  flex-shrink: 0;
+}
+
+/* ===== SUMMARY CARDS ===== */
+.sales-summary,
+.grant-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: var(--spacing-lg);
+  margin-top: 15px;
+}
+
+.summary-card {
+  background: var(--color-light);
+  padding: 15px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.summary-card h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-light);
+  font-size: var(--font-size-base);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: var(--font-size-xxl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+.main-content {
+  flex: 1; /* Take remaining space after footer */
+  min-height: 0; /* Important: allows flex shrinking */
+  overflow: hidden; /* No scrolling at main-content level */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TAB CONTENT LAYOUT ===== */
+
+.tab-content {
+  flex: 1; /* Take remaining space in main-content */
+  min-height: 0; /* Important: allows flex shrinking */
+  overflow: hidden; /* No scrolling at tab level */
+}
+
+.tab-content.active {
+  display: flex !important; /* Override any display: block */
+  flex-direction: column !important;
+  height: auto !important; /* Remove any fixed height */
+  overflow: visible !important; /* Remove any overflow settings */
+}
+
+/* ===== SCROLLABLE CONTENT LAYOUT ===== */
+
+.scrollable-content {
+  flex: 1; /* Take remaining space in tab-content */
+  min-height: 0; /* Important: allows flex shrinking */
+  overflow: visible; /* No scrolling here */
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== CHART CONTAINERS FOR NON-TABLE TABS ===== */
+
+.chart-container {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+  padding: var(--spacing-lg);
+}

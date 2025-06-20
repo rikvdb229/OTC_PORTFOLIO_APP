@@ -1,0 +1,44 @@
+/* ===== PORTFOLIO TABLE CELL ALIGNMENT - EFFICIENT APPROACH ===== */
+.portfolio-table thead tr:first-child th.group-header {
+  background: var(--bg-primary); /* This should already match */
+  color: var(--color-white);
+  text-align: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: var(--spacing-md) var(--spacing-sm);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+.portfolio-table {
+  table-layout: auto; /* Override the fixed layout */
+}
+/* Default: All cells centered with monospace font for consistency */
+.portfolio-table td {
+  text-align: center;
+  font-family: var(--font-family-mono);
+}
+
+/* Exception: Fund name (Underlying) - left aligned with medium weight */
+.portfolio-table td:nth-child(2) {
+  text-align: left;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+}
+
+/* Financial columns - right aligned for currency values */
+.portfolio-table td:nth-child(4),  /* Amount Granted */
+.portfolio-table td:nth-child(5),  /* Tax Amount */
+.portfolio-table td:nth-child(6),  /* Current Price */
+.portfolio-table td:nth-child(7),  /* Total Value */
+.portfolio-table td:nth-child(8) {
+  /* P&L vs Target */
+  text-align: right;
+}
+
+/* Emphasis on important values */
+.portfolio-table td:nth-child(7),  /* Total Value */
+.portfolio-table td:nth-child(9) {
+  /* Return % */
+  font-weight: var(--font-weight-medium);
+}

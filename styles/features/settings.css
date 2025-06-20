@@ -1,0 +1,125 @@
+/* ===== SETTINGS SIDEBAR ===== */
+
+/* ===== SETTINGS SIDEBAR CONTAINER ===== */
+.settings-sidebar {
+  position: fixed;
+  top: 0;
+  right: -400px;
+  width: 400px;
+  height: 100vh;
+  background: var(--color-white);
+  box-shadow: -5px 0 var(--spacing-lg) rgba(0, 0, 0, 0.1);
+  z-index: var(--z-modal);
+  transition: right var(--transition-medium) ease;
+  overflow-y: auto;
+}
+
+.settings-sidebar.active {
+  right: 0;
+}
+
+/* ===== SETTINGS OVERLAY ===== */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: var(--z-dropdown);
+  opacity: 0;
+  visibility: hidden;
+  transition: all var(--transition-medium);
+}
+
+.settings-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ===== SETTINGS HEADER ===== */
+.settings-header {
+  padding: var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  background: var(--color-light);
+}
+
+.settings-header h3 {
+  margin: 0;
+  color: var(--color-dark);
+  font-size: var(--font-size-xxl);
+}
+
+/* ===== SETTINGS CONTENT ===== */
+.settings-content {
+  padding: var(--spacing-lg);
+}
+
+.setting-item {
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.setting-item:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.setting-item label {
+  display: block;
+  margin-bottom: var(--spacing-lg);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-dark);
+  font-size: var(--font-size-md);
+  line-height: 1.2;
+}
+
+/* ===== SETTINGS BUTTONS ===== */
+.settings-buttons {
+  margin-top: var(--spacing-xl);
+  padding-top: var(--spacing-lg);
+  border-top: 2px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.settings-buttons .btn {
+  margin-bottom: 0;
+}
+
+#saveSettingsBtn {
+  order: 1;
+  background: var(--bg-success);
+  color: var(--color-white);
+  font-weight: var(--font-weight-medium);
+}
+
+#saveSettingsBtn:hover:not(:disabled) {
+  background: linear-gradient(
+    135deg,
+    var(--color-success-light),
+    var(--color-info)
+  );
+}
+
+#closeSettings {
+  margin-top: var(--spacing-md);
+  background: var(--color-gray);
+  color: var(--color-white);
+  border: none;
+}
+
+#closeSettings:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+}
+
+#closeSettingsBtn {
+  order: 2;
+  margin-top: 5px;
+}

@@ -1,0 +1,134 @@
+/* ===== CHART COMPONENTS ===== */
+
+/* ===== CHART CONTAINERS ===== */
+.chart-container {
+  height: 500px;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-lg);
+  background: var(--color-white);
+  box-shadow: var(--shadow-md);
+}
+
+#portfolioChart {
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 520px;
+}
+
+#chart-tab .section {
+  padding: 15px;
+}
+
+#chart-tab .section-header {
+  margin-bottom: 15px;
+  padding-bottom: var(--spacing-md);
+}
+
+/* ===== CHART LEGENDS ===== */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin-top: 15px;
+  padding: var(--spacing-md);
+  background: var(--color-light);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  font-size: var(--font-size-md);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-normal);
+}
+
+.legend-color {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--border-radius-sm);
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+/* ===== ENHANCED CHART LEGENDS ===== */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin-top: 20px;
+  padding: var(--spacing-lg);
+  background: var(--color-light);
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  font-size: var(--font-size-sm);
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* Color indicators for portfolio value */
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--border-radius-sm);
+  display: inline-block;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* VERTICAL LINE indicator for events */
+.legend-line {
+  width: 4px;
+  height: 20px;
+  display: inline-block;
+  background-color: #000000;
+  flex-shrink: 0;
+  border-radius: 2px;
+}
+
+/* Responsive legend for mobile */
+@media (max-width: 768px) {
+  .chart-legend {
+    gap: 15px;
+    padding: var(--spacing-md);
+  }
+
+  .legend-item {
+    gap: 6px;
+    font-size: var(--font-size-xs);
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+  }
+
+  .legend-line {
+    width: 3px;
+    height: 16px;
+  }
+}
+
+/* Extra small screens - stack legend items */
+@media (max-width: 480px) {
+  .chart-legend {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    text-align: center;
+  }
+
+  .legend-item {
+    justify-content: center;
+  }
+}

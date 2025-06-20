@@ -1,0 +1,79 @@
+/* ===== SIMPLE FOOTER STYLES ===== */
+
+.app-footer {
+  background: var(--color-light);
+  border-top: 1px solid var(--border-light);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.footer-content {
+  text-align: center;
+}
+
+.footer-text {
+  text-align: center;
+}
+
+.version-info {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  font-size: var(--font-size-base);
+}
+
+.footer-divider {
+  color: var(--text-muted);
+  margin: 0 4px;
+}
+
+.footer-note {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.build-info {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .app-footer {
+    padding: var(--spacing-md);
+  }
+
+  .footer-text {
+    line-height: 1.6;
+  }
+
+  .footer-divider {
+    display: none;
+  }
+
+  .version-info,
+  .footer-note,
+  .build-info {
+    display: block;
+    margin: 2px 0;
+  }
+}
+.app-footer {
+  background: var(--color-light);
+  border-top: 1px solid var(--border-light);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0; /* Footer never shrinks - always visible */
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  min-height: 60px; /* Ensure minimum height */
+  box-sizing: border-box;
+}

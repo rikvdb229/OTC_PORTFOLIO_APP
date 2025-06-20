@@ -1,0 +1,46 @@
+/* ===== TOOLTIP COMPONENTS ===== */
+
+/* ===== ENHANCED TOOLTIPS ===== */
+.user-notes-cell[title]:not([title=""]):hover::after {
+  content: attr(title);
+  position: absolute;
+  background: var(--color-dark);
+  color: var(--color-white);
+  padding: var(--spacing-lg) var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-style: normal;
+  z-index: var(--z-tooltip);
+  margin-top: 25px;
+  margin-left: -75px;
+  max-width: 250px;
+  word-wrap: break-word;
+  white-space: normal;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  line-height: 1.4;
+}
+
+/* ===== FUND NAME TOOLTIPS ===== */
+.fund-name {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary);
+  cursor: help;
+  transition: all var(--transition-fast) ease;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fund-name:hover {
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  padding: var(--spacing-xs) var(--spacing-lg);
+  border-radius: var(--border-radius-md);
+  white-space: normal;
+  word-wrap: break-word;
+  position: relative;
+  z-index: 10;
+  overflow: visible;
+  text-overflow: none;
+}

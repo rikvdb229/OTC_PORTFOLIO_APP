@@ -1,0 +1,63 @@
+/* ===== TABLET RESPONSIVE STYLES ===== */
+
+/* Tablet adjustments */
+@media (max-width: 1200px) {
+  /* ===== RESPONSIVE COLUMN ADJUSTMENTS ===== */
+  :root {
+    --col-date-sm: calc(85px * var(--col-tablet-factor));
+    --col-date-md: calc(100px * var(--col-tablet-factor));
+    --col-date-lg: calc(115px * var(--col-tablet-factor));
+
+    --col-text-sm: calc(90px * var(--col-tablet-factor));
+    --col-text-md: calc(120px * var(--col-tablet-factor));
+    --col-text-lg: calc(150px * var(--col-tablet-factor));
+    --col-text-xl: calc(180px * var(--col-tablet-factor));
+
+    --col-currency-sm: calc(90px * var(--col-tablet-factor));
+    --col-currency-md: calc(110px * var(--col-tablet-factor));
+    --col-currency-lg: calc(130px * var(--col-tablet-factor));
+    --col-currency-xl: calc(150px * var(--col-tablet-factor));
+
+    --col-actions-sm: calc(120px * var(--col-tablet-factor));
+    --col-actions-md: calc(140px * var(--col-tablet-factor));
+    --col-actions-lg: calc(160px * var(--col-tablet-factor));
+  }
+
+  /* ===== TABLE ADJUSTMENTS ===== */
+  .portfolio-table,
+  .evolution-table,
+  .sales-table,
+  .grant-table {
+    font-size: var(--font-size-sm);
+  }
+
+  /* ===== BUTTON ADJUSTMENTS ===== */
+  .action-btn {
+    font-size: var(--font-size-xs);
+    padding: var(--spacing-xs) var(--spacing-lg);
+    min-width: 45px;
+  }
+
+  .table-actions {
+    gap: 3px;
+  }
+
+  /* ===== NOTES ADJUSTMENTS ===== */
+  .user-notes-cell {
+    max-width: 100px;
+    font-size: var(--font-size-sm);
+  }
+
+  /* ===== CHART ADJUSTMENTS ===== */
+  .chart-container {
+    height: 600px;
+  }
+
+  #portfolioOverviewChart {
+    height: 650px;
+  }
+
+  #portfolioChart {
+    max-height: 620px;
+  }
+}

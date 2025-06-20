@@ -1,0 +1,197 @@
+/* ===== UPDATED SALES TABLE CSS ===== */
+/* Replace the content in styles/tables/sales.css with this updated version */
+
+/* ===== SALES TABLE BASE STYLING ===== */
+.sales-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-white);
+  font-size: var(--font-size-base);
+  table-layout: auto; /* Consistent with portfolio table */
+}
+
+/* ===== SALES TABLE GROUP HEADERS ===== */
+.sales-table thead tr:first-child th.group-header {
+  position: sticky;
+  top: 0;
+  z-index: 110;
+  background: var(--bg-primary) !important;
+  color: var(--color-white) !important;
+  text-align: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.8px; /* Match portfolio table */
+  text-transform: uppercase;
+  padding: var(--spacing-md) var(--spacing-sm);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: none;
+}
+
+.sales-table thead tr:first-child th.group-header:last-child {
+  border-right: none;
+}
+
+/* ===== SALES TABLE COLUMN HEADERS ===== */
+.sales-table thead tr:nth-child(2) th {
+  position: sticky;
+  top: 35px; /* Below group headers */
+  z-index: 105;
+  background: var(--color-light) !important;
+  padding: var(--spacing-md) var(--spacing-sm);
+  text-align: center;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-light);
+  border-bottom: none;
+  font-size: var(--font-size-sm); /* Match portfolio table */
+}
+
+.sales-table thead tr:nth-child(2) th:last-child {
+  border-right: none;
+}
+
+/* ===== SALES TABLE CELL ALIGNMENT - CONSISTENT WITH PORTFOLIO TABLE ===== */
+
+/* Default: All cells centered with monospace font for consistency */
+.sales-table td {
+  padding: var(--spacing-md) var(--spacing-sm);
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-base);
+  text-align: center; /* Default center alignment like portfolio table */
+  font-family: var(--font-family-mono); /* Consistent monospace font */
+}
+
+/* ===== SPECIFIC COLUMN ALIGNMENTS ===== */
+
+/* Date columns (Sale Date, Grant Date) - centered with monospace */
+.sales-table td:nth-child(1), /* Sale Date */
+.sales-table td:nth-child(2) {
+  /* Grant Date */
+  text-align: center;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+}
+
+/* Fund name - left aligned with medium weight (like portfolio table) */
+.sales-table td:nth-child(3) {
+  /* Fund Name */
+  text-align: left;
+  font-family: var(--font-family-base);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+/* Numeric columns - right aligned with monospace font */
+.sales-table td:nth-child(4), /* Quantity Sold */
+.sales-table td:nth-child(5), /* Sale Price */
+.sales-table td:nth-child(6), /* Total Sale Value */
+.sales-table td:nth-child(7) {
+  /* Realized P&L */
+  text-align: right;
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Emphasized financial columns (like portfolio table) */
+.sales-table td:nth-child(6), /* Total Sale Value */
+.sales-table td:nth-child(7) {
+  /* Realized P&L */
+  font-weight: var(--font-weight-medium);
+}
+
+/* Notes column - left aligned, styled like portfolio notes */
+.sales-table td:nth-child(8) {
+  /* Notes */
+  text-align: left;
+  font-family: var(--font-family-base);
+  font-style: italic;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Actions column - centered */
+.sales-table td:nth-child(9) {
+  /* Actions */
+  text-align: center;
+  padding: var(--spacing-sm) var(--spacing-xs);
+}
+
+/* ===== CURRENCY AND STATUS STYLING ===== */
+
+/* Currency columns - consistent with portfolio table */
+.sales-table .currency {
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-normal);
+}
+
+/* Positive/negative values - consistent with portfolio table */
+.sales-table .currency.positive {
+  color: var(--color-success);
+}
+
+.sales-table .currency.negative {
+  color: var(--color-danger);
+}
+
+/* ===== ACTION BUTTONS STYLING ===== */
+.sales-table .actions-cell .btn {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  margin: 0 var(--spacing-xs);
+}
+
+/* ===== FUND NAME STYLING ===== */
+.sales-table .fund-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Tooltip support for truncated fund names */
+.sales-table .fund-name[title] {
+  cursor: help;
+}
+
+/* ===== RESPONSIVE ADJUSTMENTS ===== */
+@media (max-width: 1200px) {
+  .sales-table {
+    font-size: var(--font-size-sm);
+  }
+
+  .sales-table td {
+    padding: var(--spacing-sm) var(--spacing-xs);
+  }
+
+  .sales-table .fund-name {
+    max-width: 150px;
+  }
+}
+
+/* ===== NO DATA STATE ===== */
+.sales-table .no-data td {
+  text-align: center;
+  font-style: italic;
+  color: var(--text-light);
+  padding: var(--spacing-xl);
+}
+
+/* ===== HOVER EFFECTS ===== */
+.sales-table tbody tr:hover {
+  background-color: var(--color-light);
+}
+
+/* ===== SORT INDICATORS (if applicable) ===== */
+.sales-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sales-table th.sortable:hover {
+  background-color: var(--color-primary-light);
+}

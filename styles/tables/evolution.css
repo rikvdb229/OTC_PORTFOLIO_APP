@@ -1,0 +1,216 @@
+/* ===== EVOLUTION TABLE SPECIFIC STYLING ===== */
+
+/* ===== EVOLUTION TABLE LAYOUT ===== */
+.evolution-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-white);
+  font-size: var(--font-size-base);
+  table-layout: auto;
+}
+
+/* ===== EVOLUTION GROUP HEADERS ===== */
+.evolution-table thead tr:first-child th.group-header {
+  background: var(--bg-primary);
+  color: var(--color-white);
+  text-align: center;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: var(--spacing-md) var(--spacing-sm);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.evolution-table thead tr:first-child th.group-header:last-child {
+  border-right: none;
+}
+
+.evolution-table thead tr:nth-child(2) th {
+  background: var(--color-light);
+  padding: var(--spacing-md) var(--spacing-sm);
+  text-align: center;
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--color-primary);
+  border-right: 1px solid var(--border-light);
+  font-size: var(--font-size-sm);
+}
+
+.evolution-table thead tr:nth-child(2) th:last-child {
+  border-right: none;
+}
+
+/* ===== EVOLUTION COLUMN STYLING ===== */
+.evolution-table td:nth-child(1) {
+  text-align: center;
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+}
+
+.evolution-table td:nth-child(2),
+.evolution-table td:nth-child(3) {
+  text-align: right;
+  font-family: var(--font-family-mono);
+  font-weight: var(--font-weight-normal);
+}
+
+.evolution-table td:nth-child(4) {
+  text-align: center;
+  font-weight: var(--font-weight-medium);
+}
+
+.evolution-table td:nth-child(5) {
+  text-align: center;
+  font-family: var(--font-family-mono);
+}
+
+.evolution-table td:nth-child(6) {
+  text-align: right;
+  font-size: var(--font-size-sm);
+  overflow: visible;
+  white-space: normal;
+  position: relative;
+  padding-right: 50px;
+}
+
+/* ===== CURRENCY STYLING ===== */
+.evolution-table .currency.positive,
+.evolution-table .positive {
+  color: var(--color-success);
+}
+
+.evolution-table .currency.negative,
+.evolution-table .negative {
+  color: var(--color-danger);
+}
+
+/* ===== EVOLUTION CONTROLS ===== */
+.evolution-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.evolution-controls .btn {
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+/* ===== MODERN GRANT FILTER TOGGLES ===== */
+.grant-modern-filters {
+  margin-top: var(--spacing-lg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.filter-toggle {
+  display: flex;
+  align-items: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--border-radius-xl);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
+  min-width: 120px;
+  justify-content: center;
+
+  /* Active state (default) */
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: 2px solid var(--color-primary);
+  box-shadow: 0 2px 8px rgba(0, 123, 204, 0.3);
+}
+
+.filter-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 123, 204, 0.4);
+}
+
+.filter-toggle.inactive {
+  background: var(--color-white);
+  color: var(--text-secondary);
+  border: 2px solid var(--border-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filter-toggle.inactive:hover {
+  background: var(--color-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.filter-label {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  letter-spacing: 0.5px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .grant-modern-filters {
+    flex-direction: column;
+    gap: var(--spacing-sm);
+  }
+
+  .filter-toggle {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+/* ===== FILTERED ROW STYLING ===== */
+.grant-table tbody tr.filtered-out {
+  opacity: 0.3;
+  background-color: #f8f9fa;
+  pointer-events: none;
+}
+
+.grant-table tbody tr.filtered-out td {
+  color: var(--text-muted);
+}
+
+.grant-table tbody tr.filtered-out .status-badge {
+  opacity: 0.5;
+}
+
+/* Smooth transition for filtering */
+.grant-table tbody tr {
+  transition: opacity 0.3s ease, background-color 0.3s ease;
+}
+
+/* ===== CLEARER STATUS BADGES ===== */
+.grant-table .status-badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-md);
+  border-radius: var(--border-radius-lg);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: none; /* Remove uppercase */
+  letter-spacing: 0.3px;
+  min-width: 80px;
+  text-align: center;
+}
+
+/* Clearer status colors */
+.grant-table .status-badge.active {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.grant-table .status-badge.partial {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.grant-table .status-badge.sold {
+  background-color: #e2e3e5;
+  color: #495057;
+  border: 1px solid #ced4da;
+}

@@ -1,0 +1,247 @@
+/* ===== STATUS INDICATORS & COLOR CODING SYSTEM ===== */
+
+/* ===== POSITIVE/NEGATIVE VALUES - Text color only ===== */
+.positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(40, 167, 69, 0.05); */
+}
+
+.negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(220, 53, 69, 0.05); */
+}
+
+/* ===== RETURN PERFORMANCE CLASSES - Text color only ===== */
+.return-far-below {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(220, 53, 69, 0.1); */
+}
+
+.return-below {
+  color: #fd7e14 !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(253, 126, 20, 0.1); */
+}
+
+.return-near-target {
+  color: var(--color-warning) !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(255, 193, 7, 0.1); */
+}
+
+.return-above {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(40, 167, 69, 0.1); */
+}
+
+.return-far-above {
+  color: #155724 !important;
+  font-weight: var(--font-weight-bold);
+  /* Remove: background: rgba(21, 87, 36, 0.1); */
+}
+
+/* ===== LEGACY RETURN CLASSES (for compatibility) - Text color only ===== */
+.return-bad {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-poor {
+  color: #fd7e14 !important;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-fair {
+  color: var(--color-warning) !important;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-good {
+  color: var(--color-success-light) !important;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-excellent {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+/* ===== LEGACY RETURN CLASSES (for compatibility) ===== */
+.return-bad {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-poor {
+  color: #fd7e14;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-fair {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-good {
+  color: var(--color-success-light);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.return-excellent {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+/* ===== TARGET CLASSES ===== */
+.target-bad {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.target-poor {
+  color: #fd7e14;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.target-fair {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.target-near {
+  color: var(--color-info);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.target-good {
+  color: var(--color-success);
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+.target-excellent {
+  color: #155724;
+  font-weight: var(--font-weight-bold);
+  text-align: center;
+}
+
+/* ===== STATUS INDICATORS ===== */
+.status-active {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
+}
+
+.status-sold {
+  color: var(--color-gray);
+  font-weight: var(--font-weight-normal);
+}
+
+.status-expired {
+  color: var(--color-danger);
+  font-weight: var(--font-weight-medium);
+}
+
+.status-waiting {
+  color: var(--color-warning);
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===== STATUS BADGES ===== */
+.status-badge {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.partial {
+  background: #fff3cd;
+  color: var(--color-warning-dark);
+}
+
+.status-badge.sold {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* ===== TAX DISPLAY ENHANCEMENT ===== */
+.tax-manual {
+  background: #fff3cd;
+  color: var(--color-warning-dark);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+}
+
+.tax-auto {
+  background: #d1ecf1;
+  color: #0c5460;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--border-radius-md);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+}
+
+/* ===== PROGRESS COMPONENTS ===== */
+.progress-bar {
+  width: 100%;
+  height: 16px;
+  background: #f0f0f0;
+  border-radius: var(--border-radius-xl);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), #00a8ff);
+  transition: width var(--transition-medium);
+  border-radius: var(--border-radius-xl);
+}
+
+.progress-text {
+  margin-top: var(--spacing-sm);
+  text-align: center;
+  color: var(--text-light);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-normal);
+}
+
+.status-output {
+  background: var(--color-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  min-height: 80px;
+  white-space: pre-wrap;
+  max-height: 200px;
+  overflow-y: auto;
+}

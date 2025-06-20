@@ -1,0 +1,132 @@
+/* ===== MAIN CSS FILE - OTC Portfolio Tracker ===== */
+/* This file imports all CSS modules in the correct order */
+
+/* ===== BASE STYLES - Must load first ===== */
+@import url("./base/variables.css");
+@import url("./base/reset.css");
+
+/* ===== LAYOUT COMPONENTS ===== */
+@import url("./layout/window.css");
+@import url("./layout/header.css");
+@import url("./layout/navigation.css");
+@import url("./layout/sections.css");
+@import url("./layout/footer.css");
+
+/* ===== CORE COMPONENTS ===== */
+@import url("./components/buttons.css");
+@import url("./components/forms.css");
+@import url("./components/modals.css");
+@import url("./components/notifications.css");
+@import url("./components/tooltips.css");
+
+/* ===== TABLE SYSTEM - Column system must load before specific tables ===== */
+@import url("./tables/columns.css");
+@import url("./tables/base.css");
+@import url("./tables/portfolio.css");
+@import url("./tables/evolution.css");
+@import url("./tables/sales.css");
+@import url("./tables/grants.css");
+
+/* ===== FEATURE MODULES ===== */
+@import url("./features/charts.css");
+@import url("./features/settings.css");
+@import url("./features/status-indicators.css");
+
+/* ===== RESPONSIVE STYLES - Must load last to override other styles ===== */
+@import url("./responsive/tablet.css");
+@import url("./responsive/mobile.css");
+
+/* ===== DEBUGGING - UNCOMMENT TO SEE LAYOUT BOUNDARIES ===== */
+/*
+body {
+  border: 3px solid purple !important;
+}
+
+.main-content {
+  border: 3px solid red !important;
+}
+
+.scrollable-content {
+  border: 3px solid blue !important;
+}
+
+.table-container {
+  border: 3px solid green !important;
+}
+
+.app-footer {
+  border: 3px solid orange !important;
+}
+*/
+
+/* ===== ENSURE PROPER HEIGHT CALCULATION ===== */
+/* Make sure the flex chain works correctly */
+
+html {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+}
+
+/* ===== IMPORTANT: OVERRIDE ANY CONFLICTING TAB-CONTENT STYLES ===== */
+/* Make sure navigation.css doesn't interfere */
+
+.tab-content.active {
+  display: flex !important; /* Force flex layout */
+  flex-direction: column !important;
+  height: auto !important; /* Remove any fixed height */
+  overflow: visible !important; /* Remove any overflow settings */
+}
+
+/* ===== USAGE INSTRUCTIONS ===== */
+/*
+1. Replace your current portfolio-styles.css link with:
+   <link rel="stylesheet" href="styles/main.css" />
+
+2. Create this folder structure:
+   styles/
+   ├── main.css (this file)
+   ├── base/
+   │   ├── variables.css
+   │   └── reset.css
+   ├── layout/
+   │   ├── window.css
+   │   ├── header.css
+   │   ├── navigation.css
+   │   └── sections.css
+   ├── components/
+   │   ├── buttons.css
+   │   ├── forms.css
+   │   ├── modals.css
+   │   ├── notifications.css
+   │   └── tooltips.css
+   ├── tables/
+   │   ├── columns.css
+   │   ├── base.css
+   │   ├── portfolio.css
+   │   ├── evolution.css
+   │   ├── sales.css
+   │   └── grants.css
+   ├── features/
+   │   ├── charts.css
+   │   ├── settings.css
+   │   └── status-indicators.css
+   └── responsive/
+       ├── tablet.css
+       └── mobile.css
+
+3. Copy each module file into its respective folder
+
+4. Test that all styles still work correctly
+
+5. Enjoy much more maintainable CSS! 🎉
+
+BENEFITS:
+✅ 22 focused files instead of 1 massive file
+✅ Each file is 20-200 lines instead of 1000+
+✅ Easy to find and edit specific styles
+✅ Better team collaboration
+✅ Safer changes with isolated impact
+✅ Future-ready for build optimization

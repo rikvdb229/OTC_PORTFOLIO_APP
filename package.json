@@ -1,0 +1,90 @@
+{
+  "name": "otc-portfolio-app",
+  "version": "1.0.2",
+  "description": "Option Portfolio Tracker",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build": "npm run setup-chrome && electron-builder",
+    "build-win": "npm run setup-chrome && electron-builder --win",
+    "rebuild": "electron-rebuild",
+    "postinstall": "electron-rebuild",
+    "test": "node validate-changes.js",
+    "clean": "rimraf node_modules package-lock.json && npm install",
+    "setup-chrome": "node simple-chrome-setup.js",
+    "test-chrome": "node test-chrome-simple.js",
+    "diagnose-db": "node database-diagnostic.js",
+    "check-db": "node migrate-database.js",
+    "migrate-db": "node migrate-database.js migrate"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^3.7.0",
+    "electron": "^32.2.6",
+    "electron-builder": "^25.1.8",
+    "rimraf": "^6.0.1"
+  },
+  "dependencies": {
+    "csv-parser": "^3.2.0",
+    "papaparse": "^5.5.3",
+    "puppeteer": "^23.11.1",
+    "sql.js": "^1.13.0"
+  },
+  "author": "Your Name",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "build": {
+    "appId": "com.yourcompany.otc-portfolio",
+    "productName": "OTC Portfolio Tracker",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "chrome-portable/**/*",
+      "node_modules/puppeteer/.local-chromium/**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "extraResources": [
+      {
+        "from": "chrome-portable",
+        "to": "chrome",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "node_modules/puppeteer/.local-chromium",
+        "to": "chromium",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "perMachine": false,
+      "runAfterFinish": false
+    }
+  }
+}

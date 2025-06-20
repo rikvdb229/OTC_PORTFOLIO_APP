@@ -1,0 +1,203 @@
+/* ===== NOTIFICATION COMPONENTS ===== */
+
+/* ===== HEADER PRICE NOTIFICATIONS ===== */
+.header-notification {
+  background: linear-gradient(135deg, #fff8e1, #ffecb3);
+  border: 1px solid #ffb74d;
+  border-left: 4px solid #f57c00; /* Add emphasis border */
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  margin-right: var(--spacing-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  color: #e65100;
+  box-shadow: 0 2px 8px rgba(245, 124, 0, 0.15);
+  animation: slideInRight 0.3s ease-out;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  position: relative;
+  cursor: help;
+}
+
+/* Add subtle background pattern */
+.header-notification::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 2px,
+    rgba(245, 124, 0, 0.03) 2px,
+    rgba(245, 124, 0, 0.03) 4px
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.header-notification .notification-icon {
+  font-size: var(--font-size-base);
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+  z-index: 1;
+  position: relative;
+}
+
+.header-notification .notification-text {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: #e65100;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 1;
+  position: relative;
+}
+
+.header-notification .notification-dismiss {
+  background: rgba(0, 0, 0, 0.05); /* More subtle background */
+  border: none;
+  color: rgba(230, 81, 0, 0.6); /* More muted color */
+  cursor: pointer;
+  font-size: 14px; /* Slightly larger for better touch target */
+  padding: 4px;
+  width: 20px; /* Slightly larger */
+  height: 20px; /* Slightly larger */
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-app-region: no-drag;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  font-weight: normal; /* Remove bold */
+  z-index: 1;
+  position: relative;
+  opacity: 0.7; /* Make it more subtle */
+}
+
+.header-notification .notification-dismiss:hover {
+  background: rgba(0, 0, 0, 0.1);
+  transform: scale(1.05); /* Reduced scaling */
+  color: rgba(230, 81, 0, 0.8);
+  opacity: 1; /* Full opacity on hover */
+}
+
+.header-notification .notification-dismiss:active {
+  transform: scale(0.98);
+}
+
+/* Hover tooltip */
+.header-notification:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: -35px;
+  left: 0;
+  background: var(--color-dark);
+  color: var(--color-white);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ===== RESPONSIVE BEHAVIOR ===== */
+@media (max-width: 1200px) {
+  .header-notification {
+    max-width: 160px;
+  }
+
+  .header-notification .notification-text {
+    max-width: 100px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-notification {
+    max-width: 140px;
+    margin-right: var(--spacing-xs);
+    padding: 6px var(--spacing-xs);
+  }
+
+  .header-notification .notification-text {
+    max-width: 70px;
+    font-size: 11px;
+  }
+
+  .header-notification .notification-dismiss {
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+  }
+
+  /* Hide tooltip on mobile */
+  .header-notification:hover::after {
+    display: none;
+  }
+}
+
+/* ===== LEGACY NOTIFICATION STYLES (if still needed elsewhere) ===== */
+.notification {
+  padding: var(--spacing-md);
+  border-radius: var(--border-radius-md);
+  margin-bottom: var(--spacing-md);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notification.info {
+  background: #e3f2fd;
+  border: 1px solid #bbdefb;
+  color: #1976d2;
+}
+
+.notification.warning {
+  background: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: var(--color-warning-dark);
+}
+
+.notification.error {
+  background: #ffebee;
+  border: 1px solid #ffcdd2;
+  color: #c62828;
+}
+
+.notification.success {
+  background: #e8f5e8;
+  border: 1px solid #c8e6c9;
+  color: #2e7d32;
+}
