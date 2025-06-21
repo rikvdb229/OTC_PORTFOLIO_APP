@@ -28,30 +28,17 @@
       <!-- MAIN HEADER - Always Sticky -->
       <div class="main-header">
         <header class="header">
-          <div class="header-brand">
-            <h1>KBC Portfolio Tracker</h1>
-          </div>
-          <div class="header-actions">
-            <!-- Add notification here BEFORE the Update Prices button -->
-            <div
-              id="priceUpdateNotification"
-              class="header-notification"
-              style="display: none"
-            >
-              <span class="notification-icon">⚠️</span>
-              <span class="notification-text">Prices not current</span>
-              <button id="dismissNotification" class="notification-dismiss">
-                &times;
-              </button>
-            </div>
-
-            <button id="updatePricesBtn" class="btn btn-primary">
-              📊 Update Prices
-            </button>
-            <button id="settingsToggle" class="btn btn-secondary">⚙️</button>
-          </div>
-        </header>
-
+           <div class="header-brand">
+             <img src="assets/logo.svg" alt="Portfolio Tracker" class="header-logo"> 
+            </div> 
+            <div class="header-actions">
+               <!-- Notification WITHOUT close button --> <div id="priceUpdateNotification" class="header-notification" style="display: none"> <span class="notification-icon">⚠️</span>
+                   <span class="notification-text">Prices not current</span> </div> 
+                   <!-- Update Prices Button --> <button id="updatePricesBtn" class="header-btn btn-update-prices"> 📊 Update Prices </button> 
+                    <!-- Settings Button --> <button id="settingsToggle" class="header-btn btn-settings"> ⚙️ Settings </button> 
+                    </div> 
+                  </header>
+        </div>
         <!-- Navigation Tabs - SEAMLESS CONNECTION -->
         <nav class="nav-tabs">
           <button class="nav-tab active" data-tab="portfolio">Portfolio</button>

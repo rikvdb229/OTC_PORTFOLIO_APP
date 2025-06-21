@@ -145,7 +145,7 @@
 
 /* Settings button enhancements */
 #settingsToggle {
-  padding: 14px 18px; /* Larger padding */
+  padding: 0 18px; /* Remove vertical padding */
   font-size: 16px; /* Larger font */
   min-height: 44px; /* Taller button */
 }

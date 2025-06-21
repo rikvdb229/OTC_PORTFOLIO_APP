@@ -1,4 +1,191 @@
 /* ===== MAIN HEADER STYLING ===== */
+/* UPDATED: Much larger logo sizing */
+/* ===== HEADER LAYOUT - UPDATED ===== */
+.header {
+  background: linear-gradient(135deg, #1e3d59 0%, #0ea5e9 50%, #0284c7 100%);
+  color: white;
+  padding: 16px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 70px;
+}
+.header-brand {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+}
+.header-logo {
+  height: 55px;
+  width: auto;
+  max-width: none;
+  filter: brightness(1.3) contrast(1.2);
+} /* ===== CONSISTENT HEADER ACTIONS ===== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+} /* ===== NOTIFICATION STYLING - NO CLOSE BUTTON ===== */
+.header-notification {
+  /* Remove existing styles and use button styling instead */
+  padding: 14px 18px; /* Same as your settings button */
+  font-size: 16px; /* Same as your settings button */
+  min-height: 44px; /* Same as your settings button */
+
+  /* Keep notification-specific colors */
+  background: rgba(255, 193, 7, 0.95);
+  color: #856404;
+  border: 2px solid rgba(255, 193, 7, 0.3);
+  border-radius: 8px;
+
+  /* Button-like appearance */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+#priceUpdateNotification {
+  padding: 0px 18px !important;
+}
+.header-actions {
+  display: flex;
+  align-items: center !important;
+  gap: 12px;
+}
+
+#priceUpdateNotification,
+#updatePricesBtn,
+#settingsToggle {
+  height: 44px !important;
+  padding: 0 18px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.notification-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.notification-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.notification.warning {
+  padding: 14px 18px; /* Same as your buttons */
+  font-size: 16px; /* Same as your buttons */
+  min-height: 44px; /* Same as your buttons */
+  box-sizing: border-box;
+
+  /* Keep existing notification styling */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+} /* ===== CONSISTENT HEADER BUTTONS ===== */
+.header-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  height: 44px;
+  box-sizing: border-box;
+  min-width: 140px;
+  white-space: nowrap;
+  font-family: inherit;
+} /* ===== UPDATE PRICES BUTTON - PRIMARY ===== */
+/* ===== CONSISTENT HEADER ELEMENT STYLING ===== */
+#priceUpdateNotification,
+#updatePricesBtn,
+#settingsToggle {
+  /* Base consistent styling */
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 18px !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  border: 2px solid transparent !important;
+  transition: all 0.3s ease !important;
+  margin: 0 !important;
+  min-width: 140px !important;
+}
+
+/* ===== INDIVIDUAL COLORS ===== */
+#priceUpdateNotification {
+  background: rgba(239, 68, 68, 0.9) !important; /* Red background */
+  color: white !important; /* White text */
+  border-color: rgba(239, 68, 68, 0.6) !important;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3) !important;
+}
+
+#updatePricesBtn {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+  color: white !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+#settingsToggle {
+  background: rgba(255, 255, 255, 0.9) !important;
+  color: #374151 !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+} /* ===== ANIMATIONS ===== */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+} /* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .header {
+    padding: 12px 20px;
+    flex-direction: column;
+    gap: 15px;
+    min-height: auto;
+  }
+  .header-actions {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .header-notification {
+    min-width: auto;
+    font-size: 13px;
+    padding: 10px 14px;
+    height: 40px;
+  }
+  .header-btn {
+    height: 40px;
+    padding: 10px 16px;
+    font-size: 13px;
+    min-width: 120px;
+  }
+  .header-logo {
+    height: 45px;
+  }
+}
+/* FULL HEIGHT LOGO - Method 1 */
 .main-header {
   flex-shrink: 0; /* Never shrink */
   position: sticky;
@@ -6,44 +193,6 @@
   z-index: 300;
   background: transparent;
 }
-
-.header {
-  background: var(--bg-primary); /* Official KBC blue gradient */
-  color: var(--color-white);
-  padding: 16px var(--spacing-lg); /* Increased vertical padding */
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  min-height: 70px; /* Increased height */
-}
-
-.header-brand h1 {
-  margin: 0;
-  font-size: var(--font-size-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-white);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-/* ===== HEADER ACTIONS LAYOUT ===== */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px; /* Increased gap */
-  flex-wrap: nowrap;
-  min-width: 0;
-}
-/* ===== HEADER LAYOUT UPDATES ===== */
-
-/* ===== HEADER ACTIONS LAYOUT ===== */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-sm); /* Reduce gap for tighter layout */
-  flex-wrap: nowrap; /* Prevent wrapping */
-  min-width: 0; /* Allow shrinking */
-}
-
 /* ===== NAVIGATION TABS - SEAMLESS CONNECTION TO HEADER ===== */
 .nav-tabs {
   display: flex;
@@ -56,7 +205,10 @@
   border: none;
   border-bottom: 1px solid var(--border-light);
 }
-
+#priceUpdateNotification {
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+}
 .nav-tab {
   flex: 1;
   padding: 15px var(--spacing-lg);

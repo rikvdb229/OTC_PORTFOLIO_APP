@@ -137,20 +137,6 @@ const PortfolioActionHandlers = {
         app.showAddOptionsModal();
       });
     }
-
-    // Price update notification dismiss
-    if (app.dismissNotification) {
-      window.DOMHelpers.safeAddEventListener(
-        app.dismissNotification,
-        "click",
-        () => {
-          if (app.priceUpdateNotification) {
-            app.priceUpdateNotification.style.display = "none";
-          }
-        }
-      );
-    }
-
     console.log("✅ Portfolio action handlers initialized");
   },
 };
