@@ -28,52 +28,64 @@
       <!-- MAIN HEADER - Always Sticky -->
       <div class="main-header">
         <header class="header">
-           <div class="header-brand">
-             <img src="assets/logo.svg" alt="Portfolio Tracker" class="header-logo"> 
-            </div> 
-            <div class="header-actions">
-               <!-- Notification WITHOUT close button --> <div id="priceUpdateNotification" class="header-notification" style="display: none"> <span class="notification-icon">⚠️</span>
-                   <span class="notification-text">Prices not current</span> </div> 
-                   <!-- Update Prices Button --> <button id="updatePricesBtn" class="header-btn btn-update-prices"> 📊 Update Prices </button> 
-                    <!-- Settings Button --> <button id="settingsToggle" class="header-btn btn-settings"> ⚙️ Settings </button> 
-                    </div> 
-                  </header>
-        </div>
-        <!-- Navigation Tabs - SEAMLESS CONNECTION -->
-        <nav class="nav-tabs">
-          <button class="nav-tab active" data-tab="portfolio">Portfolio</button>
-          <button class="nav-tab" data-tab="evolution">Evolution</button>
-          <button class="nav-tab" data-tab="chart">Chart</button>
-          <button class="nav-tab" data-tab="sales-history">
-            Sales History
-          </button>
-          <button class="nav-tab" data-tab="grant-history">
-            Grant History
-          </button>
-        </nav>
+          <div class="header-brand">
+            <img
+              src="assets/logo.svg"
+              alt="Portfolio Tracker"
+              class="header-logo"
+            />
+          </div>
+          <div class="header-actions">
+            <!-- Notification WITHOUT close button -->
+            <div
+              id="priceUpdateNotification"
+              class="header-notification"
+              style="display: none"
+            >
+              <span class="notification-icon">⚠️</span>
+              <span class="notification-text">Prices not current</span>
+            </div>
+            <!-- Update Prices Button -->
+            <button id="updatePricesBtn" class="header-btn btn-update-prices">
+              📊 Update Prices
+            </button>
+            <!-- Settings Button -->
+            <button id="settingsToggle" class="header-btn btn-settings">
+              ⚙️ Settings
+            </button>
+          </div>
+        </header>
+      </div>
+      <!-- Navigation Tabs - SEAMLESS CONNECTION -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="portfolio">Portfolio</button>
+        <button class="nav-tab" data-tab="evolution">Evolution</button>
+        <button class="nav-tab" data-tab="chart">Chart</button>
+        <button class="nav-tab" data-tab="sales-history">Sales History</button>
+        <button class="nav-tab" data-tab="grant-history">Grant History</button>
+      </nav>
 
-        <!-- Global Portfolio Stats - CONSISTENT SPACING -->
-        <div class="global-portfolio-header">
-          <div class="global-portfolio-stats">
-            <div class="stat-card">
-              <h4>Total Portfolio Value</h4>
-              <div id="totalPortfolioValue" class="stat-value">€ ---</div>
-              <div id="portfolioChange" class="stat-change">---</div>
-            </div>
-            <div class="stat-card">
-              <h4>Weighted Avg Return</h4>
-              <div id="totalReturnPercentage" class="stat-value">---%</div>
-              <small class="stat-note">Portfolio-wide performance</small>
-            </div>
-            <div class="stat-card">
-              <h4>Active Options</h4>
-              <div id="totalOptions" class="stat-value">---</div>
-            </div>
-            <div class="stat-card">
-              <h4>Last Update</h4>
-              <div id="lastPriceUpdate" class="stat-value">---</div>
-              <small class="stat-note">From CSV data</small>
-            </div>
+      <!-- Global Portfolio Stats - CONSISTENT SPACING -->
+      <div class="global-portfolio-header">
+        <div class="global-portfolio-stats">
+          <div class="stat-card">
+            <h4>Total Portfolio Value</h4>
+            <div id="totalPortfolioValue" class="stat-value">€ ---</div>
+            <div id="portfolioChange" class="stat-change">---</div>
+          </div>
+          <div class="stat-card">
+            <h4>Weighted Avg Return</h4>
+            <div id="totalReturnPercentage" class="stat-value">---%</div>
+            <small class="stat-note">Portfolio-wide performance</small>
+          </div>
+          <div class="stat-card">
+            <h4>Active Options</h4>
+            <div id="totalOptions" class="stat-value">---</div>
+          </div>
+          <div class="stat-card">
+            <h4>Last Update</h4>
+            <div id="lastPriceUpdate" class="stat-value">---</div>
+            <small class="stat-note">From CSV data</small>
           </div>
         </div>
       </div>
