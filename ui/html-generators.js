@@ -137,13 +137,12 @@ class HTMLGenerators {
             <div class="no-grants-message">
               <div class="no-grants-content">
                 <h3>📊 Welcome to KBC Portfolio Tracker</h3>
-                <p><strong>To get started, you need to update prices first!</strong></p>
+                <p><strong>To get started, you need to update prices first!</strong></p><br>
                 <p>Your portfolio is empty because no price data has been downloaded yet.</p>
-                <ol>
-                  <li><strong>Step 1:</strong> Click "📊 Update Prices" in the top right to download the latest option data from KBC</li>
-                  <li><strong>Step 2:</strong> Once prices are updated, you can add your option grants</li>
-                  <li><strong>Step 3:</strong> Track your portfolio performance and evolution</li>
-                </ol>
+                <br>
+                  <strong>Step 1:</strong> Click "📊 Update Prices" in the top right to download the latest option data from KBC<br>
+                  <strong>Step 2:</strong> Once prices are updated, you can add your option grants<br>
+                  <strong>Step 3:</strong> Track your portfolio performance and evolution
               </div>
             </div>
           </td>
@@ -413,12 +412,11 @@ class HTMLGenerators {
       <td colspan="5">
         <div class="no-data-message">
           <p>No grants found in database.</p>
-          <p>This might be a database sync issue.</p>
-          <button onclick="portfolioApp.debugDatabase()" class="btn btn-small btn-secondary">Debug Database</button>
         </div>
       </td>
     </tr>
   `;
+      return;
     }
 
     tableBody.innerHTML = grantHistory
