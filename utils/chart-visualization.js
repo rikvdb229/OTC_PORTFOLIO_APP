@@ -65,18 +65,9 @@ window.ChartUtils = {
     if (!chartContainer) return;
 
     chartContainer.innerHTML = `
-      <div style="text-align: center; padding: 40px;">
-        <p style="color: #666; font-size: 18px; margin-bottom: 10px;">📈 No Chart Data Available</p>
-        <div style="text-align: left; display: inline-block; margin: 20px 0;">
-          <p style="margin-bottom: 15px;">To see your portfolio chart, you need:</p>
-          <ul style="color: #666; line-height: 1.6;">
-            <li>✅ Add at least one grant/option to your portfolio</li>
-            <li>✅ Update prices to get current values</li>
-            <li>✅ Evolution data will be created automatically</li>
-          </ul>
+    <div class="no-data-message">
+          <p>📈 No Chart Data Available</p>
         </div>
-        <button onclick="portfolioApp.switchTab('portfolio')" style="background: #28a745; color: white; padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">Go to Portfolio</button>
-      </div>
     `;
   },
 

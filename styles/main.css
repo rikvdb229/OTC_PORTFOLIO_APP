@@ -44,3 +44,6 @@ body {
   height: auto !important;
   overflow: visible !important;
 }
+.no-data-message {
+  text-align: center;
+}

@@ -409,16 +409,16 @@ class HTMLGenerators {
 
     if (grantHistory.length === 0) {
       tableBody.innerHTML = `
-  <tr class="no-data">
-    <td colspan="5">
-      <div class="no-data-message">
-        <p>No grants found in database.</p>
-        <p>This might be a database sync issue.</p>
-        <button onclick="portfolioApp.debugDatabase()" class="btn btn-small btn-secondary">Debug Database</button>
-      </div>
-    </td>
-  </tr>
-`;
+    <tr class="no-data">
+      <td colspan="5">
+        <div class="no-data-message">
+          <p>No grants found in database.</p>
+          <p>This might be a database sync issue.</p>
+          <button onclick="portfolioApp.debugDatabase()" class="btn btn-small btn-secondary">Debug Database</button>
+        </div>
+      </td>
+    </tr>
+  `;
     }
 
     tableBody.innerHTML = grantHistory
