@@ -119,7 +119,7 @@ function hasPortfolioData(overview) {
  * @param {Object} stats - Portfolio statistics from generatePortfolioStats
  * @returns {Object} Status indicators
  */
-function getPortfolioStatusIndicators(stats) {
+function getPortfolioStatusIndicators(stats, targetPercentage = 65) {
   return {
     hasData: stats.totalQuantity > 0,
     isProfitable: stats.avgReturn > 0,
@@ -127,7 +127,7 @@ function getPortfolioStatusIndicators(stats) {
     hasRecentUpdate:
       stats.latestUpdate &&
       new Date() - stats.latestUpdate < 7 * 24 * 60 * 60 * 1000, // 7 days
-    returnClass: stats.avgReturn >= 0 ? "positive" : "negative",
+    returnClass: getReturnClass(stats.avgReturn, targetPercentage), // ✅ NEW WAY
     profitLossClass: stats.totalProfitLoss >= 0 ? "positive" : "negative",
   };
 }

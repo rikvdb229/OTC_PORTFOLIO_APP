@@ -1339,7 +1339,7 @@ const StatsManager = {
    * @param {Object} app - Application instance
    * @param {Array} overview - Portfolio overview data
    */
-  async updatePortfolioStats(app, overview) {
+  async updatePortfolioStats(app, overview, targetPercentage = 65) {
     if (!app) {
       console.error("App instance not available for updatePortfolioStats");
       return;
@@ -1348,7 +1348,10 @@ const StatsManager = {
     // Use extracted business logic
     const stats = window.PortfolioCalculations.generatePortfolioStats(overview);
     const indicators =
-      window.PortfolioCalculations.getPortfolioStatusIndicators(stats);
+      window.PortfolioCalculations.getPortfolioStatusIndicators(
+        stats,
+        targetPercentage
+      );
 
     // Update main stats using direct DOM access
     const totalPortfolioValueEl = document.getElementById(

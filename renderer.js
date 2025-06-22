@@ -810,7 +810,7 @@ class EnhancedPortfolioApp {
           "target_percentage"
         )) || 65;
 
-      this.updatePortfolioStats(overview);
+      this.updatePortfolioStats(overview, parseFloat(targetPercentage));
       this.updatePortfolioTable(overview, parseFloat(targetPercentage));
       this.updateActionButtons(overview.length > 0);
       this.updateHeaderStats(overview);
@@ -841,8 +841,8 @@ class EnhancedPortfolioApp {
     }
   }
 
-  updatePortfolioStats(overview) {
-    window.UIStateManager.updatePortfolioStats(overview);
+  updatePortfolioStats(overview, targetPercentage = 65) {
+    window.UIStateManager.updatePortfolioStats(overview, targetPercentage);
   }
 
   // Enhanced updatePortfolioTable method in renderer.js
@@ -1239,15 +1239,10 @@ class EnhancedPortfolioApp {
       </div>
       <div class="info-stat">
         <h4>Return %</h4>
-        <div class="stat-value ${
-          entry.current_return_percentage >= 0 ? "positive" : "negative"
-        }">
-          ${
-            entry.current_return_percentage
-              ? entry.current_return_percentage.toFixed(1) + "%"
-              : "N/A"
-          }
-        </div>
+        <div class="stat-value ${this.app.helpers.getReturnPercentageClass(
+          entry.current_return_percentage,
+          targetPercentage || 65
+        )}">
       </div>
     </div>
     

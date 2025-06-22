@@ -54,18 +54,6 @@ class AppHelpers {
       targetPercentage
     );
   }
-
-  /**
-   * Get CSS class for target value
-   * EXTRACTED FROM: renderer.js getTargetValueClass() method
-   */
-  getTargetValueClass(currentPercentage, targetPercentage) {
-    return FormatHelpers.getTargetValueClass(
-      currentPercentage,
-      targetPercentage
-    );
-  }
-
   /**
    * Format currency amount
    * EXTRACTED FROM: renderer.js formatCurrency() method
