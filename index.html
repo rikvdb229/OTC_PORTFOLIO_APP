@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="UTF-8" />
@@ -273,10 +273,13 @@
                   <th colspan="1" class="group-header">Details & Notes</th>
                 </tr>
                 <tr>
-                  <th class="sortable" data-sort="date" width="10%">Date</th>
-                  <th class="sortable" data-sort="total_value" width="10%">
-                    Total Value
+                  <!-- FIXED: Use snapshot_date (actual database column) -->
+                  <th class="sortable" data-sort="snapshot_date" width="10%">
+                    Date
                   </th>
+                  <!-- FIXED: Use total_portfolio_value (actual database column) -->
+                  <th width="10%">Total Value</th>
+                  <!-- These columns are calculated, not sortable from raw data -->
                   <th width="10%">Change from Previous</th>
                   <th width="10%">% Change</th>
                   <th width="10%">Days Gap</th>
@@ -318,7 +321,9 @@
                   <th class="sortable" data-sort="sale_date" width="7%">
                     Sale Date
                   </th>
-                  <th class="width" ="7%">Original Grant</th>
+                  <th class="sortable" data-sort="grant_date" width="7%">
+                    Original Grant Date
+                  </th>
                   <th width="20%">Underlying Fund</th>
                   <th class="sortable" data-sort="quantity_sold" width="7%">
                     Quantity Sold

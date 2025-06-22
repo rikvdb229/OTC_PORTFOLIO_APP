@@ -19,6 +19,9 @@ class EnhancedPortfolioApp {
     this.currentSortColumn = null;
     this.currentSortDirection = "asc";
     this.portfolioData = [];
+    this.evolutionData = [];
+    this.salesData = [];
+    this.grantData = [];
     this.activeTab = "portfolio";
     this.htmlGen = new HTMLGenerators(this);
     this.helpers = new AppHelpers(this);
@@ -433,9 +436,8 @@ class EnhancedPortfolioApp {
 
   async checkAutoUpdate() {
     try {
-      const autoUpdate = await window.IPCCommunication.Settings.getSetting(
-        "auto_update_prices"
-      );
+      const autoUpdate =
+        await window.IPCCommunication.Settings.getSetting("auto_update_prices");
       if (autoUpdate === "true") {
         setTimeout(() => this.updatePrices(), 2000);
       }
@@ -524,21 +526,63 @@ class EnhancedPortfolioApp {
 
   // ===== TABLE SORTING =====
   sortTable(column) {
-    if (!this.portfolioData) return;
+    console.log(`🔄 Sorting by column: ${column}`);
 
+    // Determine which data array to sort based on active tab
+    const activeTab = document.querySelector(".nav-tab.active");
+    if (!activeTab) {
+      console.warn("No active tab found");
+      return;
+    }
+
+    const tabText = activeTab.textContent.trim().toLowerCase();
+    let dataToSort, updateMethod;
+
+    // Map tabs to their data and update methods
+    if (tabText.includes("portfolio")) {
+      dataToSort = this.portfolioData;
+      updateMethod = (sortedData) => {
+        this.portfolioData = sortedData;
+        this.updatePortfolioTable(sortedData);
+      };
+    } else if (tabText.includes("evolution")) {
+      dataToSort = this.evolutionData;
+      updateMethod = (sortedData) => {
+        this.evolutionData = sortedData;
+        this.htmlGen.renderEvolutionTable(sortedData);
+      };
+    } else if (tabText.includes("sales")) {
+      dataToSort = this.salesData;
+      updateMethod = (sortedData) => {
+        this.salesData = sortedData;
+        this.htmlGen.renderSalesTable(sortedData);
+      };
+    } else if (tabText.includes("grant")) {
+      dataToSort = this.grantData;
+      updateMethod = (sortedData) => {
+        this.grantData = sortedData;
+        this.htmlGen.renderGrantTable(sortedData);
+      };
+    } else {
+      console.warn(`Unknown tab: ${tabText}`);
+      return;
+    }
+
+    // Check if we have data to sort
+    if (!dataToSort || dataToSort.length === 0) {
+      console.warn(`No data available for ${tabText} tab`);
+      return;
+    }
+
+    // Use your existing sorting logic from UIStateManager
     const sortedData = window.UIStateManager.sortTable(
       column,
-      this.portfolioData,
-      (sortedData) => {
-        // Re-render table with sorted data
-        this.updatePortfolioTable(sortedData);
-      }
+      dataToSort,
+      updateMethod
     );
 
-    // Update stored data
-    this.portfolioData = sortedData;
+    console.log(`✅ ${tabText} table sorted by ${column}`);
   }
-
   // ===== DATA AVAILABILITY CHECK =====
   async checkDataAvailability() {
     try {
@@ -653,9 +697,8 @@ class EnhancedPortfolioApp {
   `;
 
     document.getElementById("quantityToSell").max = entry.quantity_remaining;
-    document.getElementById(
-      "maxQuantityHelp"
-    ).textContent = `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
+    document.getElementById("maxQuantityHelp").textContent =
+      `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
     document.getElementById("salePrice").value = entry.current_value || "";
 
     // Reset calculations
@@ -810,11 +853,8 @@ class EnhancedPortfolioApp {
       console.log("=== END CHART DEBUG ===");
 
       // Rest of your existing showOptionInfo code...
-      document.getElementById(
-        "optionInfoTitle"
-      ).textContent = `${this.helpers.formatFundName(
-        entry.fund_name
-      )} Option Details`;
+      document.getElementById("optionInfoTitle").textContent =
+        `${this.helpers.formatFundName(entry.fund_name)} Option Details`;
 
       // Enhanced option summary with fund information
       document.querySelector(".option-summary").innerHTML = `
@@ -1574,10 +1614,15 @@ class EnhancedPortfolioApp {
         return;
       }
 
+      // ADD THIS LINE - Store data for sorting:
+      this.evolutionData = evolutionData;
+
       // Use HTML generator
       this.htmlGen.renderEvolutionTable(evolutionData);
     } catch (error) {
       console.error("Error loading evolution data:", error);
+      // ADD THIS LINE - Initialize empty on error:
+      this.evolutionData = [];
     }
   }
 
@@ -1718,10 +1763,15 @@ class EnhancedPortfolioApp {
         return;
       }
 
+      // ADD THIS LINE - Store data for sorting:
+      this.salesData = salesHistory;
+
       // Use HTML generator
       this.htmlGen.renderSalesTable(salesHistory);
     } catch (error) {
       console.error("Error loading sales history:", error);
+      // ADD THIS LINE - Initialize empty on error:
+      this.salesData = [];
     }
   }
 
@@ -1737,23 +1787,28 @@ class EnhancedPortfolioApp {
         const tableBody = document.getElementById("grantTableBody");
         if (tableBody) {
           tableBody.innerHTML = `
-          <tr class="no-data">
-            <td colspan="7">
-              <div class="no-data-message">
-                <p>Error loading grant history: ${grantHistory.error}</p>
-              </div>
-            </td>
-          </tr>
-        `;
+        <tr class="no-data">
+          <td colspan="7">
+            <div class="no-data-message">
+              <p>Error loading grant history: ${grantHistory.error}</p>
+            </div>
+          </td>
+        </tr>
+      `;
         }
         this.initializeGrantFilters();
         return;
       }
 
+      // ADD THIS LINE - Store data for sorting:
+      this.grantData = grantHistory;
+
       // Use HTML generator
       this.htmlGen.renderGrantTable(grantHistory);
     } catch (error) {
       console.error("Error loading grant history:", error);
+      // ADD THIS LINE - Initialize empty on error:
+      this.grantData = [];
     }
   }
   // ===== GRANT HISTORY FILTERING =====
@@ -1940,9 +1995,8 @@ class EnhancedPortfolioApp {
         return;
       }
 
-      const result = await window.IPCCommunication.Database.importDatabase(
-        mergeMode
-      );
+      const result =
+        await window.IPCCommunication.Database.importDatabase(mergeMode);
 
       if (result.success) {
         alert(

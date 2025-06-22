@@ -1288,18 +1288,48 @@ const TableManager = {
   },
 
   /**
-   * Update table headers with sort indicators
-   * @param {string} activeColumn - Currently sorted column
-   * @param {string} direction - Sort direction
-   */
-  /**
-   * Update table headers with sort indicators
+   * Update table headers with sort indicators - FIXED VERSION
    * @param {string} activeColumn - Currently sorted column
    * @param {string} direction - Sort direction
    */
   updateSortHeaders(activeColumn, direction) {
-    // Remove existing sort indicators and classes
-    document.querySelectorAll(".sortable").forEach((header) => {
+    console.log(
+      `🔄 Updating sort headers for column: ${activeColumn} (${direction})`
+    );
+
+    // Get the currently active tab to determine which table to update
+    const activeTab = document.querySelector(".nav-tab.active");
+    if (!activeTab) {
+      console.warn("No active tab found for sort header update");
+      return;
+    }
+
+    const tabText = activeTab.textContent.trim().toLowerCase();
+    let tableSelector;
+
+    // Map tabs to their table selectors
+    if (tabText.includes("portfolio")) {
+      tableSelector = "#portfolioTable";
+    } else if (tabText.includes("evolution")) {
+      tableSelector = "#evolutionTable";
+    } else if (tabText.includes("sales")) {
+      tableSelector = "#salesTable";
+    } else if (tabText.includes("grant")) {
+      tableSelector = "#grantTable";
+    } else {
+      console.warn(`Unknown tab for sort headers: ${tabText}`);
+      return;
+    }
+
+    // Only update sortable headers in the current active table
+    const currentTable = document.querySelector(tableSelector);
+    if (!currentTable) {
+      console.warn(`Table not found: ${tableSelector}`);
+      return;
+    }
+
+    // Remove existing sort indicators and classes from current table only
+    currentTable.querySelectorAll(".sortable").forEach((header) => {
       header.classList.remove("sorted-asc", "sorted-desc");
 
       // Remove any old sort indicator spans that might exist
@@ -1309,12 +1339,19 @@ const TableManager = {
       }
     });
 
-    // Add sort class to active column
-    const activeHeader = document.querySelector(
+    // Add sort class to active column in current table only
+    const activeHeader = currentTable.querySelector(
       `th[data-sort="${activeColumn}"]`
     );
     if (activeHeader) {
       activeHeader.classList.add(`sorted-${direction}`);
+      console.log(
+        `✅ Applied sorted-${direction} class to ${activeColumn} header in ${tableSelector}`
+      );
+    } else {
+      console.warn(
+        `Active header not found: th[data-sort="${activeColumn}"] in ${tableSelector}`
+      );
     }
   },
 
