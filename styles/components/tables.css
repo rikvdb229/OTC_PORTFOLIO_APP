@@ -609,6 +609,143 @@
   color: var(--color-danger);
 }
 
+/* FIXED: Portfolio Table Color Coding CSS */
+/* Add this to your styles/components/tables.css file */
+
+/* ===== PORTFOLIO TABLE SPECIFIC COLOR CODING ===== */
+
+/* Positive/Negative Currency Values */
+.portfolio-table .currency.positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .currency.negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+/* General Positive/Negative Values (for non-currency cells) */
+.portfolio-table .positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===== RETURN PERCENTAGE COLOR CODING ===== */
+.portfolio-table .return-positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-moderate {
+  color: var(--color-warning) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-na {
+  color: var(--text-muted) !important;
+  font-style: italic;
+}
+
+/* ===== TARGET VALUE CLASSES ===== */
+/* ===== BASIC POSITIVE/NEGATIVE CLASSES ===== */
+.portfolio-table .positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===== CURRENCY SPECIFIC CLASSES ===== */
+.portfolio-table .currency.positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .currency.negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+/* ===== RETURN PERCENTAGE CLASSES ===== */
+/* These match what getReturnPercentageClass returns */
+.portfolio-table .return-positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-moderate {
+  color: var(--color-warning) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-na {
+  color: var(--text-muted) !important;
+  font-style: italic;
+}
+
+.portfolio-table .return-far-below {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-bold);
+}
+
+.portfolio-table .return-below {
+  color: var(--color-warning-dark) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-near-target {
+  color: var(--color-warning) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-above {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-medium);
+}
+
+.portfolio-table .return-far-above {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-bold);
+}
+
+/* ===== ROW STATUS CLASSES ===== */
+
+.portfolio-table tr.status-waiting {
+  background-color: rgba(255, 193, 7, 0.05);
+}
+
+.portfolio-table tr.status-expiring {
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.portfolio-table tr.status-expired {
+  background-color: rgba(108, 117, 125, 0.1);
+  opacity: 0.7;
+}
+
+.portfolio-table tr.status-sold {
+  background-color: rgba(23, 162, 184, 0.05);
+}
+
 /* ===== ACTION BUTTONS STYLING ===== */
 .sales-table .actions-cell .btn {
   padding: var(--spacing-xs) var(--spacing-sm);

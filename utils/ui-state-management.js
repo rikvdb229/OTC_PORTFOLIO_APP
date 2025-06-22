@@ -1191,37 +1191,59 @@ const StatsManager = {
 
     // FIXED: Get actual change from previous portfolio evolution
     try {
-      const evolutionData = await EvolutionOperations.getPortfolioEvolution(2); // Get last 2 entries
+      const evolutionData = await EvolutionOperations.getPortfolioEvolution(30); // Get last 30 days
       const portfolioChangeEl = document.getElementById("portfolioChange");
 
-      if (portfolioChangeEl && evolutionData && evolutionData.length > 0) {
-        const latestEntry = evolutionData[0];
-        const changeFromPrevious = latestEntry.change_from_previous || 0;
+      if (portfolioChangeEl && evolutionData && evolutionData.length >= 2) {
+        // Take the first two entries (most recent and second most recent)
+        const latestSnapshot = evolutionData[0]; // Most recent snapshot
+        const previousSnapshot = evolutionData[1]; // Previous snapshot
+
+        // Calculate change between these two snapshots
+        const changeFromPrevious =
+          latestSnapshot.total_portfolio_value -
+          previousSnapshot.total_portfolio_value;
 
         if (changeFromPrevious !== 0) {
-          // FIXED: Use app.helpers.formatCurrency instead of app.formatCurrency
+          // Format and display the change
           const changeSymbol = changeFromPrevious >= 0 ? "+" : "";
           const formattedChange = app.helpers
             ? app.helpers.formatCurrency(changeFromPrevious)
             : window.FormatHelpers.formatCurrencyValue(changeFromPrevious, "€");
+
           portfolioChangeEl.textContent = `${changeSymbol}${formattedChange}`;
           portfolioChangeEl.className = `stat-change ${
             changeFromPrevious >= 0 ? "positive" : "negative"
           }`;
+
+          // Optional: Add debug info to console
+          console.log("📊 Portfolio Change Calculation:", {
+            latest: latestSnapshot.total_portfolio_value,
+            previous: previousSnapshot.total_portfolio_value,
+            change: changeFromPrevious,
+            latestDate: latestSnapshot.snapshot_date,
+            previousDate: previousSnapshot.snapshot_date,
+            latestNotes: latestSnapshot.notes,
+            previousNotes: previousSnapshot.notes,
+          });
         } else {
+          // No change between snapshots
           const formattedZero = app.helpers
             ? app.helpers.formatCurrency(0)
             : "€0.00";
           portfolioChangeEl.textContent = formattedZero;
           portfolioChangeEl.className = "stat-change";
         }
+      } else if (evolutionData && evolutionData.length === 1) {
+        // Only one snapshot exists - show as no change
+        portfolioChangeEl.textContent = "€0.00";
+        portfolioChangeEl.className = "stat-change";
+        console.log("📊 Only one portfolio snapshot exists - showing €0.00");
       } else {
         // No evolution data available
-        const portfolioChangeEl = document.getElementById("portfolioChange");
-        if (portfolioChangeEl) {
-          portfolioChangeEl.textContent = "---";
-          portfolioChangeEl.className = "stat-change";
-        }
+        portfolioChangeEl.textContent = "---";
+        portfolioChangeEl.className = "stat-change";
+        console.log("📊 No portfolio evolution data available");
       }
     } catch (error) {
       console.log("Could not get portfolio change data:", error);

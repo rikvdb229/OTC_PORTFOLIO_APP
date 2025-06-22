@@ -109,17 +109,17 @@ class HTMLGenerators {
       </button>
       <button class="btn action-btn edit-btn" 
               onclick="portfolioApp.editTax(${entry.id}, ${
-      entry.tax_auto_calculated
-    }, ${entry.tax_amount || 0})"
+                entry.tax_auto_calculated
+              }, ${entry.tax_amount || 0})"
               title="Edit the tax amount for this grant">
         ✏️ Edit
       </button>
       <button class="btn action-btn delete-btn" 
               onclick="portfolioApp.showDeleteConfirmModal(${entry.id}, '${
-      entry.grant_date
-    }', ${entry.quantity_remaining}, ${entry.exercise_price}, ${
-      entry.current_total_value || 0
-    })"
+                entry.grant_date
+              }', ${entry.quantity_remaining}, ${entry.exercise_price}, ${
+                entry.current_total_value || 0
+              })"
               title="Permanently delete this portfolio entry">
         🗑️ Delete
       </button>
@@ -178,15 +178,15 @@ class HTMLGenerators {
 
     if (evolutionData.length === 0) {
       tableBody.innerHTML = `
-    <tr class="no-data">
-      <td colspan="6">
-        <div class="no-data-message">
-          <p>No evolution data available.</p>
-          <p>Data will appear after price updates and option additions.</p>
-        </div>
-      </td>
-    </tr>
-  `;
+  <tr class="no-data">
+    <td colspan="6">
+      <div class="no-data-message">
+        <p>No evolution data available.</p>
+        <p>Data will appear after price updates and option additions.</p>
+      </div>
+    </td>
+  </tr>
+`;
       return;
     }
 
@@ -202,46 +202,44 @@ class HTMLGenerators {
             .replace(/\r/g, "<br>");
         }
 
-        // Calculate percentage change
-        const percentageChange = entry.percentage_change || 0;
+        // FIXED: Use the correct field names from database calculation
+        const percentageChange = entry.change_percent || 0; // Changed from percentage_change
+        const daysGap = entry.days_between || 0; // Changed from days_gap
 
         // Generate unique ID for this entry
-        const entryId = `${entry.snapshot_date.replace(
-          /[^0-9]/g,
-          ""
-        )}-${index}`;
+        const entryId = `${entry.snapshot_date.replace(/[^0-9]/g, "")}-${index}`;
 
         return `
-      <tr>
-        <td>${new Date(entry.snapshot_date).toLocaleDateString()}</td>
-        <td class="currency">${this.app.helpers.formatCurrency(
-          entry.total_portfolio_value
-        )}</td>
-        <td class="currency ${
-          (entry.change_from_previous || 0) >= 0 ? "positive" : "negative"
-        }">
-          ${
-            entry.change_from_previous !== null &&
-            entry.change_from_previous !== 0
-              ? `${
-                  entry.change_from_previous > 0 ? "+" : ""
-                }${this.app.helpers.formatCurrency(entry.change_from_previous)}`
-              : "—"
-          }
-        </td>
-        <td class="${percentageChange >= 0 ? "positive" : "negative"}">
-          ${
-            percentageChange !== 0
-              ? `${percentageChange > 0 ? "+" : ""}${percentageChange.toFixed(
-                  1
-                )}%`
-              : "—"
-          }
-        </td>
-        <td>${entry.days_gap || "—"}</td>
-        ${this.generateNotesCell(notesHtml, entryId)}
-      </tr>
-    `;
+    <tr>
+      <td>${new Date(entry.snapshot_date).toLocaleDateString()}</td>
+      <td class="currency">${this.app.helpers.formatCurrency(
+        entry.total_portfolio_value
+      )}</td>
+      <td class="currency ${
+        (entry.change_from_previous || 0) >= 0 ? "positive" : "negative"
+      }">
+        ${
+          entry.change_from_previous !== null &&
+          entry.change_from_previous !== 0
+            ? `${
+                entry.change_from_previous > 0 ? "+" : ""
+              }${this.app.helpers.formatCurrency(entry.change_from_previous)}`
+            : "—"
+        }
+      </td>
+      <td class="${percentageChange >= 0 ? "positive" : "negative"}">
+        ${
+          percentageChange !== 0
+            ? `${percentageChange > 0 ? "+" : ""}${percentageChange.toFixed(1)}%`
+            : "—"
+        }
+      </td>
+      <td class="text-center">
+        ${daysGap > 0 ? `${daysGap} days` : "—"}
+      </td>
+      ${this.generateNotesCell(notesHtml, entryId)}
+    </tr>
+  `;
       })
       .join("");
   }
