@@ -171,6 +171,30 @@ ipcMain.handle("get-app-version", () => {
     status: APP_CONFIG.STATUS,
   };
 });
+ipcMain.handle("delete-database", async () => {
+  try {
+    console.log("🗑️ Received delete database request");
+
+    // Call the database deletion method
+    const result = await portfolioDb.deleteDatabase();
+
+    if (result.success) {
+      console.log("✅ Database deleted successfully");
+      return {
+        success: true,
+        message: "Database deleted successfully",
+      };
+    } else {
+      throw new Error(result.error || "Failed to delete database");
+    }
+  } catch (error) {
+    console.error("❌ Error deleting database:", error);
+    return {
+      success: false,
+      error: error.message || "Unknown error occurred while deleting database",
+    };
+  }
+});
 
 console.log("🚀 KBC ESOP Portfolio Tracker v0.1 - Main process initialized");
 // Window control handlers for frameless window

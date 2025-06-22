@@ -316,6 +316,17 @@ const DatabaseOperations = {
       throw error;
     }
   },
+  /**
+   * Delete the entire database
+   */
+  async deleteDatabase() {
+    try {
+      return await window.ipcRenderer.invoke("delete-database");
+    } catch (error) {
+      console.error("❌ Error deleting database:", error);
+      throw error;
+    }
+  },
 
   async debugState() {
     try {

@@ -143,3 +143,20 @@
 .existing-grants-list.disabled .grant-selection-item label {
   cursor: not-allowed;
 }
+#settingsOverlay {
+  z-index: 9999 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  position: fixed !important;
+}
+
+.tab-header-content,
+.controls-tab-header {
+  z-index: 1 !important;
+}
+#deleteDatabaseModal {
+  z-index: 10500 !important;
+}
+
+#deleteDatabaseModal .modal-content {
+  z-index: 10501 !important;
+}

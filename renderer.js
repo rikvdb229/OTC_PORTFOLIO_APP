@@ -134,7 +134,13 @@ class EnhancedPortfolioApp {
       exportDatabaseBtn: "#exportDatabaseBtn",
       importDatabaseBtn: "#importDatabaseBtn",
       importMergeBtn: "#importMergeBtn",
+      deleteDatabaseBtn: "#deleteDatabaseBtn",
 
+      // Delete database modal elements
+      deleteDatabaseModal: "#deleteDatabaseModal",
+      deleteDatabaseConfirmText: "#deleteDatabaseConfirmText",
+      confirmDeleteDatabase: "#confirmDeleteDatabase",
+      cancelDeleteDatabase: "#cancelDeleteDatabase",
       // ✅ FIXED: Updated merge grants modal elements to match your HTML
       existingGrantDate: "#existingGrantDate",
       existingExercisePrice: "#existingExercisePrice",
@@ -207,7 +213,7 @@ class EnhancedPortfolioApp {
 
     // Use the event handler coordinator to set up all listeners
     window.EventHandlers.EventHandlerCoordinator.initializeAll(this);
-
+    this.initializeDeleteDatabase();
     console.log("✅ All event listeners attached successfully");
   }
   /**
@@ -1396,21 +1402,24 @@ class EnhancedPortfolioApp {
     window.UIStateManager.Modals.showModal("editTaxModal");
   }
 
-  showDeleteConfirmModal(
-    entryId,
-    grantDate,
-    quantity,
-    exercisePrice,
-    currentValue
-  ) {
-    window.UIStateManager.Modals.showDeleteConfirmModal(
-      this,
-      entryId,
-      grantDate,
-      quantity,
-      exercisePrice,
-      currentValue
-    );
+  showDeleteDatabaseModal() {
+    console.log("🗑️ Showing delete database modal");
+
+    // Reset the confirmation input
+    if (this.deleteDatabaseConfirmText) {
+      this.deleteDatabaseConfirmText.value = "";
+      this.deleteDatabaseConfirmText.classList.remove("valid", "invalid");
+    }
+
+    // Disable the confirm button
+    if (this.confirmDeleteDatabase) {
+      this.confirmDeleteDatabase.disabled = true;
+    }
+
+    // Show the modal
+    if (this.deleteDatabaseModal) {
+      this.deleteDatabaseModal.classList.add("active");
+    }
   }
 
   async confirmDelete() {
@@ -2217,6 +2226,266 @@ class EnhancedPortfolioApp {
   }
 
   // ===== DATABASE MANAGEMENT =====
+  initializeDeleteDatabase() {
+    console.log("🗑️ Initializing delete database functionality...");
+
+    // Delete database button click handler
+    if (this.deleteDatabaseBtn) {
+      this.deleteDatabaseBtn.addEventListener("click", () => {
+        this.showDeleteDatabaseModal();
+      });
+    }
+
+    // Cancel delete database
+    if (this.cancelDeleteDatabase) {
+      this.cancelDeleteDatabase.addEventListener("click", () => {
+        this.closeModals();
+      });
+    }
+
+    // Confirm delete database
+    if (this.confirmDeleteDatabase) {
+      this.confirmDeleteDatabase.addEventListener("click", () => {
+        this.executeDeleteDatabase();
+      });
+    }
+
+    // Text input validation - use direct DOM query as fallback
+    const textInput =
+      this.deleteDatabaseConfirmText ||
+      document.getElementById("deleteDatabaseConfirmText");
+    if (textInput) {
+      console.log("✅ Found text input element, attaching validation listener");
+
+      // Add multiple event listeners for better responsiveness
+      ["input", "keyup", "paste", "change"].forEach((eventType) => {
+        textInput.addEventListener(eventType, (e) => {
+          console.log(
+            `🔍 Text input event triggered: ${eventType}, value: "${e.target.value}"`
+          );
+          // Small delay to ensure paste events are processed
+          setTimeout(() => this.validateDeleteConfirmation(), 10);
+        });
+      });
+
+      // Test the validation immediately
+      console.log("🧪 Testing validation function...");
+      this.validateDeleteConfirmation();
+    } else {
+      console.error("❌ Delete confirmation text input not found!");
+      console.log(
+        "Available element:",
+        document.getElementById("deleteDatabaseConfirmText")
+      );
+    }
+
+    console.log("✅ Delete database functionality initialized");
+  }
+
+  /**
+   * Show the delete database confirmation modal
+   */
+  showDeleteDatabaseModal() {
+    console.log("🗑️ Showing delete database modal");
+
+    // Show modal using your existing modal system
+    if (this.deleteDatabaseModal) {
+      this.deleteDatabaseModal.classList.add("active");
+      console.log("✅ Modal shown");
+    }
+
+    // Reset and setup input field
+    const input = document.getElementById("deleteDatabaseConfirmText");
+    const button = document.getElementById("confirmDeleteDatabase");
+
+    if (input) {
+      input.value = "";
+      input.classList.remove("valid", "invalid");
+      console.log("✅ Input field reset");
+    }
+
+    if (button) {
+      button.disabled = true;
+      console.log("✅ Button disabled");
+    }
+
+    // Set up validation with direct event listener
+    setTimeout(() => {
+      if (input && button) {
+        console.log("🔧 Setting up validation listener...");
+
+        // Remove existing event listeners by cloning the node
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+
+        // Add fresh event listener
+        newInput.addEventListener("input", function (e) {
+          console.log("📝 Input event fired, value:", this.value);
+
+          const requiredText = "delete database";
+          const userInput = this.value.toLowerCase().trim();
+          const isValid = userInput === requiredText;
+
+          console.log(
+            `🔍 Checking: "${userInput}" vs "${requiredText}" = ${isValid}`
+          );
+
+          // Update button
+          const currentButton = document.getElementById(
+            "confirmDeleteDatabase"
+          );
+          if (currentButton) {
+            currentButton.disabled = !isValid;
+            console.log(`Button is now: ${isValid ? "ENABLED" : "DISABLED"}`);
+          }
+
+          // Update input styling
+          this.classList.remove("valid", "invalid");
+          if (userInput.length > 0) {
+            this.classList.add(isValid ? "valid" : "invalid");
+          }
+        });
+
+        // Add other event types for completeness
+        ["keyup", "paste", "change"].forEach((eventType) => {
+          newInput.addEventListener(eventType, function (e) {
+            console.log(`📝 ${eventType} event fired`);
+            this.dispatchEvent(new Event("input"));
+          });
+        });
+
+        console.log("✅ Validation listeners attached");
+      } else {
+        console.error("❌ Input or button not found during setup");
+      }
+    }, 200);
+  }
+
+  /**
+   * Validate the confirmation text input
+   */
+  validateDeleteConfirmation() {
+    const input = this.deleteDatabaseConfirmText;
+    const confirmBtn = this.confirmDeleteDatabase;
+
+    if (!input || !confirmBtn) {
+      console.warn("⚠️ Delete confirmation elements not found");
+      return;
+    }
+
+    const requiredText = "delete database";
+    const userInput = input.value.toLowerCase().trim();
+
+    console.log(
+      `🔍 Validating input: "${userInput}" vs required: "${requiredText}"`
+    );
+
+    // Remove previous validation classes
+    input.classList.remove("valid", "invalid");
+
+    if (userInput === requiredText) {
+      // Valid input
+      input.classList.add("valid");
+      confirmBtn.disabled = false;
+      console.log("✅ Delete confirmation text validated - button enabled");
+    } else if (userInput.length > 0) {
+      // Invalid input (but user is typing)
+      input.classList.add("invalid");
+      confirmBtn.disabled = true;
+      console.log(`❌ Invalid input: "${userInput}" - button disabled`);
+    } else {
+      // Empty input
+      confirmBtn.disabled = true;
+      console.log("📝 Empty input - button disabled");
+    }
+  }
+
+  /**
+   * Execute the database deletion
+   */
+  async executeDeleteDatabase() {
+    console.log("🗑️ Executing database deletion...");
+
+    try {
+      // Show loading state
+      if (this.confirmDeleteDatabase) {
+        this.confirmDeleteDatabase.textContent = "Deleting...";
+        this.confirmDeleteDatabase.disabled = true;
+      }
+
+      // Call the backend to delete the database
+      console.log("📡 Calling backend delete database method...");
+      const result = await window.IPCCommunication.Database.deleteDatabase();
+
+      console.log("📡 Backend response:", result);
+
+      if (result && result.success) {
+        console.log("✅ Database deleted successfully");
+
+        // Close the modal
+        window.UIStateManager.closeAllModals(this);
+        // Reload the application
+        await this.handlePostDeleteCleanup();
+      } else {
+        const errorMsg =
+          result?.error || result?.message || "Unknown error occurred";
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      console.error("❌ Error deleting database:", error);
+      console.error("❌ Full error object:", error);
+
+      alert("Error deleting database: " + (error.message || error.toString()));
+
+      // Reset button state
+      if (this.confirmDeleteDatabase) {
+        this.confirmDeleteDatabase.textContent = "🗑️ DELETE DATABASE";
+        this.confirmDeleteDatabase.disabled = false;
+      }
+    }
+  }
+
+  /**
+   * Handle cleanup after database deletion
+   */
+  async handlePostDeleteCleanup() {
+    try {
+      console.log("🧹 Performing post-delete cleanup...");
+
+      // Clear current portfolio data
+      this.portfolioData = [];
+      this.salesData = [];
+      this.evolutionData = [];
+
+      // Reset UI elements
+      if (this.portfolioTableBody) {
+        this.portfolioTableBody.innerHTML =
+          '<tr><td colspan="10" class="no-data">No portfolio data available</td></tr>';
+      }
+
+      if (this.totalPortfolioValue) {
+        this.totalPortfolioValue.textContent = "€0.00";
+      }
+
+      // Reset charts if they exist
+      if (this.portfolioChart) {
+        this.portfolioChart.destroy();
+        this.portfolioChart = null;
+      }
+
+      // Switch to portfolio tab
+      this.switchTab("portfolio");
+
+      // Reload the app to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      console.error("❌ Error in post-delete cleanup:", error);
+      // Force reload anyway
+      window.location.reload();
+    }
+  }
   async exportDatabase() {
     try {
       const result = await window.IPCCommunication.Database.exportDatabase();
@@ -2260,6 +2529,19 @@ class EnhancedPortfolioApp {
       console.error("Error importing database:", error);
       alert("Error importing database: " + error.message);
     }
+  }
+  debugDeleteElements() {
+    console.log("🔍 Element access test:");
+    console.log("Input via this:", this.deleteDatabaseConfirmText);
+    console.log(
+      "Input via DOM:",
+      document.getElementById("deleteDatabaseConfirmText")
+    );
+    console.log("Button via this:", this.confirmDeleteDatabase);
+    console.log(
+      "Button via DOM:",
+      document.getElementById("confirmDeleteDatabase")
+    );
   }
 
   // ===== SETTINGS MANAGEMENT =====

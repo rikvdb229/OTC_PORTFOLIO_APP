@@ -448,6 +448,9 @@
             <button id="importMergeBtn" class="btn btn-secondary btn-full">
               🔄 Merge Database
             </button>
+            <button id="deleteDatabaseBtn" class="btn btn-danger btn-full">
+              🗑️ Delete Database
+            </button>
           </div>
           <small class="form-help"
             >Backup your data or transfer between computers</small
@@ -855,6 +858,82 @@
           <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
           <button id="confirmDelete" class="btn btn-danger">
             🗑️ Delete Entry
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- Delete Database Confirmation Modal -->
+    <div id="deleteDatabaseModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>⚠️ DELETE ENTIRE DATABASE</h3>
+        </div>
+        <div class="modal-body">
+          <div class="delete-database-warning">
+            <div class="warning-header">
+              <p><strong>🚨 DANGER ZONE - IRREVERSIBLE ACTION 🚨</strong></p>
+            </div>
+
+            <div class="warning-content">
+              <p>
+                <strong
+                  >You are about to permanently delete your ENTIRE portfolio
+                  database.</strong
+                >
+              </p>
+
+              <div class="warning-details">
+                <p>This will permanently remove:</p>
+                <ul>
+                  <li>All portfolio entries and options data</li>
+                  <li>All price history records</li>
+                  <li>All sales transaction records</li>
+                  <li>All portfolio evolution data</li>
+                  <li>All application settings</li>
+                </ul>
+              </div>
+
+              <div class="warning-consequences">
+                <p><strong>⚠️ Important consequences:</strong></p>
+                <ul>
+                  <li>This action cannot be undone</li>
+                  <li>No backup will be created automatically</li>
+                  <li>You will lose all historical data</li>
+                  <li>The application will restart with an empty database</li>
+                </ul>
+              </div>
+
+              <div class="confirmation-requirement">
+                <p><strong>To confirm this action, type exactly:</strong></p>
+                <code class="confirmation-text">delete database</code>
+
+                <div class="confirmation-input-group">
+                  <label for="deleteDatabaseConfirmText"
+                    >Confirmation Text:</label
+                  >
+                  <input
+                    type="text"
+                    id="deleteDatabaseConfirmText"
+                    placeholder="Type 'delete database' to confirm"
+                    autocomplete="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            id="cancelDeleteDatabase"
+            class="btn btn-secondary"
+            onclick="portfolioApp.closeModals()"
+          >
+            Cancel
+          </button>
+          <button id="confirmDeleteDatabase" class="btn btn-danger" disabled>
+            🗑️ DELETE DATABASE
           </button>
         </div>
       </div>

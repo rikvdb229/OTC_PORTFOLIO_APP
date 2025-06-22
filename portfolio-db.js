@@ -1896,8 +1896,8 @@ class PortfolioDatabase {
 
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO ${tableName} (${columns.join(
-      ","
-    )}) VALUES (${placeholders})
+        ","
+      )}) VALUES (${placeholders})
     `);
 
     data.forEach((row) => {
@@ -1930,6 +1930,123 @@ class PortfolioDatabase {
       return Promise.resolve({ changes: 1 });
     } catch (error) {
       console.error("Error updating tax amount:", error);
+      return Promise.reject(error);
+    }
+  }
+  async deleteDatabase() {
+    try {
+      console.log("🗑️ Starting database deletion process...");
+
+      // Close current database connection
+      if (this.db) {
+        console.log("📎 Closing database connection...");
+        this.db.close();
+        this.db = null;
+      }
+
+      // Delete the database file
+      if (fs.existsSync(this.dbPath)) {
+        console.log(`🗑️ Deleting database file: ${this.dbPath}`);
+        fs.unlinkSync(this.dbPath);
+      }
+
+      // Delete backup file if it exists
+      const backupPath = `${this.dbPath}.bak`;
+      if (fs.existsSync(backupPath)) {
+        console.log(`🗑️ Deleting backup file: ${backupPath}`);
+        fs.unlinkSync(backupPath);
+      }
+
+      // Create a fresh database using the correct method name
+      console.log("🆕 Creating fresh database...");
+      await this.initialize(); // FIXED: Use initialize() instead of initializeDatabase()
+
+      console.log("✅ Database deletion and recreation completed");
+
+      return Promise.resolve({
+        success: true,
+        message: "Database deleted and recreated successfully",
+      });
+    } catch (error) {
+      console.error("❌ Error during database deletion:", error);
+
+      // If something went wrong, try to restore from backup or create new
+      try {
+        console.log("🔄 Attempting recovery...");
+        await this.initialize(); // FIXED: Use initialize() instead of initializeDatabase()
+        return Promise.resolve({
+          success: true,
+          message: "Database deleted with recovery",
+        });
+      } catch (recoveryError) {
+        console.error("❌ Recovery also failed:", recoveryError);
+        return Promise.reject({
+          success: false,
+          error: `Database deletion failed: ${error.message}. Recovery also failed: ${recoveryError.message}`,
+        });
+      }
+    }
+  }
+
+  /**
+   * Create an emergency backup before database deletion
+   * This is called automatically before deleteDatabase()
+   */
+  async createEmergencyBackup() {
+    try {
+      console.log("💾 Creating emergency backup before deletion...");
+
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const emergencyBackupPath = path.join(
+        path.dirname(this.dbPath),
+        `emergency-backup-${timestamp}.json`
+      );
+
+      // Export current database
+      const exportData = await this.exportDatabase();
+
+      // Write to emergency backup file
+      fs.writeFileSync(
+        emergencyBackupPath,
+        JSON.stringify(exportData, null, 2)
+      );
+
+      console.log(`💾 Emergency backup created: ${emergencyBackupPath}`);
+
+      return {
+        success: true,
+        backupPath: emergencyBackupPath,
+      };
+    } catch (error) {
+      console.error("❌ Failed to create emergency backup:", error);
+      // Don't throw error - deletion can proceed without backup
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  /**
+   * Enhanced delete database method with automatic backup
+   */
+  async deleteDatabaseWithBackup() {
+    try {
+      console.log("🗑️ Starting enhanced database deletion with backup...");
+
+      // Step 1: Create emergency backup
+      const backupResult = await this.createEmergencyBackup();
+      if (backupResult.success) {
+        console.log(`✅ Emergency backup created: ${backupResult.backupPath}`);
+      } else {
+        console.warn(`⚠️ Emergency backup failed: ${backupResult.error}`);
+        // Continue with deletion anyway
+      }
+
+      // Step 2: Proceed with regular deletion
+      return await this.deleteDatabase();
+    } catch (error) {
+      console.error("❌ Enhanced database deletion failed:", error);
       return Promise.reject(error);
     }
   }

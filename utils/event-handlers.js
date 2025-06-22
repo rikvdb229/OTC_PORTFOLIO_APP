@@ -421,6 +421,15 @@ const DatabaseHandlers = {
         }
       );
     }
+    if (app.deleteDatabaseBtn) {
+      window.DOMHelpers.safeAddEventListener(
+        app.deleteDatabaseBtn,
+        "click",
+        () => {
+          app.showDeleteDatabaseModal();
+        }
+      );
+    }
 
     console.log("✅ Database handlers initialized");
   },
