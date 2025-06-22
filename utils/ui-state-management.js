@@ -924,6 +924,9 @@ const SettingsManager = {
 /**
  * Notification management
  */
+/**
+ * Notification management
+ */
 const NotificationManager = {
   /**
    * Show notification
@@ -946,7 +949,11 @@ const NotificationManager = {
       window.DOMHelpers.safeSetContent(messageElement, message);
     }
 
-    // Add type class
+    // Remove existing type classes
+    notification.classList.remove("info", "warning", "error", "success");
+
+    // Add new type class
+    notification.classList.add(type);
     notification.className = `notification ${type}`;
     notification.style.display = "block";
 
@@ -971,17 +978,17 @@ const NotificationManager = {
    * @param {Object} app - Application instance
    */
   showPriceUpdateNotification(app) {
+    // This method is now deprecated in favor of direct showNotification calls
+    // with specific messages and types, but kept for backward compatibility
     const success = this.showNotification(
       "priceUpdateNotification",
-      "Prices outdated", // Shorter message for header
+      "Prices outdated",
       "warning"
     );
 
-    // ADD THIS BLOCK:
     if (success) {
       const notification = document.getElementById("priceUpdateNotification");
       if (notification && !notification.title) {
-        // Set default title if not already set
         notification.title =
           "Prices not current. KBC updates weekdays excluding bank holidays after 09:00. Click 'Update Prices' to get latest data.";
       }

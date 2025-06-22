@@ -289,7 +289,11 @@ class EnhancedPortfolioApp {
 
       if (!latestPriceDate) {
         // No price data at all
-        window.UIStateManager.Notifications.showPriceUpdateNotification(this);
+        window.UIStateManager.Notifications.showNotification(
+          "priceUpdateNotification",
+          "No data available",
+          "info"
+        );
         this.updatePricesBtn.disabled = false;
         this.updatePricesBtn.textContent = "📊 Update Prices";
         this.updatePricesBtn.title =
@@ -299,17 +303,26 @@ class EnhancedPortfolioApp {
         const notification = document.getElementById("priceUpdateNotification");
         if (notification) {
           notification.title =
-            "Prices not current. KBC updates weekdays excluding bank holidays after 09:00. Click 'Update Prices' to get latest data.";
+            "No price data available. Click 'Update Prices' to download from KBC.";
+          // Set info icon
+          const iconElement = notification.querySelector(".notification-icon");
+          if (iconElement) {
+            iconElement.textContent = "📊";
+          }
         }
         return;
       }
 
-      // MOVE THESE DECLARATIONS TO THE TOP LEVEL
+      // Get current time and date info
       const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
       const latestPrice = new Date(latestPriceDate).toISOString().split("T")[0];
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentDay = now.getDay(); // 0=Sunday, 6=Saturday
+      const isWeekend = currentDay === 0 || currentDay === 6;
 
       console.log(
-        `Price date comparison: Latest from KBC: ${latestPrice}, Today: ${today}`
+        `Price date comparison: Latest from KBC: ${latestPrice}, Today: ${today}, Hour: ${currentHour}, Weekend: ${isWeekend}`
       );
 
       if (latestPrice === today) {
@@ -321,43 +334,79 @@ class EnhancedPortfolioApp {
           latestPriceDate
         ).toLocaleDateString()}`;
       } else {
-        // Prices are from a previous day (KBC hasn't updated yet or we need to scrape)
-        window.UIStateManager.Notifications.showPriceUpdateNotification(this);
-        this.updatePricesBtn.disabled = false;
-        this.updatePricesBtn.textContent = "📊 Update Prices";
-
+        // Prices are from a previous day - show context-aware notification
         const daysDiff = Math.floor(
           (new Date(today) - new Date(latestPrice)) / (1000 * 60 * 60 * 24)
         );
 
-        // Add tooltip for notification
+        // Determine context-aware message and icon
+        let notificationMessage = "";
+        let notificationIcon = "";
+        let buttonTooltip = "";
+        let notificationTooltip = "";
+
+        if (isWeekend) {
+          notificationMessage = "Weekend: Friday's prices";
+          notificationIcon = "📅";
+          buttonTooltip = `Latest available: ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
+          notificationTooltip = `Markets closed on weekends. Latest prices from ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
+        } else if (currentHour < 9) {
+          notificationMessage = "Before 09:00: Yesterday's prices";
+          notificationIcon = "🕒";
+          buttonTooltip = `Current: ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates at 09:00 today.`;
+          notificationTooltip = `Too early for today's update. KBC publishes new prices at 09:00 on weekdays. Current prices from ${new Date(latestPriceDate).toLocaleDateString()}.`;
+        } else if (daysDiff === 1) {
+          notificationMessage = "Yesterday's prices - Check for update";
+          notificationIcon = "📊";
+          buttonTooltip = `Prices from ${new Date(latestPriceDate).toLocaleDateString()}. Click to check for today's update.`;
+          notificationTooltip = `Prices are from yesterday (${new Date(latestPriceDate).toLocaleDateString()}). Click 'Update Prices' to check for today's data.`;
+        } else if (daysDiff > 1) {
+          notificationMessage = `${daysDiff} days old - Update needed`;
+          notificationIcon = "⚠️";
+          buttonTooltip = `Prices from ${new Date(latestPriceDate).toLocaleDateString()}. May include bank holidays.`;
+          notificationTooltip = `Prices are ${daysDiff} days old (${new Date(latestPriceDate).toLocaleDateString()}). Note: KBC doesn't update on bank holidays.`;
+        } else {
+          // Same day but something's off
+          notificationMessage = "Check for updates";
+          notificationIcon = "🔄";
+          buttonTooltip = "Click to check for latest prices from KBC";
+          notificationTooltip =
+            "Click 'Update Prices' to check for the latest data from KBC.";
+        }
+
+        // Show notification with appropriate type
+        const notificationType = daysDiff > 2 ? "warning" : "info";
+        window.UIStateManager.Notifications.showNotification(
+          "priceUpdateNotification",
+          notificationMessage,
+          notificationType
+        );
+
+        // Configure button
+        this.updatePricesBtn.disabled = false;
+        this.updatePricesBtn.textContent = "📊 Update Prices";
+        this.updatePricesBtn.title = buttonTooltip;
+
+        // Configure notification details
         const notification = document.getElementById("priceUpdateNotification");
         if (notification) {
-          if (daysDiff === 1) {
-            this.updatePricesBtn.title = `Prices from yesterday (${new Date(
-              latestPriceDate
-            ).toLocaleDateString()}) - click to get latest from KBC`;
-            notification.title = `Prices from yesterday (${new Date(
-              latestPriceDate
-            ).toLocaleDateString()}). Click 'Update Prices' to get latest from KBC.`;
-          } else if (daysDiff > 1) {
-            this.updatePricesBtn.title = `Prices from ${daysDiff} days ago (${new Date(
-              latestPriceDate
-            ).toLocaleDateString()}) - click to get latest from KBC`;
-            notification.title = `Prices from ${daysDiff} days ago (${new Date(
-              latestPriceDate
-            ).toLocaleDateString()}). Click 'Update Prices' to get latest from KBC.`;
-          } else {
-            this.updatePricesBtn.title = "Click to get latest prices from KBC";
-            notification.title =
-              "Prices not current. KBC updates weekdays excluding bank holidays after 09:00. Click 'Update Prices' to get latest data.";
+          notification.title = notificationTooltip;
+
+          // Set appropriate icon
+          const iconElement = notification.querySelector(".notification-icon");
+          if (iconElement) {
+            iconElement.textContent = notificationIcon;
           }
         }
       }
     } catch (error) {
       console.error("Error checking price update status:", error);
       // Fallback to allow updates on error
-      window.UIStateManager.Notifications.showPriceUpdateNotification(this);
+      window.UIStateManager.Notifications.showNotification(
+        "priceUpdateNotification",
+        "Status unknown",
+        "warning"
+      );
       this.updatePricesBtn.disabled = false;
       this.updatePricesBtn.textContent = "📊 Update Prices";
       this.updatePricesBtn.title =
@@ -368,6 +417,10 @@ class EnhancedPortfolioApp {
       if (notification) {
         notification.title =
           "Error checking price status. Click 'Update Prices' to try again.";
+        const iconElement = notification.querySelector(".notification-icon");
+        if (iconElement) {
+          iconElement.textContent = "❓";
+        }
       }
     }
   }
