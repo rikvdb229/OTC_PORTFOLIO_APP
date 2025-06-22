@@ -487,7 +487,47 @@ class EnhancedPortfolioApp {
       }
     }
   }
+  showDeleteConfirmModal(
+    entryId,
+    grantDate,
+    quantity,
+    exercisePrice,
+    currentValue
+  ) {
+    window.UIStateManager.Modals.showDeleteConfirmModal(
+      this,
+      entryId,
+      grantDate,
+      quantity,
+      exercisePrice,
+      currentValue
+    );
+  }
 
+  async confirmDelete() {
+    try {
+      const result = await ipcRenderer.invoke(
+        "delete-portfolio-entry",
+        this.currentDeletingEntryId
+      );
+
+      if (result.error) {
+        alert("Error deleting entry: " + result.error);
+        return;
+      }
+
+      this.closeModals();
+      await this.loadPortfolioData();
+      console.log(`✅ Deleted portfolio entry`);
+    } catch (error) {
+      console.error("Error deleting portfolio entry:", error);
+      alert("Error deleting entry");
+    }
+  }
+
+  closeModals() {
+    window.UIStateManager.Modals.closeAllModals(this);
+  }
   // UPDATE your existing clearAddOptionsForm function to also clear stored data:
   clearAddOptionsForm() {
     try {

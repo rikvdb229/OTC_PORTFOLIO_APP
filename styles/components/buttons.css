@@ -171,21 +171,6 @@
   opacity: 1;
 }
 
-.action-btn-edit:hover:not(:disabled) {
-  background: var(--color-info-dark);
-  border-color: var(--color-info-dark);
-}
-
-.action-btn-delete:hover:not(:disabled) {
-  background: var(--color-danger-dark);
-  border-color: var(--color-danger-dark);
-}
-
-.action-btn-sell:hover:not(:disabled) {
-  background: var(--color-success-dark);
-  border-color: var(--color-success-dark);
-}
-
 /* ===== RESPONSIVE BUTTON ADJUSTMENTS ===== */
 @media (max-width: 768px) {
   .btn {
@@ -446,4 +431,80 @@
   #deleteDatabaseModal .modal-footer {
     flex-direction: column;
   }
+}
+/* ===== PORTFOLIO ACTION BUTTON COLORS - PALE VERSION ===== */
+
+/* Delete button - PALE RED */
+.delete-btn {
+  background: #f8d7da !important;
+  border-color: #f5c6cb !important;
+  color: #721c24 !important;
+}
+
+.delete-btn:hover:not(:disabled) {
+  background: #f1b0b7 !important;
+  border-color: #ef808a !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.15);
+}
+
+/* Info button - PALE BLUE */
+.info-btn {
+  background: #d1ecf1 !important;
+  border-color: #bee5eb !important;
+  color: #0c5460 !important;
+}
+
+.info-btn:hover:not(:disabled) {
+  background: #b6e3ea !important;
+  border-color: #9fdbde !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
+}
+
+/* Sell button - PALE GOLD */
+.sell-btn {
+  background: #fff3cd !important;
+  border-color: #ffeaa7 !important;
+  color: #856404 !important;
+}
+
+.sell-btn:hover:not(:disabled) {
+  background: #ffe8a1 !important;
+  border-color: #ffdd7b !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.15);
+}
+
+/* Edit tax button - PALE PURPLE */
+.edit-btn {
+  background: #e2d9f3 !important;
+  border-color: #d1c4e9 !important;
+  color: #4a148c !important;
+}
+
+.edit-btn:hover:not(:disabled) {
+  background: #d1c4e9 !important;
+  border-color: #b39ddb !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(111, 66, 193, 0.15);
+}
+/* Disabled sell button - Strike-through and grayed out */
+/* Diagonal line overlay for disabled state */
+/* Disabled sell button - Strike-through and grayed out */
+.sell-btn:disabled,
+.sell-btn[disabled] {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+.sell-btn:disabled:hover,
+.sell-btn[disabled]:hover {
+  background: #f8f9fa !important;
+  border-color: #dee2e6 !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
