@@ -64,11 +64,6 @@
   border-bottom: 1px solid #f0f0f0;
 }
 
-.setting-item:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
-}
-
 .setting-item label {
   display: block;
   margin-bottom: var(--spacing-lg);
@@ -76,16 +71,6 @@
   color: var(--color-dark);
   font-size: var(--font-size-md);
   line-height: 1.2;
-}
-
-/* ===== SETTINGS BUTTONS ===== */
-.settings-buttons {
-  margin-top: var(--spacing-xl);
-  padding-top: var(--spacing-lg);
-  border-top: 2px solid var(--border-light);
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-md);
 }
 
 .settings-buttons .btn {
@@ -117,9 +102,4 @@
 #closeSettings:hover {
   background: #5a6268;
   transform: translateY(-1px);
-}
-
-#closeSettingsBtn {
-  order: 2;
-  margin-top: 5px;
 }

@@ -167,37 +167,3 @@
     display: none;
   }
 }
-
-/* ===== LEGACY NOTIFICATION STYLES (if still needed elsewhere) ===== */
-.notification {
-  padding: var(--spacing-md);
-  border-radius: var(--border-radius-md);
-  margin-bottom: var(--spacing-md);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.notification.info {
-  background: #e3f2fd;
-  border: 1px solid #bbdefb;
-  color: #1976d2;
-}
-
-.notification.warning {
-  background: #fff3cd;
-  border: 1px solid #ffeaa7;
-  color: var(--color-warning-dark);
-}
-
-.notification.error {
-  background: #ffebee;
-  border: 1px solid #ffcdd2;
-  color: #c62828;
-}
-
-.notification.success {
-  background: #e8f5e8;
-  border: 1px solid #c8e6c9;
-  color: #2e7d32;
-}

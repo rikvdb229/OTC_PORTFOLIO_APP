@@ -28,18 +28,6 @@ body {
   flex-direction: column;
 }
 
-/* ===== CLEAN CONTAINER ===== */
-.container {
-  max-width: none;
-  margin: 0;
-  background: transparent;
-  padding: 0; /* No padding to avoid conflicts */
-  flex: 1;
-  overflow: visible; /* No scrolling at container level */
-  display: flex;
-  flex-direction: column;
-}
-
 /* ===== HEADINGS ===== */
 h1,
 h2,
@@ -73,41 +61,6 @@ input,
 select,
 textarea {
   font-family: inherit;
-}
-
-/* ===== UTILITY CLASSES ===== */
-.sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* ===== STATUS UTILITY CLASSES ===== */
-.success {
-  color: var(--color-success);
-}
-.error {
-  color: var(--color-danger);
-}
-.warning {
-  color: var(--color-warning);
-}
-.info {
-  color: var(--color-info);
-}
-
-/* ===== BUTTON GROUPS ===== */
-.button-group {
-  display: flex;
-  gap: var(--spacing-md);
-  margin-bottom: var(--spacing-lg);
-  flex-wrap: wrap;
 }
 
 /* ===== GLOBAL SCROLLBAR STYLING ===== */
@@ -144,11 +97,6 @@ textarea {
 .status-output {
   overflow-y: auto;
   overflow-x: hidden;
-}
-
-.data-preview {
-  overflow-x: auto;
-  overflow-y: hidden;
 }
 
 .settings-sidebar {

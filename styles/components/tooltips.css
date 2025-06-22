@@ -20,18 +20,6 @@
   line-height: 1.4;
 }
 
-/* ===== FUND NAME TOOLTIPS ===== */
-.fund-name {
-  font-weight: var(--font-weight-medium);
-  color: var(--color-primary);
-  cursor: help;
-  transition: all var(--transition-fast) ease;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .fund-name:hover {
   background: var(--color-primary-light);
   color: var(--color-primary-dark);

@@ -1,0 +1,206 @@
+
+
+.window-control:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.window-control.minimize:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.window-control.maximize:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.window-control.close:hover {
+  background: #ff5f56;
+  color: var(--color-white);
+}
+
+.window-control.maximize::before {
+  content: "🗖";
+  font-size: 14px;
+  text-indent: 0;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.window-control.maximize.maximized::before {
+  content: "🗗";
+  font-size: 14px;
+}
+
+.window-control.maximize.text-fallback::before {
+  content: "⬜";
+  font-size: 12px;
+}
+
+.window-control.maximize.maximized.text-fallback::before {
+  content: "❐";
+  font-size: 12px;
+}
+*/
+
+/* ===== PLACEHOLDER FOR FUTURE CUSTOM WINDOW CONTROLS ===== */
+/* If you ever want to switch back to custom window controls, uncomment the CSS above */
+
+
+/* ===== FROM LAYOUT/SECTIONS.CSS ===== */
+/* ===== SECTION LAYOUT ===== */
+
+.section {
+  background: var(--color-white);
+  padding: var(--spacing-lg);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.summary-card {
+  background: var(--color-light);
+  padding: 15px;
+  border-radius: var(--border-radius-lg);
+  border: 1px solid var(--border-light);
+  text-align: center;
+}
+
+.summary-card h4 {
+  margin: 0 0 var(--spacing-sm) 0;
+  color: var(--text-light);
+  font-size: var(--font-size-base);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summary-value {
+  font-size: var(--font-size-xxl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+.main-content {
+  flex: 1; /* Take remaining space after footer */
+  min-height: 0; /* Important: allows flex shrinking */
+  overflow: hidden; /* No scrolling at main-content level */
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== TAB CONTENT LAYOUT ===== */
+
+.tab-content {
+  flex: 1; /* Take remaining space in main-content */
+  min-height: 0; /* Important: allows flex shrinking */
+  overflow: hidden; /* No scrolling at tab level */
+}
+
+.tab-content.active {
+  display: flex !important; /* Override any display: block */
+  flex-direction: column !important;
+  height: auto !important; /* Remove any fixed height */
+  overflow: visible !important; /* Remove any overflow settings */
+}
+
+/* ===== SCROLLABLE CONTENT LAYOUT ===== */
+
+.scrollable-content {
+  flex: 1; /* Take remaining space in tab-content */
+  min-height: 0; /* Important: allows flex shrinking */
+  overflow: visible; /* No scrolling here */
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ===== CHART CONTAINERS FOR NON-TABLE TABS ===== */
+
+.chart-container {
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+  padding: var(--spacing-lg);
+}
+
+
+/* ===== FROM LAYOUT/FOOTER.CSS ===== */
+/* ===== SIMPLE FOOTER STYLES ===== */
+
+.app-footer {
+  background: var(--color-light);
+  border-top: 1px solid var(--border-light);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.footer-content {
+  text-align: center;
+}
+
+.footer-text {
+  text-align: center;
+}
+
+.version-info {
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  font-size: var(--font-size-base);
+}
+
+.footer-divider {
+  color: var(--text-muted);
+  margin: 0 4px;
+}
+
+.footer-note {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+
+.build-info {
+  color: var(--text-muted);
+  font-size: var(--font-size-xs);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .app-footer {
+    padding: var(--spacing-md);
+  }
+
+  .footer-text {
+    line-height: 1.6;
+  }
+
+  .footer-divider {
+    display: none;
+  }
+
+  .version-info,
+  .footer-note,
+  .build-info {
+    display: block;
+    margin: 2px 0;
+  }
+}
+.app-footer {
+  background: var(--color-light);
+  border-top: 1px solid var(--border-light);
+  padding: var(--spacing-lg);
+  margin-top: var(--spacing-xl);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0; /* Footer never shrinks - always visible */
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  text-align: center;
+  min-height: 60px; /* Ensure minimum height */
+  box-sizing: border-box;
+}
+

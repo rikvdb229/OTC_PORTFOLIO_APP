@@ -19,11 +19,6 @@
   min-height: 40px; /* Add minimum height */
 }
 
-.btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
 /* ===== BUTTON VARIANTS ===== */
 .btn-primary {
   background: var(--color-primary);
@@ -52,12 +47,6 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
-.btn-accent {
-  background: var(--color-warning);
-  color: var(--color-white);
-  border-color: var(--color-warning);
-}
-
 .btn-accent:hover:not(:disabled) {
   background: var(--color-warning-dark);
   border-color: var(--color-warning-dark);
@@ -69,11 +58,6 @@
 .btn-small {
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-sm);
-}
-
-.btn-large {
-  padding: var(--spacing-md) var(--spacing-xl);
-  font-size: var(--font-size-lg);
 }
 
 .btn-full {
@@ -109,19 +93,6 @@
   }
 }
 
-/* Enhanced primary button styling for Update Prices */
-#updatePricesBtn.btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary),
-    var(--color-primary-dark)
-  );
-  border: 2px solid var(--color-primary);
-  font-weight: var(--font-weight-medium);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
 #updatePricesBtn.btn-primary:hover:not(:disabled) {
   background: linear-gradient(
     135deg,
@@ -132,28 +103,11 @@
   box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3); /* Updated shadow with KBC blue */
 }
 
-/* When disabled (fresh data) */
-#updatePricesBtn:disabled {
-  background: linear-gradient(135deg, #27ae60, #2ecc71);
-  border-color: #27ae60;
-  color: white;
-  cursor: not-allowed;
-  animation: none;
-  box-shadow: none;
-  opacity: 1; /* Override default disabled opacity */
-}
-
 /* Settings button enhancements */
 #settingsToggle {
   padding: 0 18px; /* Remove vertical padding */
   font-size: 16px; /* Larger font */
   min-height: 44px; /* Taller button */
-}
-#settingsToggle.btn-secondary {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  color: var(--text-light);
-  transition: all 0.3s ease;
 }
 
 #settingsToggle.btn-secondary:hover:not(:disabled) {
@@ -172,41 +126,14 @@
   opacity: 1;
 }
 
-/* ===== ACTION BUTTONS ===== */
-.action-btn {
-  padding: var(--spacing-xs) var(--spacing-sm);
-  font-size: var(--font-size-xs);
-  border-radius: var(--border-radius-sm);
-  min-width: 60px;
-  text-align: center;
-}
-
-.action-btn-edit {
-  background: var(--color-info);
-  color: var(--color-white);
-  border-color: var(--color-info);
-}
-
 .action-btn-edit:hover:not(:disabled) {
   background: var(--color-info-dark);
   border-color: var(--color-info-dark);
 }
 
-.action-btn-delete {
-  background: var(--color-danger);
-  color: var(--color-white);
-  border-color: var(--color-danger);
-}
-
 .action-btn-delete:hover:not(:disabled) {
   background: var(--color-danger-dark);
   border-color: var(--color-danger-dark);
-}
-
-.action-btn-sell {
-  background: var(--color-success);
-  color: var(--color-white);
-  border-color: var(--color-success);
 }
 
 .action-btn-sell:hover:not(:disabled) {
@@ -226,28 +153,10 @@
     font-size: var(--font-size-xs);
   }
 
-  .action-btn {
-    font-size: var(--font-size-xs);
-    padding: 3px 5px;
-    min-width: 40px;
-  }
-
   /* Remove pulse animation on mobile to save battery */
   #updatePricesBtn {
     animation: none !important;
   }
-}
-
-/* ===== BUTTON STATES ===== */
-.btn-disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-
-.btn-loading {
-  position: relative;
-  color: transparent;
 }
 
 .btn-loading::after {

@@ -1,14 +1,20 @@
-/* ===== STATUS OUTPUT & DATA COMPONENTS ===== */
-/* Content from original styles.css file */
 
-/* ===== PROGRESS BAR COMPONENTS ===== */
-.progress-container {
-  margin: var(--spacing-lg) 0;
+
+/* ===== STATUS INDICATORS ===== */
+.status-active {
+  color: var(--color-success);
+  font-weight: var(--font-weight-medium);
 }
 
+.status-badge.active {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* ===== PROGRESS COMPONENTS ===== */
 .progress-bar {
   width: 100%;
-  height: 20px;
+  height: 16px;
   background: #f0f0f0;
   border-radius: var(--border-radius-xl);
   overflow: hidden;
@@ -22,21 +28,22 @@
 }
 
 .progress-text {
-  margin-top: var(--spacing-md);
+  margin-top: var(--spacing-sm);
   text-align: center;
   color: var(--text-light);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-normal);
 }
 
 .status-output {
   background: var(--color-light);
   border: 1px solid var(--border-light);
   border-radius: var(--border-radius-lg);
-  padding: 15px;
-  font-family: "Courier New", monospace;
-  font-size: var(--font-size-md);
-  min-height: 100px;
+  padding: var(--spacing-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-base);
+  min-height: 80px;
   white-space: pre-wrap;
-  max-height: 300px;
+  max-height: 200px;
   overflow-y: auto;
 }
