@@ -1,6 +1,3 @@
-/* ===== MODAL COMPONENTS ===== */
-
-/* ===== BASE MODAL STYLING ===== */
 .modal {
   display: none;
   position: fixed;
@@ -12,13 +9,11 @@
   z-index: var(--z-modal);
   backdrop-filter: blur(4px);
 }
-
 .modal.active {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .modal-content {
   background: var(--color-white);
   border-radius: var(--border-radius-xl);
@@ -28,12 +23,9 @@
   max-height: 90vh;
   overflow-y: auto;
 }
-
 .modal-large {
   max-width: 800px;
 }
-
-/* ===== MODAL HEADER ===== */
 .modal-header {
   padding: 15px var(--spacing-lg);
   border-bottom: 1px solid var(--border-light);
@@ -42,23 +34,14 @@
   align-items: center;
   background: var(--color-light);
 }
-
 .modal-header h3 {
   margin: 0;
   color: var(--color-dark);
   font-size: var(--font-size-xl);
 }
-
-.modal-close:hover {
-  background: var(--color-light);
-  color: var(--color-dark);
-}
-
-/* ===== MODAL BODY & FOOTER ===== */
 .modal-body {
   padding: var(--spacing-lg);
 }
-
 .modal-footer {
   padding: 15px var(--spacing-lg);
   border-top: 1px solid var(--border-light);
@@ -67,8 +50,6 @@
   justify-content: flex-end;
   background: var(--color-light);
 }
-
-/* ===== MERGE GRANTS MODAL ===== */
 .existing-grants-list {
   margin: 15px 0;
   border: 1px solid var(--border-light);
@@ -77,7 +58,6 @@
   max-height: 200px;
   overflow-y: auto;
 }
-
 .grant-selection-item {
   padding: var(--spacing-md) 15px;
   border-bottom: 1px solid #f0f0f0;
@@ -88,29 +68,15 @@
   gap: var(--spacing-md);
   min-height: 60px;
 }
-
 .grant-selection-item:hover {
   background: var(--color-light);
 }
-
-.total-after-merge-preview {
-  background: #e8f5e8;
-  border: 1px solid var(--color-success);
-  border-radius: var(--border-radius-md);
-  padding: var(--spacing-sm);
-  margin-top: var(--spacing-md);
-  text-align: center;
-  font-weight: var(--font-weight-medium);
-  color: #155724;
-}
-/* ===== DISABLED GRANTS LIST STYLING ===== */
 .existing-grants-list.disabled {
   opacity: 0.5;
   pointer-events: none;
   background-color: #f8f9fa;
   position: relative;
 }
-
 .existing-grants-list.disabled::before {
   content: "";
   position: absolute;
@@ -128,18 +94,15 @@
   pointer-events: none;
   z-index: 1;
 }
-
 .existing-grants-list.disabled .grant-selection-item {
   color: #6c757d;
   background-color: #f8f9fa;
   cursor: not-allowed;
 }
-
 .existing-grants-list.disabled .grant-selection-item input[type="radio"] {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 .existing-grants-list.disabled .grant-selection-item label {
   cursor: not-allowed;
 }
@@ -148,15 +111,13 @@
   background: rgba(0, 0, 0, 0.5) !important;
   position: fixed !important;
 }
-
-.tab-header-content,
-.controls-tab-header {
+.controls-tab-header,
+.tab-header-content {
   z-index: 1 !important;
 }
 #deleteDatabaseModal {
   z-index: 10500 !important;
 }
-
 #deleteDatabaseModal .modal-content {
   z-index: 10501 !important;
 }

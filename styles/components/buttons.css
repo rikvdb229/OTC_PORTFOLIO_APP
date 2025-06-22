@@ -1,11 +1,8 @@
-/* ===== BUTTON COMPONENTS ===== */
-
-/* ===== BASE BUTTON STYLES ===== */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 12px 20px; /* Increased from var(--spacing-sm) var(--spacing-lg) */
+  padding: 12px 20px;
   border: 2px solid transparent;
   border-radius: var(--border-radius-md);
   font-size: var(--font-size-base);
@@ -16,29 +13,24 @@
   white-space: nowrap;
   -webkit-app-region: no-drag;
   gap: var(--spacing-xs);
-  min-height: 40px; /* Add minimum height */
+  min-height: 40px;
 }
-
-/* ===== BUTTON VARIANTS ===== */
 .btn-primary {
   background: var(--color-primary);
   color: var(--color-white);
   border-color: var(--color-primary);
 }
-
 .btn-primary:hover:not(:disabled) {
   background: var(--color-primary-dark);
   border-color: var(--color-primary-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
-
 .btn-secondary {
   background: var(--color-light);
   color: var(--text-primary);
   border-color: var(--border-light);
 }
-
 .btn-secondary:hover:not(:disabled) {
   background: var(--color-lighter);
   border-color: var(--color-primary);
@@ -46,50 +38,29 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
-.btn-accent:hover:not(:disabled) {
-  background: var(--color-warning-dark);
-  border-color: var(--color-warning-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-/* ===== BUTTON SIZES ===== */
 .btn-small {
   padding: var(--spacing-xs) var(--spacing-md);
   font-size: var(--font-size-sm);
 }
-
 .btn-full {
   width: 100%;
 }
-
-/* ===== SPECIFIC BUTTON ENHANCEMENTS ===== */
-
-/* Enhanced Update Prices Button */
 #updatePricesBtn {
   position: relative;
   transition: all 0.3s ease;
-  padding: 14px 24px; /* Larger padding */
-  font-size: 16px; /* Larger font */
-  min-height: 44px; /* Taller button */
+  padding: 14px 24px;
+  font-size: 16px;
+  min-height: 44px;
 }
-
-/* Pulse animation when notification is active */
 .header-notification.warning:not([style*="display: none"]) + #updatePricesBtn {
   animation: pulseGlowWarning 2s infinite;
 }
-
-/* Gentler pulse for info notifications (less urgent) */
 .header-notification.info:not([style*="display: none"]) + #updatePricesBtn {
   animation: pulseGlowInfo 3s infinite;
 }
-
-/* Error pulse (most urgent) */
 .header-notification.error:not([style*="display: none"]) + #updatePricesBtn {
   animation: pulseGlowError 1.5s infinite;
 }
-
 @keyframes pulseGlowWarning {
   0% {
     box-shadow: 0 0 0 0 rgba(245, 124, 0, 0.4);
@@ -101,8 +72,6 @@
     box-shadow: 0 0 0 0 rgba(245, 124, 0, 0);
   }
 }
-
-/* Info pulse - subtle blue colors */
 @keyframes pulseGlowInfo {
   0% {
     box-shadow: 0 0 0 0 rgba(33, 150, 243, 0.3);
@@ -114,8 +83,6 @@
     box-shadow: 0 0 0 0 rgba(33, 150, 243, 0);
   }
 }
-
-/* Error pulse - red colors */
 @keyframes pulseGlowError {
   0% {
     box-shadow: 0 0 0 0 rgba(244, 67, 54, 0.5);
@@ -127,7 +94,6 @@
     box-shadow: 0 0 0 0 rgba(244, 67, 54, 0);
   }
 }
-
 #updatePricesBtn.btn-primary:hover:not(:disabled) {
   background: linear-gradient(
     135deg,
@@ -137,82 +103,52 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(30, 136, 229, 0.3);
 }
-
-/* Tone down settings button when any notification is visible */
 .header-notification:not([style*="display: none"]) ~ #settingsToggle {
   opacity: 0.7;
   transition: opacity 0.3s ease;
 }
-
 .header-notification:not([style*="display: none"]) ~ #settingsToggle:hover {
   opacity: 1;
 }
-
-/* Settings button enhancements */
 #settingsToggle {
-  padding: 0 18px; /* Remove vertical padding */
-  font-size: 16px; /* Larger font */
-  min-height: 44px; /* Taller button */
+  padding: 0 18px;
+  font-size: 16px;
+  min-height: 44px;
 }
-
 #settingsToggle.btn-secondary:hover:not(:disabled) {
   background: var(--color-white);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
-
-/* Tone down settings button when notification is visible */
 .header-notification:not([style*="display: none"]) ~ #settingsToggle {
   opacity: 0.7;
   transition: opacity 0.3s ease;
 }
-
 .header-notification:not([style*="display: none"]) ~ #settingsToggle:hover {
   opacity: 1;
 }
-
-/* ===== RESPONSIVE BUTTON ADJUSTMENTS ===== */
 @media (max-width: 768px) {
   .btn {
     padding: var(--spacing-xs) var(--spacing-sm);
     font-size: var(--font-size-sm);
   }
-
   .btn-small {
     padding: 4px var(--spacing-xs);
     font-size: var(--font-size-xs);
   }
-
-  /* Remove pulse animation on mobile to save battery */
   #updatePricesBtn {
     animation: none !important;
   }
 }
-
-.btn-loading::after {
-  content: "";
-  position: absolute;
-  width: 16px;
-  height: 16px;
-  top: 50%;
-  left: 50%;
-  margin-left: -8px;
-  margin-top: -8px;
-  border: 2px solid transparent;
-  border-top-color: currentColor;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 @keyframes pulseGlow {
   0% {
-    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.4); /* KBC blue */
+    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(30, 136, 229, 0); /* KBC blue */
+    box-shadow: 0 0 0 8px rgba(30, 136, 229, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0); /* KBC blue */
+    box-shadow: 0 0 0 0 rgba(30, 136, 229, 0);
   }
 }
 .btn-danger {
@@ -220,14 +156,12 @@
   color: var(--color-white);
   border-color: var(--color-danger);
 }
-
 .btn-danger:hover:not(:disabled) {
   background: var(--color-danger-dark);
   border-color: var(--color-danger-dark);
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
 }
-
 .btn-danger:disabled {
   background: #f8d7da;
   color: #721c24;
@@ -235,19 +169,15 @@
   cursor: not-allowed;
   opacity: 0.65;
 }
-
 .btn-danger:disabled:hover {
   transform: none;
   box-shadow: none;
 }
-
-/* ===== DELETE DATABASE BUTTON SPECIFIC STYLING ===== */
 #deleteDatabaseBtn {
   margin-top: var(--spacing-sm);
   position: relative;
   overflow: hidden;
 }
-
 #deleteDatabaseBtn::before {
   content: "";
   position: absolute;
@@ -263,31 +193,23 @@
   );
   transition: left 0.5s;
 }
-
 #deleteDatabaseBtn:hover::before {
   left: 100%;
 }
-
-/* Add these styles to styles/components/modals.css or create a new section */
-
-/* ===== DELETE DATABASE MODAL STYLES ===== */
 #deleteDatabaseModal .modal-content {
   max-width: 600px;
   border: 3px solid var(--color-danger);
 }
-
 #deleteDatabaseModal .modal-header {
   background: linear-gradient(135deg, #dc3545, #c82333);
-  color: white;
+  color: #fff;
   text-align: center;
 }
-
 #deleteDatabaseModal .modal-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  font-weight: bold;
+  font-weight: 700;
 }
-
 .delete-database-warning {
   background: #fff5f5;
   border: 2px solid #fed7d7;
@@ -295,7 +217,6 @@
   padding: var(--spacing-lg);
   margin: var(--spacing-md) 0;
 }
-
 .warning-header {
   text-align: center;
   margin-bottom: var(--spacing-lg);
@@ -303,40 +224,34 @@
   background: #fed7d7;
   border-radius: var(--border-radius-sm);
 }
-
 .warning-header p {
   margin: 0;
   font-size: 1.1rem;
-  font-weight: bold;
+  font-weight: 700;
   color: var(--color-danger);
 }
-
 .warning-content {
   line-height: 1.6;
 }
-
-.warning-details,
-.warning-consequences {
+.warning-consequences,
+.warning-details {
   margin: var(--spacing-lg) 0;
   padding: var(--spacing-md);
-  background: white;
+  background: #fff;
   border-radius: var(--border-radius-sm);
   border-left: 4px solid var(--color-danger);
 }
-
-.warning-details ul,
-.warning-consequences ul {
+.warning-consequences ul,
+.warning-details ul {
   margin: var(--spacing-sm) 0;
   padding-left: var(--spacing-lg);
 }
-
-.warning-details li,
-.warning-consequences li {
+.warning-consequences li,
+.warning-details li {
   margin: var(--spacing-xs) 0;
   color: var(--color-danger);
   font-weight: 500;
 }
-
 .confirmation-requirement {
   margin-top: var(--spacing-xl);
   padding: var(--spacing-lg);
@@ -345,31 +260,27 @@
   border-radius: var(--border-radius-md);
   text-align: center;
 }
-
 .confirmation-text {
   display: inline-block;
   background: var(--color-danger);
-  color: white;
+  color: #fff;
   padding: var(--spacing-xs) var(--spacing-md);
   border-radius: var(--border-radius-sm);
   font-family: monospace;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   margin: var(--spacing-sm) 0;
 }
-
 .confirmation-input-group {
   margin-top: var(--spacing-lg);
   text-align: left;
 }
-
 .confirmation-input-group label {
   display: block;
   margin-bottom: var(--spacing-xs);
-  font-weight: bold;
+  font-weight: 700;
   color: var(--color-danger);
 }
-
 #deleteDatabaseConfirmText {
   width: 100%;
   padding: var(--spacing-md);
@@ -377,27 +288,22 @@
   border-radius: var(--border-radius-sm);
   font-size: 1rem;
   font-family: monospace;
-  background: white;
+  background: #fff;
   transition: border-color 0.3s ease;
 }
-
 #deleteDatabaseConfirmText:focus {
-  outline: none;
+  outline: 0;
   border-color: var(--color-danger);
   box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
 }
-
 #deleteDatabaseConfirmText.valid {
   border-color: var(--color-success);
   background: #f8fff8;
 }
-
 #deleteDatabaseConfirmText.invalid {
   border-color: var(--color-danger);
   background: #fff8f8;
 }
-
-/* Modal footer for delete database */
 #deleteDatabaseModal .modal-footer {
   background: #f8f9fa;
   border-top: 2px solid var(--border-light);
@@ -406,105 +312,23 @@
   justify-content: space-between;
   gap: var(--spacing-md);
 }
-
 #deleteDatabaseModal .modal-footer .btn {
   flex: 1;
   min-width: 120px;
 }
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
   #deleteDatabaseModal .modal-content {
     margin: var(--spacing-md);
     max-width: calc(100vw - 2rem);
   }
-
   .delete-database-warning {
     padding: var(--spacing-md);
   }
-
-  .warning-details,
-  .warning-consequences {
+  .warning-consequences,
+  .warning-details {
     padding: var(--spacing-sm);
   }
-
   #deleteDatabaseModal .modal-footer {
     flex-direction: column;
   }
-}
-/* ===== PORTFOLIO ACTION BUTTON COLORS - PALE VERSION ===== */
-
-/* Delete button - PALE RED */
-.delete-btn {
-  background: #f8d7da !important;
-  border-color: #f5c6cb !important;
-  color: #721c24 !important;
-}
-
-.delete-btn:hover:not(:disabled) {
-  background: #f1b0b7 !important;
-  border-color: #ef808a !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(220, 53, 69, 0.15);
-}
-
-/* Info button - PALE BLUE */
-.info-btn {
-  background: #d1ecf1 !important;
-  border-color: #bee5eb !important;
-  color: #0c5460 !important;
-}
-
-.info-btn:hover:not(:disabled) {
-  background: #b6e3ea !important;
-  border-color: #9fdbde !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.15);
-}
-
-/* Sell button - PALE GOLD */
-.sell-btn {
-  background: #fff3cd !important;
-  border-color: #ffeaa7 !important;
-  color: #856404 !important;
-}
-
-.sell-btn:hover:not(:disabled) {
-  background: #ffe8a1 !important;
-  border-color: #ffdd7b !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(255, 193, 7, 0.15);
-}
-
-/* Edit tax button - PALE PURPLE */
-.edit-btn {
-  background: #e2d9f3 !important;
-  border-color: #d1c4e9 !important;
-  color: #4a148c !important;
-}
-
-.edit-btn:hover:not(:disabled) {
-  background: #d1c4e9 !important;
-  border-color: #b39ddb !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(111, 66, 193, 0.15);
-}
-/* Disabled sell button - Strike-through and grayed out */
-/* Diagonal line overlay for disabled state */
-/* Disabled sell button - Strike-through and grayed out */
-.sell-btn:disabled,
-.sell-btn[disabled] {
-  background: #f8f9fa !important;
-  border-color: #dee2e6 !important;
-  color: #6c757d !important;
-  cursor: not-allowed !important;
-  opacity: 0.6 !important;
-}
-
-.sell-btn:disabled:hover,
-.sell-btn[disabled]:hover {
-  background: #f8f9fa !important;
-  border-color: #dee2e6 !important;
-  transform: none !important;
-  box-shadow: none !important;
 }

@@ -1,6 +1,3 @@
-/* ===== NOTIFICATION COMPONENTS ===== */
-
-/* ===== HEADER PRICE NOTIFICATIONS - BASE STYLES ===== */
 .header-notification {
   border-radius: var(--border-radius-md);
   padding: var(--spacing-xs) var(--spacing-sm);
@@ -15,44 +12,32 @@
   overflow: hidden;
   position: relative;
   cursor: help;
-  padding: 14px 18px; /* Same as buttons */
-  font-size: 16px; /* Same as buttons */
-  min-height: 44px; /* Same as buttons */
+  padding: 14px 18px;
+  font-size: 16px;
+  min-height: 44px;
   box-sizing: border-box;
 }
-
-/* Add subtle background pattern */
-/* Info notifications - clean version without background patterns */
 #priceUpdateNotification.notification.info,
 .header-notification.notification.info {
-  background: #f0fdfa !important; /* Solid color instead of gradient */
+  background: #f0fdfa !important;
   border: 1px solid #5eead4 !important;
   border-left: 4px solid #14b8a6 !important;
   color: #0f766e !important;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important; /* Simple shadow */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
 }
-
-/* Remove the ::before pattern that might be causing green background */
 #priceUpdateNotification.notification.info::before,
 .header-notification.notification.info::before {
   display: none !important;
 }
-
 #priceUpdateNotification.notification.info .notification-text,
 .header-notification.notification.info .notification-text {
   color: #0f766e !important;
   font-weight: 600 !important;
 }
-
 #priceUpdateNotification.notification.info .notification-icon,
 .header-notification.notification.info .notification-icon {
   color: #0f766e !important;
 }
-
-/* ===== NOTIFICATION TYPE VARIANTS ===== */
-
-/* Info notifications - warm teal/cyan colors that contrast with blue header */
-
 #priceUpdateNotification.notification.info,
 .header-notification.notification.info {
   background: linear-gradient(135deg, #f0fdfa, #ccfbf1) !important;
@@ -61,13 +46,11 @@
   color: #0f766e !important;
   box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2) !important;
 }
-
 #priceUpdateNotification.notification.info .notification-text,
 .header-notification.notification.info .notification-text {
   color: #0f766e !important;
   font-weight: 600 !important;
 }
-
 #priceUpdateNotification.notification.info .notification-icon,
 .header-notification.notification.info .notification-icon {
   color: #0f766e !important;
@@ -79,7 +62,6 @@
   color: #0f766e;
   box-shadow: 0 2px 8px rgba(20, 184, 166, 0.2);
 }
-
 .header-notification.info::before {
   background: repeating-linear-gradient(
     45deg,
@@ -89,21 +71,10 @@
     rgba(20, 184, 166, 0.03) 4px
   );
 }
-
 .header-notification.info .notification-text {
   color: #0f766e;
   font-weight: 600;
 }
-
-.header-notification.info .notification-dismiss {
-  color: rgba(15, 118, 110, 0.6);
-}
-
-.header-notification.info .notification-dismiss:hover {
-  color: rgba(15, 118, 110, 0.8);
-}
-
-/* Warning notifications - keep existing orange/amber colors */
 .header-notification.warning {
   background: linear-gradient(135deg, #fff8e1, #ffecb3);
   border: 1px solid #ffb74d;
@@ -111,7 +82,6 @@
   color: #e65100;
   box-shadow: 0 2px 8px rgba(245, 124, 0, 0.15);
 }
-
 .header-notification.warning::before {
   background: repeating-linear-gradient(
     45deg,
@@ -121,20 +91,9 @@
     rgba(245, 124, 0, 0.03) 4px
   );
 }
-
 .header-notification.warning .notification-text {
   color: #e65100;
 }
-
-.header-notification.warning .notification-dismiss {
-  color: rgba(230, 81, 0, 0.6);
-}
-
-.header-notification.warning .notification-dismiss:hover {
-  color: rgba(230, 81, 0, 0.8);
-}
-
-/* Success notifications - green colors */
 .header-notification.success {
   background: linear-gradient(135deg, #e8f5e8, #c8e6c9);
   border: 1px solid #81c784;
@@ -142,7 +101,6 @@
   color: #2e7d32;
   box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
 }
-
 .header-notification.success::before {
   background: repeating-linear-gradient(
     45deg,
@@ -152,20 +110,9 @@
     rgba(76, 175, 80, 0.03) 4px
   );
 }
-
 .header-notification.success .notification-text {
   color: #2e7d32;
 }
-
-.header-notification.success .notification-dismiss {
-  color: rgba(46, 125, 50, 0.6);
-}
-
-.header-notification.success .notification-dismiss:hover {
-  color: rgba(46, 125, 50, 0.8);
-}
-
-/* Error notifications - red colors */
 .header-notification.error {
   background: linear-gradient(135deg, #ffebee, #ffcdd2);
   border: 1px solid #e57373;
@@ -173,7 +120,6 @@
   color: #c62828;
   box-shadow: 0 2px 8px rgba(244, 67, 54, 0.15);
 }
-
 .header-notification.error::before {
   background: repeating-linear-gradient(
     45deg,
@@ -183,20 +129,9 @@
     rgba(244, 67, 54, 0.03) 4px
   );
 }
-
 .header-notification.error .notification-text {
   color: #c62828;
 }
-
-.header-notification.error .notification-dismiss {
-  color: rgba(198, 40, 40, 0.6);
-}
-
-.header-notification.error .notification-dismiss:hover {
-  color: rgba(198, 40, 40, 0.8);
-}
-
-/* Hover tooltip */
 .header-notification:hover::after {
   content: attr(title);
   position: absolute;
@@ -212,8 +147,6 @@
   animation: fadeIn 0.2s ease-in;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
-
-/* ===== ANIMATIONS ===== */
 @keyframes slideInRight {
   from {
     opacity: 0;
@@ -224,7 +157,6 @@
     transform: translateX(0);
   }
 }
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -235,46 +167,31 @@
     transform: translateY(0);
   }
 }
-
-/* ===== RESPONSIVE BEHAVIOR ===== */
 @media (max-width: 1200px) {
   .header-notification {
     max-width: 160px;
   }
-
   .header-notification .notification-text {
     max-width: 100px;
   }
 }
-
 @media (max-width: 768px) {
   .header-notification {
     max-width: 140px;
     margin-right: var(--spacing-xs);
     padding: 6px var(--spacing-xs);
   }
-
   .header-notification .notification-text {
     max-width: 70px;
     font-size: 11px;
   }
-
-  .header-notification .notification-dismiss {
-    width: 16px;
-    height: 16px;
-    font-size: 10px;
-  }
-
-  /* Hide tooltip on mobile */
   .header-notification:hover::after {
     display: none;
   }
-
-  /* Ensure all notification types are readable on mobile */
+  .header-notification.error .notification-text,
   .header-notification.info .notification-text,
-  .header-notification.warning .notification-text,
   .header-notification.success .notification-text,
-  .header-notification.error .notification-text {
+  .header-notification.warning .notification-text {
     font-size: 11px;
     font-weight: 600;
   }
