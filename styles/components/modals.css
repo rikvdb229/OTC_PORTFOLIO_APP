@@ -103,3 +103,43 @@
   font-weight: var(--font-weight-medium);
   color: #155724;
 }
+/* ===== DISABLED GRANTS LIST STYLING ===== */
+.existing-grants-list.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  background-color: #f8f9fa;
+  position: relative;
+}
+
+.existing-grants-list.disabled::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.3) 10px,
+    rgba(255, 255, 255, 0.3) 20px
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.existing-grants-list.disabled .grant-selection-item {
+  color: #6c757d;
+  background-color: #f8f9fa;
+  cursor: not-allowed;
+}
+
+.existing-grants-list.disabled .grant-selection-item input[type="radio"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.existing-grants-list.disabled .grant-selection-item label {
+  cursor: not-allowed;
+}

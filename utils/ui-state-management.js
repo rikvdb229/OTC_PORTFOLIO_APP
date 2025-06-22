@@ -339,6 +339,10 @@ const ModalManager = {
    * Close all modals
    * @param {Object} app - Application instance for cleanup
    */
+  /**
+   * Close all modals - ENHANCED VERSION that preserves grant selection
+   * @param {Object} app - Application instance for cleanup
+   */
   closeAllModals(app) {
     console.log("📱 Closing all modals");
 
@@ -347,13 +351,24 @@ const ModalManager = {
       modal.classList.remove("active");
 
       // 🆕 Clear user input fields only (not display elements)
+      // BUT PRESERVE GRANT SELECTION RADIO BUTTONS
       const inputs = modal.querySelectorAll("input, select, textarea");
       inputs.forEach((input) => {
-        // Skip read-only and disabled inputs
+        // Skip read-only, disabled inputs, and grant selection radio buttons
         if (input.readOnly || input.disabled) return;
+        if (input.name === "grantSelection") {
+          console.log(
+            "🔒 Preserving grant selection radio button:",
+            input.value
+          );
+          return; // DON'T clear grant selection radios
+        }
 
         if (input.type === "checkbox" || input.type === "radio") {
-          input.checked = false;
+          // Only clear non-grant-selection radio buttons
+          if (input.name !== "grantChoice") {
+            input.checked = false;
+          }
         } else {
           input.value = "";
         }
@@ -365,32 +380,13 @@ const ModalManager = {
           ".calculated-value:not(.persistent), .display-value:not(.persistent)"
       );
       userEditableDisplays.forEach((display) => {
-        if (display.textContent !== undefined) {
+        if (display && !display.classList.contains("persistent")) {
           display.textContent = "";
         }
       });
-
-      // 🆕 Reset select elements to their first option (but not disabled ones)
-      const selects = modal.querySelectorAll("select:not([disabled])");
-      selects.forEach((select) => {
-        if (select.options.length > 0) {
-          select.selectedIndex = 0;
-        }
-      });
-
-      // 🆕 DO NOT clear these important display elements:
-      // - autoTaxAmount, currentTaxAmount (edit tax modal)
-      // - canvas elements (charts)
-      // - Any element with class 'persistent'
-      // - Any element with data-preserve="true"
     });
 
-    // Reset modal-related state
-    this.resetModalState(app);
-
-    // 🆕 Ensure body scrolling is restored
-    document.body.style.overflow = "";
-    document.documentElement.style.overflow = "";
+    console.log("✅ All modals closed (with grant selection preserved)");
   },
 
   /**
@@ -463,7 +459,7 @@ const ModalManager = {
   },
 
   /**
-   * Show merge grants modal with data
+   * Show merge grants modal with data - ENHANCED VERSION
    * @param {Object} app - Application instance
    * @param {Array} existingGrants - Existing grant data
    * @param {number} newQuantity - New quantity to merge
@@ -494,12 +490,202 @@ const ModalManager = {
     app.newGrantQuantity = newQuantity;
     app.newGrantTaxAmount = newTaxAmount;
 
-    // Populate modal fields
-    this.populateMergeModalFields(
-      app.existingGrants[0],
-      newQuantity,
-      newTaxAmount
+    // Show appropriate section based on number of existing grants
+    if (app.existingGrants.length === 1) {
+      console.log("📝 Single grant scenario");
+      this.showSingleGrantMerge(
+        app.existingGrants[0],
+        newQuantity,
+        newTaxAmount
+      );
+    } else {
+      console.log("📝 Multiple grants scenario:", app.existingGrants.length);
+      this.showMultipleGrantsMerge(
+        app.existingGrants,
+        newQuantity,
+        newTaxAmount
+      );
+    }
+  },
+  /**
+   * Show single grant merge scenario
+   */
+  showSingleGrantMerge(existingGrant, newQuantity, newTaxAmount) {
+    console.log("📝 Setting up single grant merge display");
+
+    // Hide multiple grants section, show single grant section
+    const singleSection =
+      window.DOMHelpers.safeGetElementById("singleGrantMerge");
+    const multipleSection = window.DOMHelpers.safeGetElementById(
+      "multipleGrantsMerge"
     );
+
+    if (singleSection) {
+      singleSection.style.display = "block";
+      console.log("✅ Single grant section shown");
+    }
+    if (multipleSection) {
+      multipleSection.style.display = "none";
+      console.log("✅ Multiple grants section hidden");
+    }
+
+    // Populate single grant fields
+    this.populateMergeModalFields(existingGrant, newQuantity, newTaxAmount);
+  },
+
+  /**
+   * Show multiple grants merge scenario - THE MISSING PIECE!
+   */
+  showMultipleGrantsMerge(existingGrants, newQuantity, newTaxAmount) {
+    console.log("📝 Setting up multiple grants merge display");
+
+    // Hide single grant section, show multiple grants section
+    const singleSection =
+      window.DOMHelpers.safeGetElementById("singleGrantMerge");
+    const multipleSection = window.DOMHelpers.safeGetElementById(
+      "multipleGrantsMerge"
+    );
+
+    if (singleSection) {
+      singleSection.style.display = "none";
+      console.log("✅ Single grant section hidden");
+    }
+    if (multipleSection) {
+      multipleSection.style.display = "block";
+      console.log("✅ Multiple grants section shown");
+    }
+
+    // THIS IS THE KEY MISSING PIECE - Populate the grants selection list
+    this.populateGrantsList(existingGrants);
+
+    // Set new quantity in the multiple grants section
+    const newQtyMultiple = window.DOMHelpers.safeGetElementById(
+      "newQuantityMultiple"
+    );
+    if (newQtyMultiple) {
+      window.DOMHelpers.safeSetContent(
+        newQtyMultiple,
+        newQuantity?.toString() || "0"
+      );
+      console.log(
+        "✅ New quantity set in multiple grants section:",
+        newQuantity
+      );
+    }
+  },
+
+  populateGrantsList(existingGrants) {
+    console.log(
+      "📝 Populating grants list with",
+      existingGrants.length,
+      "grants"
+    );
+
+    const listContainer =
+      window.DOMHelpers.safeGetElementById("existingGrantsList");
+    if (!listContainer) {
+      console.error("❌ existingGrantsList container not found!");
+      return;
+    }
+
+    let html = "";
+    existingGrants.forEach((grant, index) => {
+      const isFirst = index === 0; // Auto-select first grant
+      const grantDate = new Date(grant.grant_date).toLocaleDateString();
+      const quantity = grant.quantity_remaining || grant.quantity || 0;
+
+      html += `
+      <div class="grant-selection-item" data-grant-id="${grant.id}">
+        <input type="radio" 
+               name="grantSelection" 
+               value="${grant.id}" 
+               id="grant_${grant.id}"
+               ${isFirst ? "checked" : ""}>
+        <label for="grant_${grant.id}">
+          <strong>Grant ${index + 1}</strong> - Current Quantity: ${quantity.toLocaleString()} options
+        </label>
+      </div>
+    `;
+    });
+
+    listContainer.innerHTML = html;
+    console.log("✅ Grants list populated successfully");
+    console.log("📝 Generated HTML:", html);
+
+    // Verify radio buttons were created
+    setTimeout(() => {
+      const createdRadios = document.querySelectorAll(
+        'input[name="grantSelection"]'
+      );
+      console.log(
+        "🔍 Verification: Created",
+        createdRadios.length,
+        "radio buttons"
+      );
+      createdRadios.forEach((radio, i) => {
+        console.log(
+          `🔍 Radio ${i}: ID=${radio.id}, value=${radio.value}, checked=${radio.checked}`
+        );
+      });
+    }, 100);
+
+    // Add click event listeners to the grant items
+    const grantItems = listContainer.querySelectorAll(".grant-selection-item");
+    grantItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        const radio = item.querySelector('input[type="radio"]');
+        if (radio) {
+          radio.checked = true;
+          // Update visual selection
+          grantItems.forEach((i) => i.classList.remove("selected"));
+          item.classList.add("selected");
+          console.log("📋 Grant selected:", radio.value);
+        }
+      });
+    });
+
+    // Auto-select first grant visually
+    if (grantItems.length > 0) {
+      grantItems[0].classList.add("selected");
+    }
+    this.setupGrantChoiceHandlers();
+  },
+  /**
+   * NEW: Setup handlers for grant choice radio buttons (merge vs separate)
+   */
+  setupGrantChoiceHandlers() {
+    const mergeRadio = document.getElementById("mergeGrants");
+    const separateRadio = document.getElementById("separateGrants");
+    const grantsList =
+      window.DOMHelpers.safeGetElementById("existingGrantsList");
+
+    if (!mergeRadio || !separateRadio || !grantsList) {
+      console.warn("⚠️ Grant choice elements not found for setup");
+      return;
+    }
+
+    const toggleGrantsListState = () => {
+      const isSeparateSelected = separateRadio.checked;
+
+      if (isSeparateSelected) {
+        // Disable grants list when "Keep Separate" is selected
+        grantsList.classList.add("disabled");
+        console.log("🔒 Grants list disabled (keep separate selected)");
+      } else {
+        // Enable grants list when "Merge" is selected
+        grantsList.classList.remove("disabled");
+        console.log("🔓 Grants list enabled (merge selected)");
+      }
+    };
+
+    // Add event listeners
+    mergeRadio.addEventListener("change", toggleGrantsListState);
+    separateRadio.addEventListener("change", toggleGrantsListState);
+
+    // Set initial state
+    toggleGrantsListState();
+
+    console.log("✅ Grant choice handlers setup complete");
   },
 
   /**
@@ -508,28 +694,31 @@ const ModalManager = {
    * @param {number} newQuantity - New quantity
    * @param {number} newTaxAmount - New tax amount
    */
+  /**
+   * Populate merge modal fields - CLEANED UP VERSION
+   * @param {Object} existingGrant - Existing grant data
+   * @param {number} newQuantity - New quantity
+   * @param {number} newTaxAmount - New tax amount
+   */
   populateMergeModalFields(existingGrant, newQuantity, newTaxAmount) {
-    // First populate the basic fields that always exist
-    const baseFields = {
-      existingGrantDate: new Date(
-        existingGrant.grant_date
-      ).toLocaleDateString(),
-      existingExercisePrice: `€${existingGrant.exercise_price}`,
-      existingQuantity: existingGrant.quantity_remaining?.toString() || "0",
-    };
+    console.log("📝 Populating single grant merge fields");
 
-    // Populate base fields
-    for (const [fieldId, value] of Object.entries(baseFields)) {
-      const element = window.DOMHelpers.safeGetElementById(fieldId);
-      if (element) {
-        window.DOMHelpers.safeSetContent(element, value);
-      }
+    // Only populate the relevant field - Current Quantity
+    const existingQuantity =
+      existingGrant.quantity_remaining?.toString() || "0";
+
+    const existingQuantityElement =
+      window.DOMHelpers.safeGetElementById("existingQuantity");
+    if (existingQuantityElement) {
+      window.DOMHelpers.safeSetContent(
+        existingQuantityElement,
+        existingQuantity
+      );
     }
 
-    // ✅ Handle new quantity fields (both single and multiple versions)
+    // Handle new quantity fields (both single and multiple versions)
     const newQtyValue = newQuantity?.toString() || "0";
 
-    // Try both possible element IDs from your HTML
     const newQuantitySingle =
       window.DOMHelpers.safeGetElementById("newQuantitySingle");
     const newQuantityMultiple = window.DOMHelpers.safeGetElementById(
@@ -543,7 +732,7 @@ const ModalManager = {
       window.DOMHelpers.safeSetContent(newQuantityMultiple, newQtyValue);
     }
 
-    // ✅ Calculate and display total after merge in mergeDetails element
+    // Calculate and display total after merge
     const totalAfter =
       (existingGrant.quantity_remaining || 0) + (newQuantity || 0);
     const mergeDetails = window.DOMHelpers.safeGetElementById("mergeDetails");
@@ -554,28 +743,21 @@ const ModalManager = {
       );
     }
 
-    console.log("✅ Merge modal fields populated successfully", {
-      existingGrant: existingGrant.quantity_remaining,
+    console.log("✅ Single grant merge fields populated", {
+      existingQuantity: existingGrant.quantity_remaining,
       newQuantity,
       totalAfter,
-      foundElements: {
-        newQuantitySingle: !!newQuantitySingle,
-        newQuantityMultiple: !!newQuantityMultiple,
-        mergeDetails: !!mergeDetails,
-      },
     });
   },
+
+  // FIXED: showEditSaleModal with proper context binding
+  // Replace the existing showEditSaleModal method in utils/ui-state-management.js
+
   /**
-   /**
-
-// FIXED: showEditSaleModal with proper context binding
-// Replace the existing showEditSaleModal method in utils/ui-state-management.js
-
-/**
- * Show edit sale modal with sale data (FIXED: Context binding)
- * @param {Object} app - Application instance
- * @param {number} saleId - ID of the sale to edit
- */
+   * Show edit sale modal with sale data (FIXED: Context binding)
+   * @param {Object} app - Application instance
+   * @param {number} saleId - ID of the sale to edit
+   */
   async showEditSaleModal(app, saleId) {
     try {
       console.log(`✏️ Showing edit sale modal for ID: ${saleId}`);
