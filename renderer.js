@@ -24,7 +24,7 @@ class EnhancedPortfolioApp {
     this.grantData = [];
     this.activeTab = "portfolio";
     this.htmlGen = new HTMLGenerators(this);
-    this.helpers = new AppHelpers(this);
+    this.helpers = new window.AppHelpers(this);
     // ADDED: Initialize UI state management
     window.UIStateManager.initialize(this);
 
@@ -1239,10 +1239,16 @@ class EnhancedPortfolioApp {
       </div>
       <div class="info-stat">
         <h4>Return %</h4>
-        <div class="stat-value ${this.app.helpers.getReturnPercentageClass(
+        <div class="stat-value ${portfolioApp.helpers.getReturnPercentageClass(
           entry.current_return_percentage,
-          targetPercentage || 65
+          portfolioApp.targetPercentage?.value || 65
         )}">
+          ${
+            entry.current_return_percentage
+              ? entry.current_return_percentage.toFixed(1) + "%"
+              : "N/A"
+          }
+        </div>
       </div>
     </div>
     

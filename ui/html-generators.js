@@ -102,11 +102,11 @@ class HTMLGenerators {
               title="${sellTooltip}">
         💰 Sell
       </button>
-      <button class="btn action-btn info-btn" 
-              onclick="portfolioApp.showOptionInfo(${entry.id})"
-              title="View detailed information about this option">
-        📊 Info
-      </button>
+<button class="btn action-btn info-btn" 
+        onclick="portfolioApp.showOptionInfo.call(portfolioApp, ${entry.id})"
+        title="View detailed information about this option">
+  📊 Info
+</button>
       <button class="btn action-btn edit-btn" 
               onclick="portfolioApp.editTax(${entry.id}, ${
                 entry.tax_auto_calculated

@@ -1666,9 +1666,13 @@ const UIStateManager = {
   Tables: TableManager,
 
   // Convenience methods for easy access
-  updatePortfolioStats(overview) {
+  updatePortfolioStats(overview, targetPercentage = 65) {
     if (window.portfolioApp) {
-      StatsManager.updatePortfolioStats(window.portfolioApp, overview);
+      StatsManager.updatePortfolioStats(
+        window.portfolioApp,
+        overview,
+        targetPercentage
+      );
     }
   },
 
