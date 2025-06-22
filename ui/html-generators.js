@@ -136,7 +136,7 @@ class HTMLGenerators {
           <td colspan="11">
             <div class="no-grants-message">
               <div class="no-grants-content">
-                <h3>📊 Welcome to KBC Portfolio Tracker</h3>
+                <h3>📊 Welcome to Portfolio tracker</h3>
                 <p><strong>To get started, you need to update prices first!</strong></p><br>
                 <p>Your portfolio is empty because no price data has been downloaded yet.</p>
                 <br>

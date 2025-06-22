@@ -5,7 +5,7 @@
 
 const APP_CONFIG = {
   VERSION: "1.0.2",
-  APP_NAME: "KBC Portfolio Tracker", // Changed from "KBC ESOP Portfolio Tracker"
+  APP_NAME: "Portfolio tracker", // Changed from "KBC ESOP Portfolio Tracker"
   STATUS: "Development Version",
   BUILD_DATE: "2025-06-19",
   AUTHOR: "Portfolio Manager",
