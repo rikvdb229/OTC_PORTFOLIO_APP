@@ -598,17 +598,8 @@ class EnhancedPortfolioApp {
   }
 
   async checkAutoUpdate() {
-    try {
-      const autoUpdate =
-        await window.IPCCommunication.Settings.getSetting("auto_update_prices");
-      if (autoUpdate === "true") {
-        setTimeout(() => this.updatePrices(), 2000);
-      }
-    } catch (error) {
-      console.error("Error checking auto-update setting:", error);
-    }
+    this.helpers.checkAutoUpdate();
   }
-
   updateProgress(progressText) {
     if (this.updateProgressText) {
       this.updateProgressText.textContent = progressText;

@@ -1,3 +1,4 @@
+// utils/app-helpers.js
 // Simple helper methods extracted from renderer.js
 // These are just wrapper methods - SAFEST EXTRACTION
 
@@ -54,6 +55,7 @@ class AppHelpers {
       targetPercentage
     );
   }
+
   /**
    * Format currency amount
    * EXTRACTED FROM: renderer.js formatCurrency() method
@@ -61,6 +63,23 @@ class AppHelpers {
   formatCurrency(amount) {
     const symbol = this.app.currencySymbol?.value || "€";
     return window.FormatHelpers.formatCurrencyValue(amount, symbol);
+  }
+
+  /**
+   * Check for auto-update setting and trigger price update if enabled
+   * MIGRATED FROM: renderer.js checkAutoUpdate() method
+   * RISK LEVEL: LOW - Simple setting check and conditional action
+   */
+  async checkAutoUpdate() {
+    try {
+      const autoUpdate =
+        await window.IPCCommunication.Settings.getSetting("auto_update_prices");
+      if (autoUpdate === "true") {
+        setTimeout(() => this.app.updatePrices(), 2000);
+      }
+    } catch (error) {
+      console.error("Error checking auto-update setting:", error);
+    }
   }
 }
 
