@@ -679,58 +679,7 @@ class EnhancedPortfolioApp {
   }
   // ===== TABLE SORTING =====
   sortTable(column) {
-    console.log(`🔄 Sorting by column: ${column}`);
-
-    // Determine which data array to sort based on active tab
-    const activeTab = document.querySelector(".nav-tab.active");
-    if (!activeTab) {
-      console.warn("No active tab found");
-      return;
-    }
-
-    const tabText = activeTab.textContent.trim().toLowerCase();
-    let dataToSort, updateMethod;
-
-    // Map tabs to their data and update methods
-    if (tabText.includes("portfolio")) {
-      dataToSort = this.portfolioData;
-      updateMethod = (sortedData) => {
-        this.portfolioData = sortedData;
-        this.updatePortfolioTable(sortedData);
-      };
-    } else if (tabText.includes("evolution")) {
-      dataToSort = this.evolutionData;
-      updateMethod = (sortedData) => {
-        this.evolutionData = sortedData;
-        this.htmlGen.renderEvolutionTable(sortedData);
-      };
-    } else if (tabText.includes("sales")) {
-      dataToSort = this.salesData;
-      updateMethod = (sortedData) => {
-        this.salesData = sortedData;
-        this.htmlGen.renderSalesTable(sortedData);
-      };
-    } else if (tabText.includes("grant")) {
-      dataToSort = this.grantData;
-      updateMethod = (sortedData) => {
-        this.grantData = sortedData;
-        this.htmlGen.renderGrantTable(sortedData);
-      };
-    } else {
-      console.warn(`Unknown tab: ${tabText}`);
-      return;
-    }
-
-    // Check if we have data to sort
-    if (!dataToSort || dataToSort.length === 0) {
-      console.warn(`No data available for ${tabText} tab`);
-      return;
-    }
-
-    // Use UIStateManager's sorting functionality
-    window.UIStateManager.sortTable(column, dataToSort, updateMethod);
-
-    console.log(`✅ ${tabText} table sorted by ${column}`);
+    window.UIStateManager.smartSortTable(column);
   }
   // ===== DATA AVAILABILITY CHECK =====
   async checkDataAvailability() {

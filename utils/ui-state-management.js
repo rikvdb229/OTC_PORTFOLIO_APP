@@ -1733,7 +1733,105 @@ const TableManager = {
   },
 
   /**
-   * Handle table sorting functionality
+   * ENHANCED: Smart table sorting that handles tab detection and data mapping
+   * @param {Object} app - Application instance
+   * @param {string} column - Column to sort by
+   */
+  smartSort(app, column) {
+    console.log(`🔄 Smart sorting by column: ${column}`);
+
+    // Detect active tab and get corresponding data
+    const tabInfo = this.detectActiveTabAndData(app);
+    if (!tabInfo) {
+      console.warn("Could not detect active tab or data");
+      return;
+    }
+
+    const { tabName, data, updateMethod } = tabInfo;
+
+    // Check if we have data to sort
+    if (!data || data.length === 0) {
+      console.warn(`No data available for ${tabName} tab`);
+      return;
+    }
+
+    // Perform the sorting
+    this.sortTable(app, column, data, updateMethod);
+    console.log(`✅ ${tabName} table sorted by ${column}`);
+  },
+
+  /**
+   * Detect which tab is active and return corresponding data and update method
+   * @param {Object} app - Application instance
+   * @returns {Object|null} Tab information with data and update method
+   */
+  detectActiveTabAndData(app) {
+    const activeTab = document.querySelector(".nav-tab.active");
+    if (!activeTab) {
+      console.warn("No active tab found");
+      return null;
+    }
+
+    const tabText = activeTab.textContent.trim().toLowerCase();
+
+    // Map tabs to their data and update methods
+    const tabMappings = [
+      {
+        keywords: ["portfolio"],
+        tabName: "portfolio",
+        getData: () => app.portfolioData,
+        updateMethod: (sortedData) => {
+          app.portfolioData = sortedData;
+          app.updatePortfolioTable(sortedData);
+        },
+      },
+      {
+        keywords: ["evolution"],
+        tabName: "evolution",
+        getData: () => app.evolutionData,
+        updateMethod: (sortedData) => {
+          app.evolutionData = sortedData;
+          app.htmlGen.renderEvolutionTable(sortedData);
+        },
+      },
+      {
+        keywords: ["sales"],
+        tabName: "sales",
+        getData: () => app.salesData,
+        updateMethod: (sortedData) => {
+          app.salesData = sortedData;
+          app.htmlGen.renderSalesTable(sortedData);
+        },
+      },
+      {
+        keywords: ["grant"],
+        tabName: "grant",
+        getData: () => app.grantData,
+        updateMethod: (sortedData) => {
+          app.grantData = sortedData;
+          app.htmlGen.renderGrantTable(sortedData);
+        },
+      },
+    ];
+
+    // Find matching tab mapping
+    for (const mapping of tabMappings) {
+      if (mapping.keywords.some((keyword) => tabText.includes(keyword))) {
+        const data = mapping.getData();
+        return {
+          tabName: mapping.tabName,
+          data: data,
+          updateMethod: mapping.updateMethod,
+        };
+      }
+    }
+
+    console.warn(`Unknown tab: ${tabText}`);
+    return null;
+  },
+
+  /**
+   * Handle table sorting functionality (existing method, enhanced)
    * @param {Object} app - Application instance
    * @param {string} column - Column to sort by
    * @param {Array} data - Data array to sort
@@ -1767,7 +1865,7 @@ const TableManager = {
   },
 
   /**
-   * Update table headers with sort indicators - FIXED VERSION
+   * Update table headers with sort indicators (existing method)
    * @param {string} activeColumn - Currently sorted column
    * @param {string} direction - Sort direction
    */
@@ -1835,7 +1933,7 @@ const TableManager = {
   },
 
   /**
-   * Perform actual sorting of data
+   * Perform actual sorting of data (existing method)
    * @param {Array} data - Data to sort
    * @param {string} column - Column to sort by
    * @param {string} direction - Sort direction
@@ -1876,7 +1974,7 @@ const TableManager = {
   },
 
   /**
-   * Show/hide loading indicator for tables
+   * Show/hide loading indicator for tables (existing method)
    * @param {boolean} show - Whether to show loading
    * @param {string} containerId - Container element ID
    * @param {string} message - Loading message
@@ -1941,16 +2039,19 @@ const UIStateManager = {
     }
   },
 
-  sortTable(column, data, renderCallback) {
+  /**
+   * ENHANCED: Smart table sorting - handles all tab detection automatically
+   * @param {string} column - Column to sort by
+   */
+  smartSortTable(column) {
     if (window.portfolioApp) {
-      return TableManager.sortTable(
-        window.portfolioApp,
-        column,
-        data,
-        renderCallback
-      );
+      TableManager.smartSort(window.portfolioApp, column);
     }
-    return data;
+  },
+  sortTable(column) {
+    if (window.portfolioApp) {
+      TableManager.smartSort(window.portfolioApp, column);
+    }
   },
 
   switchTab(tabName) {
