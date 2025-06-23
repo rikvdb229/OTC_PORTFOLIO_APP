@@ -439,9 +439,7 @@ Note: KBC doesn't update on bank holidays.`;
 const SettingsOperations = {
   async getSetting(key) {
     try {
-      console.log(`🔍 DEBUG IPC: getSetting('${key}') calling main process...`);
       const result = await window.ipcRenderer.invoke("get-setting", key);
-      console.log(`🔍 DEBUG IPC: getSetting('${key}') result:`, result);
       return result;
     } catch (error) {
       console.error(`❌ Error getting setting '${key}':`, error);
