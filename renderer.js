@@ -677,7 +677,6 @@ class EnhancedPortfolioApp {
       return false;
     }
   }
-
   // ===== TABLE SORTING =====
   sortTable(column) {
     console.log(`🔄 Sorting by column: ${column}`);
@@ -728,12 +727,8 @@ class EnhancedPortfolioApp {
       return;
     }
 
-    // Use your existing sorting logic from UIStateManager
-    const sortedData = window.UIStateManager.sortTable(
-      column,
-      dataToSort,
-      updateMethod
-    );
+    // Use UIStateManager's sorting functionality
+    window.UIStateManager.sortTable(column, dataToSort, updateMethod);
 
     console.log(`✅ ${tabText} table sorted by ${column}`);
   }
