@@ -9,6 +9,17 @@ const HTMLGenerators = require("./ui/html-generators");
 // EXISTING: Your class starts here
 class EnhancedPortfolioApp {
   constructor() {
+    // ✅ ADD THIS DEBUG AT THE TOP
+    console.log("🔍 DEBUG: Checking AppConfig availability...");
+    console.log("window.AppConfig:", window.AppConfig);
+    console.log(
+      "window.AppConfig.SettingsManager:",
+      window.AppConfig?.SettingsManager
+    );
+    console.log(
+      "loadSettings method:",
+      window.AppConfig?.SettingsManager?.loadSettings
+    );
     this.initializeElements();
     this.attachEventListeners();
     this.setupIpcListeners();
@@ -27,13 +38,12 @@ class EnhancedPortfolioApp {
     this.helpers = new window.AppHelpers(this);
     // ADDED: Initialize UI state management
     window.UIStateManager.initialize(this);
-
     // ADDED: Initialize footer with version info
     this.initializeFooter();
 
     // Initialize the app
     this.loadPortfolioData();
-    this.loadSettings();
+    window.AppConfig.SettingsManager.loadSettings(this);
     this.checkDataAvailability();
     window.IPCCommunication.Price.checkPriceUpdateStatus(this);
     this.checkAutoUpdate();
@@ -217,11 +227,11 @@ class EnhancedPortfolioApp {
 
   // ===== SETTINGS MANAGEMENT =====
   openSettings() {
-    window.UIStateManager.Settings.openSettings(this);
+    window.UIStateManager.Modals.openSettings(app);
   }
 
   closeSettingsPanel() {
-    window.UIStateManager.Settings.closeSettings(this);
+    window.UIStateManager.Modals.closeSettings(app);
   }
   async confirmMergeGrants() {
     try {
@@ -1600,59 +1610,6 @@ class EnhancedPortfolioApp {
   }
 
   // ===== SETTINGS MANAGEMENT =====
-  async loadSettings() {
-    try {
-      const settings = await window.IPCCommunication.Settings.loadAllSettings();
-
-      if (settings.target_percentage && this.targetPercentage) {
-        this.targetPercentage.value = settings.target_percentage;
-      }
-      if (settings.tax_auto_rate && this.taxRate) {
-        this.taxRate.value = settings.tax_auto_rate;
-      }
-      if (settings.currency_symbol && this.currencySymbol) {
-        this.currencySymbol.value = settings.currency_symbol;
-      }
-      if (settings.auto_update_prices && this.autoUpdatePrices) {
-        this.autoUpdatePrices.checked = settings.auto_update_prices === "true";
-      }
-    } catch (error) {
-      console.error("Error loading settings:", error);
-    }
-  }
-
-  async saveSettings() {
-    try {
-      const settings = {
-        target_percentage: this.targetPercentage?.value || "65",
-        tax_auto_rate: this.taxRate?.value || "30",
-        currency_symbol: this.currencySymbol?.value || "€",
-        auto_update_prices:
-          this.autoUpdatePrices?.checked?.toString() || "false",
-      };
-
-      await window.IPCCommunication.Settings.saveAllSettings(settings);
-
-      // Show success feedback
-      const originalText = this.saveSettingsBtn.textContent;
-      this.saveSettingsBtn.textContent = "✅ Saved!";
-      this.saveSettingsBtn.style.background = "#28a745";
-
-      setTimeout(() => {
-        this.saveSettingsBtn.textContent = originalText;
-        this.saveSettingsBtn.style.background = "";
-      }, 2000);
-
-      // Refresh portfolio data to apply new target percentage
-      await this.loadPortfolioData();
-    } catch (error) {
-      console.error("Error saving settings:", error);
-      this.saveSettingsBtn.textContent = "❌ Error";
-      setTimeout(() => {
-        this.saveSettingsBtn.textContent = "💾 Save Settings";
-      }, 2000);
-    }
-  }
   async debugDatabase() {
     return await window.UIStateManager.Database.debugDatabase(this);
   }

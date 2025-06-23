@@ -234,6 +234,14 @@ const PortfolioOperations = {
       throw error;
     }
   },
+  async getAvailableExercisePrices() {
+    try {
+      return await window.ipcRenderer.invoke("get-available-exercise-prices");
+    } catch (error) {
+      console.error("❌ Error getting available exercise prices:", error);
+      throw error;
+    }
+  },
 };
 
 /**
@@ -431,7 +439,10 @@ Note: KBC doesn't update on bank holidays.`;
 const SettingsOperations = {
   async getSetting(key) {
     try {
-      return await window.ipcRenderer.invoke("get-setting", key);
+      console.log(`🔍 DEBUG IPC: getSetting('${key}') calling main process...`);
+      const result = await window.ipcRenderer.invoke("get-setting", key);
+      console.log(`🔍 DEBUG IPC: getSetting('${key}') result:`, result);
+      return result;
     } catch (error) {
       console.error(`❌ Error getting setting '${key}':`, error);
       throw error;
@@ -440,7 +451,13 @@ const SettingsOperations = {
 
   async updateSetting(key, value) {
     try {
-      return await window.ipcRenderer.invoke("update-setting", key, value);
+      const result = await window.ipcRenderer.invoke(
+        "update-setting",
+        key,
+        value
+      );
+      console.log(`🔍 DEBUG: IPC result for ${key}:`, result);
+      return result;
     } catch (error) {
       console.error(`❌ Error updating setting '${key}':`, error);
       throw error;
@@ -470,12 +487,16 @@ const SettingsOperations = {
 
   async saveAllSettings(settings) {
     try {
+      console.log("🔍 DEBUG: saveAllSettings called with:", settings);
       const results = {};
 
       for (const [key, value] of Object.entries(settings)) {
+        console.log(`🔍 DEBUG: Saving ${key} = ${value}`);
         results[key] = await this.updateSetting(key, value);
+        console.log(`🔍 DEBUG: Save result for ${key}:`, results[key]);
       }
 
+      console.log("🔍 DEBUG: All settings saved, results:", results);
       return results;
     } catch (error) {
       console.error("❌ Error saving all settings:", error);

@@ -241,7 +241,6 @@ class PortfolioDatabase {
 
       this.db = new SQL.Database(fileBuffer);
       console.log("✅ Database connection established");
-
       await this.createTables();
 
       // Test database operations
@@ -384,12 +383,11 @@ class PortfolioDatabase {
     );
 
     -- Application settings
-    CREATE TABLE IF NOT EXISTS settings (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      setting_key VARCHAR(50) UNIQUE NOT NULL,
-      setting_value TEXT NOT NULL,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
+CREATE TABLE IF NOT EXISTS settings (
+  setting_key VARCHAR(50) PRIMARY KEY,
+  setting_value TEXT NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
     -- Option price history
     CREATE TABLE IF NOT EXISTS option_price_history (
@@ -438,10 +436,23 @@ class PortfolioDatabase {
       ];
 
       defaultSettings.forEach(([key, value]) => {
+        // ✅ ADD DEBUG BEFORE INSERT
+
         const stmt = this.db.prepare(
           "INSERT OR IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)"
         );
-        stmt.run([key, value]);
+        const result = stmt.run([key, value]);
+
+        // ✅ ADD DEBUG AFTER INSERT
+
+        if (result.changes > 0) {
+          console.log(
+            `🚨 WARNING: OVERWROTE existing setting ${key} with default ${value}!`
+          );
+        } else {
+          console.log(`✅ GOOD: Skipped ${key} because it already exists`);
+        }
+
         stmt.free();
       });
 
@@ -2181,6 +2192,8 @@ class PortfolioDatabase {
 
   async getSetting(key) {
     try {
+      console.log(`🔍 DEBUG DB: getSetting('${key}') called`);
+
       const stmt = this.db.prepare(
         "SELECT setting_value FROM settings WHERE setting_key = ?"
       );
@@ -2188,13 +2201,16 @@ class PortfolioDatabase {
 
       let result = null;
       if (stmt.step()) {
-        const row = stmt.getAsObject();
-        result = row.setting_value;
+        result = stmt.getAsObject().setting_value;
+        console.log(`🔍 DEBUG DB: Found ${key} =`, result);
+      } else {
+        console.log(`🔍 DEBUG DB: No value found for ${key}`);
       }
       stmt.free();
 
       return Promise.resolve(result);
     } catch (error) {
+      console.error(`❌ Error getting setting '${key}':`, error);
       return Promise.reject(error);
     }
   }
@@ -2223,14 +2239,24 @@ class PortfolioDatabase {
 
   async updateSetting(key, value) {
     try {
+      // Now we can use INSERT OR REPLACE safely since setting_key is the primary key
       const stmt = this.db.prepare(`
-        INSERT OR REPLACE INTO settings (setting_key, setting_value, updated_at)
-        VALUES (?, ?, CURRENT_TIMESTAMP)
-      `);
+      INSERT OR REPLACE INTO settings (setting_key, setting_value, updated_at)
+      VALUES (?, ?, CURRENT_TIMESTAMP)
+    `);
 
-      stmt.run([key, value]);
+      const result = stmt.run([key, value]);
       stmt.free();
-
+      // Verify it was saved
+      const verifyStmt = this.db.prepare(
+        "SELECT setting_value FROM settings WHERE setting_key = ?"
+      );
+      verifyStmt.bind([key]);
+      let savedValue = null;
+      if (verifyStmt.step()) {
+        savedValue = verifyStmt.getAsObject().setting_value;
+      }
+      verifyStmt.free();
       this.saveDatabase();
       return Promise.resolve({ changes: 1 });
     } catch (error) {

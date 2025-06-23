@@ -1373,16 +1373,6 @@ const ModalManager = {
       alert("Error loading option information: " + error.message);
     }
   },
-};
-
-/**
- * Settings panel management
- */
-const SettingsManager = {
-  /**
-   * Open settings panel
-   * @param {Object} app - Application instance
-   */
   openSettings(app) {
     console.log("⚙️ Opening settings panel");
 
@@ -1393,12 +1383,8 @@ const SettingsManager = {
       app.settingsOverlay.classList.add("active");
     }
 
-    // Load current settings
-    if (app.loadSettings) {
-      app.loadSettings();
-    }
+    window.AppConfig.SettingsManager.loadSettings(app);
   },
-
   /**
    * Close settings panel
    * @param {Object} app - Application instance

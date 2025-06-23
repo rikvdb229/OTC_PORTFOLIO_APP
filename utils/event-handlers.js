@@ -33,7 +33,7 @@ const HeaderActionHandlers = {
         app.settingsToggle,
         "click",
         () => {
-          app.openSettings();
+          window.UIStateManager.Modals.openSettings(app); // ← NEW
         }
       );
     }
@@ -81,7 +81,7 @@ const SettingsHandlers = {
     // Settings close button
     if (app.closeSettings) {
       window.DOMHelpers.safeAddEventListener(app.closeSettings, "click", () => {
-        app.closeSettingsPanel();
+        window.UIStateManager.Modals.closeSettings(app); // ← ADD (app) and ()
       });
     }
 
@@ -105,13 +105,12 @@ const SettingsHandlers = {
       });
     }
 
-    // Save settings button
     if (app.saveSettingsBtn) {
       window.DOMHelpers.safeAddEventListener(
         app.saveSettingsBtn,
         "click",
         () => {
-          app.saveSettings();
+          window.AppConfig.SettingsManager.saveSettings(app); // ← NEW
         }
       );
     }

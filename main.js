@@ -658,7 +658,10 @@ ipcMain.handle("get-setting", async (event, key) => {
 
 ipcMain.handle("update-setting", async (event, key, value) => {
   try {
-    return await portfolioDb.updateSetting(key, value);
+    console.log(`🔍 DEBUG MAIN: update-setting called with ${key} = ${value}`);
+    const result = await portfolioDb.updateSetting(key, value);
+    console.log(`🔍 DEBUG MAIN: updateSetting result for ${key}:`, result);
+    return result;
   } catch (error) {
     console.error("Error updating setting:", error);
     return { error: error.message };
