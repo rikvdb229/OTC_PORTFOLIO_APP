@@ -82,7 +82,6 @@ class AppHelpers {
     }
   }
 }
-
 // Export to global scope for use in renderer.js
 window.AppHelpers = AppHelpers;
 

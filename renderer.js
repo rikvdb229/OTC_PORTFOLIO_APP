@@ -467,7 +467,7 @@ class EnhancedPortfolioApp {
   }
   // UPDATE your existing clearAddOptionsForm function to also clear stored data:
   clearAddOptionsForm() {
-    window.AppConfig.FormManager.clearAddOptionsForm(this);
+    window.UIStateManager.Forms.clearAddOptionsForm(this);
   }
 
   // ===== PRICE UPDATE FUNCTIONALITY =====
@@ -909,103 +909,17 @@ class EnhancedPortfolioApp {
   }
 
   // ===== ADD OPTIONS FUNCTIONALITY =====
-  async onGrantDateChange() {
-    const grantDate = document.getElementById("grantDate").value;
-    const exercisePriceSelect = document.getElementById("exercisePrice");
-    const helpText = document.getElementById("exercisePriceHelp");
-
-    if (!grantDate) {
-      exercisePriceSelect.innerHTML =
-        '<option value="">First enter grant date...</option>';
-      exercisePriceSelect.disabled = true;
-      helpText.textContent = "Options will appear after entering grant date";
-      return;
-    }
-
-    try {
-      const options = await ipcRenderer.invoke(
-        "get-options-by-grant-date",
-        grantDate
-      );
-
-      if (options.error) {
-        alert("Error loading options: " + options.error);
-        return;
-      }
-
-      if (options.length === 0) {
-        exercisePriceSelect.innerHTML =
-          '<option value="">No options available for this date</option>';
-        exercisePriceSelect.disabled = true;
-        helpText.textContent =
-          "No option plans found for this grant date. Try a different date or update prices.";
-        helpText.className = "form-help error";
-        return;
-      }
-
-      exercisePriceSelect.innerHTML =
-        '<option value="">Select an option...</option>';
-      options.forEach((option) => {
-        const optionElement = document.createElement("option");
-        optionElement.value = option.exercise_price;
-        optionElement.dataset.currentValue = option.current_value;
-        optionElement.dataset.fundName = option.fund_name;
-
-        // Show fund name prominently with price and current value
-        const fundName = this.helpers.formatFundName(option.fund_name);
-        optionElement.textContent = `${fundName} - €${
-          option.exercise_price
-        } (Current: €${option.current_value || "N/A"})`;
-
-        exercisePriceSelect.appendChild(optionElement);
-      });
-
-      exercisePriceSelect.disabled = false;
-      helpText.textContent = `Found ${options.length} option(s) for this grant date`;
-      helpText.className = "form-help";
-
-      if (options.length === 1) {
-        exercisePriceSelect.selectedIndex = 1;
-        this.calculateEstimatedTax();
-      }
-    } catch (error) {
-      console.error("Error loading options for grant date:", error);
-      exercisePriceSelect.innerHTML =
-        '<option value="">Error loading options</option>';
-      exercisePriceSelect.disabled = true;
-      helpText.textContent = "Error loading options for this date";
-      helpText.className = "form-help error";
-    }
+  async handleGrantDateSelection() {
+    await window.UIStateManager.Forms.handleGrantDateSelection(this);
   }
 
   calculateEstimatedTax() {
-    const quantity = parseInt(document.getElementById("quantity").value) || 0;
-    const taxRate = parseFloat(this.taxRate?.value) / 100 || 0.3;
-    const estimatedTax = quantity * 10 * taxRate;
-
-    document.getElementById("estimatedTax").textContent =
-      this.helpers.formatCurrency(estimatedTax);
-
-    const actualTaxField = document.getElementById("actualTaxAmount");
-    if (!actualTaxField.value) {
-      actualTaxField.placeholder = this.helpers
-        .formatCurrency(estimatedTax)
-        .replace("€", "");
-    }
+    window.UIStateManager.Forms.calculateEstimatedTax(this);
   }
 
   updateTaxDisplay() {
-    // Real-time feedback for tax input
-    const actualTax = parseFloat(
-      document.getElementById("actualTaxAmount").value
-    );
-    const estimatedTax = parseFloat(
-      document.getElementById("estimatedTax").textContent.replace(/[€,]/g, "")
-    );
-
-    // Could add visual feedback here if needed
+    window.UIStateManager.Forms.updateTaxDisplay(this);
   }
-
   // FIXED: Enhanced add options with better error handling
   // REPLACE your existing addOptions() function in renderer.js with this complete version:
 

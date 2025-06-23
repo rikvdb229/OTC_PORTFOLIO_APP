@@ -335,7 +335,7 @@ const FormHandlers = {
       {
         id: "grantDate",
         event: "change",
-        handler: () => app.onGrantDateChange(),
+        handler: () => app.handleGrantDateSelection(),
       },
       {
         id: "quantity",
