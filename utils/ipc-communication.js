@@ -127,6 +127,14 @@ const PortfolioOperations = {
       throw error;
     }
   },
+  async getPortfolioEvents() {
+    try {
+      return await window.ipcRenderer.invoke("get-portfolio-events");
+    } catch (error) {
+      console.error("❌ Error getting portfolio events:", error);
+      throw error;
+    }
+  },
 };
 
 /**

@@ -2335,7 +2335,7 @@ textarea {
 #portfolioChart {
   width: 100% !important;
   height: 100% !important;
-  max-height: 520px;
+  max-height: 1200px;
 }
 #chart-tab .section {
   padding: 15px;
@@ -2538,12 +2538,6 @@ textarea {
   }
   .chart-container {
     height: 600px;
-  }
-  #portfolioOverviewChart {
-    height: 650px;
-  }
-  #portfolioChart {
-    max-height: 620px;
   }
 }
 @media (max-width: 768px) {

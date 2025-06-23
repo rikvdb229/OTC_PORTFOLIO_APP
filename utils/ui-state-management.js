@@ -2201,6 +2201,104 @@ const FormManager = {
     // Could add visual feedback here if needed
   },
 };
+/**
+ * ===== DATABASE MANAGEMENT FUNCTIONS =====
+ * Moved from renderer.js to centralize database operations
+ * Add this to your existing ui-state-management.js file
+ */
+const DatabaseManager = {
+  /**
+   * Export database to file
+   * @param {Object} app - Application instance (optional, for future use)
+   */
+  async exportDatabase(app = null) {
+    try {
+      console.log("📤 Starting database export...");
+      const result = await window.IPCCommunication.Database.exportDatabase();
+
+      if (result.success) {
+        alert(`Database exported successfully to:\n${result.filePath}`);
+        console.log("✅ Database export completed successfully");
+      } else {
+        alert("Export cancelled or failed");
+        console.log("❌ Database export cancelled or failed");
+      }
+    } catch (error) {
+      console.error("❌ Error exporting database:", error);
+      alert("Error exporting database: " + error.message);
+    }
+  },
+
+  /**
+   * Import database from file
+   * @param {Object} app - Application instance
+   * @param {boolean} mergeMode - Whether to merge with existing data
+   */
+  async importDatabase(app, mergeMode = false) {
+    try {
+      console.log(`📥 Starting database import (merge: ${mergeMode})...`);
+
+      const confirmMessage = mergeMode
+        ? "Are you sure you want to merge the imported data with existing data?"
+        : "Are you sure you want to replace all existing data with imported data?\n\nThis action cannot be undone!";
+
+      if (!confirm(confirmMessage)) {
+        console.log("📥 Database import cancelled by user");
+        return;
+      }
+
+      const result =
+        await window.IPCCommunication.Database.importDatabase(mergeMode);
+
+      if (result.success) {
+        const successMessage = `Database ${mergeMode ? "merged" : "imported"} successfully!\nImported ${result.importedEntries} entries.`;
+        alert(successMessage);
+        console.log("✅ Database import completed successfully");
+
+        // Reload data and switch to portfolio tab
+        if (app && app.loadPortfolioData) {
+          await app.loadPortfolioData();
+        }
+        if (app) {
+          window.UIStateManager.Tabs.switchTab(app, "portfolio");
+        }
+      } else {
+        alert("Import cancelled or failed");
+        console.log("❌ Database import cancelled or failed");
+      }
+    } catch (error) {
+      console.error("❌ Error importing database:", error);
+      alert("Error importing database: " + error.message);
+    }
+  },
+
+  /**
+   * Debug database state - output to console
+   * @param {Object} app - Application instance (optional, for future use)
+   */
+  async debugDatabase(app = null) {
+    try {
+      console.log("🔍 Starting database debug...");
+      const result = await window.IPCCommunication.Database.debugState();
+
+      console.log("=== DATABASE DEBUG INFO ===");
+      console.log("Portfolio Entries:", result.portfolioEntries);
+      console.log("Recent Price History:", result.priceHistory);
+      console.log("Evolution Data:", result.evolutionData);
+      console.log("Counts:", {
+        entries: result.entriesCount,
+        prices: result.pricesCount,
+        evolution: result.evolutionCount,
+      });
+      console.log("=== END DEBUG ===");
+
+      return result;
+    } catch (error) {
+      console.error("❌ Debug error:", error);
+      return null;
+    }
+  },
+};
 
 /**
  * Main UI State coordinator
@@ -2234,6 +2332,7 @@ const UIStateManager = {
   Tables: TableManager,
   Footer: FooterManager,
   Forms: FormManager,
+  Database: DatabaseManager,
 
   // Convenience methods for easy access
   updatePortfolioStats(overview, targetPercentage = 65) {

@@ -558,22 +558,7 @@ class EnhancedPortfolioApp {
 
   // ===== PORTFOLIO DATA MANAGEMENT =====
   async loadPortfolioData() {
-    try {
-      const overview = await window.IPCCommunication.Portfolio.getOverview();
-
-      this.portfolioData = overview;
-      const targetPercentage =
-        (await window.IPCCommunication.Settings.getSetting(
-          "target_percentage"
-        )) || 65;
-
-      this.updatePortfolioStats(overview, parseFloat(targetPercentage));
-      this.updatePortfolioTable(overview, parseFloat(targetPercentage));
-      this.updateActionButtons(overview.length > 0);
-      this.updateHeaderStats(overview);
-    } catch (error) {
-      console.error("Error loading portfolio data:", error);
-    }
+    return await this.helpers.loadPortfolioData();
   }
 
   // FIXED: Update header stats method
@@ -1229,32 +1214,7 @@ class EnhancedPortfolioApp {
 
   // ===== EVOLUTION TAB =====
   async loadEvolutionData(days = "all") {
-    try {
-      console.log("Loading evolution data for:", days);
-
-      // Update active button using your ActionButtons manager
-      window.UIStateManager.ActionButtons.updateEvolutionButtons(days);
-
-      const evolutionData = await ipcRenderer.invoke(
-        "get-portfolio-evolution",
-        days === "all" ? null : parseInt(days)
-      );
-
-      if (evolutionData.error) {
-        console.error("Error loading evolution data:", evolutionData.error);
-        return;
-      }
-
-      // ADD THIS LINE - Store data for sorting:
-      this.evolutionData = evolutionData;
-
-      // Use HTML generator
-      this.htmlGen.renderEvolutionTable(evolutionData);
-    } catch (error) {
-      console.error("Error loading evolution data:", error);
-      // ADD THIS LINE - Initialize empty on error:
-      this.evolutionData = [];
-    }
+    return await this.helpers.loadEvolutionData(days);
   }
 
   // ===== CHART TAB =====
@@ -1270,96 +1230,7 @@ class EnhancedPortfolioApp {
    * Replace the existing loadChartData function
    */
   async loadChartData(period = "all") {
-    try {
-      console.log(`📊 Loading chart data for period: ${period}`);
-
-      // Update button states
-      document.querySelectorAll("#chart-tab-header .btn").forEach((btn) => {
-        btn.classList.remove("btn-primary");
-        btn.classList.add("btn-secondary");
-      });
-
-      const activeBtn = document.querySelector(
-        `#chart-tab-header [data-period="${period}"]`
-      );
-      if (activeBtn) {
-        activeBtn.classList.remove("btn-secondary");
-        activeBtn.classList.add("btn-primary");
-      }
-
-      // Check for required chart utilities
-      if (!window.ChartUtils) {
-        console.error("❌ ChartUtils not available");
-        return;
-      }
-
-      // Load portfolio evolution data
-      const days = period === "all" ? null : parseInt(period);
-      const evolutionData = await ipcRenderer.invoke(
-        "get-portfolio-evolution",
-        days
-      );
-
-      if (evolutionData && evolutionData.error) {
-        console.error("❌ Evolution data error:", evolutionData.error);
-        return;
-      }
-
-      if (
-        !evolutionData ||
-        !Array.isArray(evolutionData) ||
-        evolutionData.length === 0
-      ) {
-        window.ChartUtils.displayNoDataMessage("portfolioOverviewChart");
-        return;
-      }
-
-      // Load portfolio events for annotations
-      const portfolioEvents = await ipcRenderer.invoke("get-portfolio-events");
-
-      // Process data using ChartUtils
-      const sortedEvolutionData =
-        window.ChartUtils.procesEvolutionData(evolutionData);
-      const portfolioValues = sortedEvolutionData.map(
-        (e) => e.total_portfolio_value || 0
-      );
-      const yAxisConfig =
-        window.ChartUtils.calculateYAxisRange(portfolioValues);
-
-      // Process events and create annotations
-      const eventsByDate = window.ChartUtils.processPortfolioEvents(
-        sortedEvolutionData,
-        portfolioEvents,
-        period
-      );
-      const annotations =
-        window.ChartUtils.createChartAnnotations(eventsByDate);
-
-      // Create and render chart
-      const chartConfig = window.ChartUtils.createChartConfig(
-        sortedEvolutionData,
-        annotations,
-        yAxisConfig,
-        period,
-        eventsByDate
-      );
-
-      const chart = window.ChartUtils.createChart(
-        "portfolioChart",
-        chartConfig
-      );
-
-      if (chart) {
-        console.log(
-          `✅ Chart created successfully with ${sortedEvolutionData.length} data points`
-        );
-
-        // Add simple custom legend below the chart
-        this.createSimpleChartLegend();
-      }
-    } catch (error) {
-      console.error("❌ Error in loadChartData:", error);
-    }
+    return await this.helpers.loadChartData(period);
   }
 
   // ADD this function to renderer.js:
@@ -1862,48 +1733,11 @@ class EnhancedPortfolioApp {
     }
   }
   async exportDatabase() {
-    try {
-      const result = await window.IPCCommunication.Database.exportDatabase();
-
-      if (result.success) {
-        alert(`Database exported successfully to:\n${result.filePath}`);
-      } else {
-        alert("Export cancelled or failed");
-      }
-    } catch (error) {
-      console.error("Error exporting database:", error);
-      alert("Error exporting database: " + error.message);
-    }
+    return await window.UIStateManager.Database.exportDatabase(this);
   }
 
   async importDatabase(mergeMode = false) {
-    try {
-      const confirmMessage = mergeMode
-        ? "Are you sure you want to merge the imported data with existing data?"
-        : "Are you sure you want to replace all existing data with imported data?\n\nThis action cannot be undone!";
-
-      if (!confirm(confirmMessage)) {
-        return;
-      }
-
-      const result =
-        await window.IPCCommunication.Database.importDatabase(mergeMode);
-
-      if (result.success) {
-        alert(
-          `Database ${
-            mergeMode ? "merged" : "imported"
-          } successfully!\nImported ${result.importedEntries} entries.`
-        );
-        await this.loadPortfolioData();
-        this.switchTab("portfolio");
-      } else {
-        alert("Import cancelled or failed");
-      }
-    } catch (error) {
-      console.error("Error importing database:", error);
-      alert("Error importing database: " + error.message);
-    }
+    return await window.UIStateManager.Database.importDatabase(this, mergeMode);
   }
   debugDeleteElements() {
     console.log("🔍 Element access test:");
@@ -1974,23 +1808,7 @@ class EnhancedPortfolioApp {
     }
   }
   async debugDatabase() {
-    try {
-      const result = await window.IPCCommunication.Database.debugState();
-      console.log("=== DATABASE DEBUG INFO ===");
-      console.log("Portfolio Entries:", result.portfolioEntries);
-      console.log("Recent Price History:", result.priceHistory);
-      console.log("Evolution Data:", result.evolutionData);
-      console.log("Counts:", {
-        entries: result.entriesCount,
-        prices: result.pricesCount,
-        evolution: result.evolutionCount,
-      });
-      console.log("=== END DEBUG ===");
-
-      return result;
-    } catch (error) {
-      console.error("Debug error:", error);
-    }
+    return await window.UIStateManager.Database.debugDatabase(this);
   }
 }
 
