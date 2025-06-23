@@ -297,6 +297,49 @@ const TabManager = {
       }
     }
   },
+  /**
+   * Toggle notes expansion/collapse in evolution table
+   * EXTRACTED FROM: renderer.js toggleNotes() method
+   * @param {Object} app - Application instance
+   * @param {string} noteId - Unique ID for the note entry
+   * @param {boolean} expand - Whether to expand (true) or collapse (false)
+   */
+  toggleNotes(app, noteId, expand) {
+    try {
+      const shortDiv = document.getElementById(`short-${noteId}`);
+      const fullDiv = document.getElementById(`full-${noteId}`);
+
+      if (!shortDiv || !fullDiv) {
+        console.warn(`Toggle notes elements not found for ID: ${noteId}`);
+        return;
+      }
+
+      if (expand) {
+        // Expand notes
+        shortDiv.style.display = "none";
+        fullDiv.style.display = "block";
+
+        // Smooth scroll to keep the expanded content in view
+        setTimeout(() => {
+          fullDiv.scrollIntoView({
+            behavior: "smooth",
+            block: "nearest",
+            inline: "nearest",
+          });
+        }, 100);
+
+        console.log(`📄 Expanded notes for entry: ${noteId}`);
+      } else {
+        // Collapse notes
+        fullDiv.style.display = "none";
+        shortDiv.style.display = "flex";
+
+        console.log(`📋 Collapsed notes for entry: ${noteId}`);
+      }
+    } catch (error) {
+      console.error("Error toggling notes:", error);
+    }
+  },
 };
 
 /**
