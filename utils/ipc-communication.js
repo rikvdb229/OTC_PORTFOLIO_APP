@@ -40,6 +40,9 @@ const WindowOperations = {
 /**
  * Portfolio data operations
  */
+/**
+ * Portfolio data operations
+ */
 const PortfolioOperations = {
   async getOverview() {
     try {
@@ -119,14 +122,110 @@ const PortfolioOperations = {
     }
   },
 
-  async getAvailableExercisePrices() {
+  /**
+   * Load sales history data via IPC
+   * MOVED FROM: renderer.js loadSalesHistory()
+   * @param {Object} app - Application instance for data storage
+   * @returns {Array} Sales history data
+   */
+  async loadSalesHistory(app) {
     try {
-      return await window.ipcRenderer.invoke("get-available-exercise-prices");
+      const salesHistory = await window.ipcRenderer.invoke("get-sales-history");
+
+      if (salesHistory.error) {
+        console.error("Error loading sales history:", salesHistory.error);
+        // Initialize empty on error
+        if (app) {
+          app.salesData = [];
+        }
+        return [];
+      }
+
+      // Store data for sorting if app instance provided
+      if (app) {
+        app.salesData = salesHistory;
+      }
+
+      // Use HTML generator to render
+      if (app && app.htmlGen) {
+        app.htmlGen.renderSalesTable(salesHistory);
+      }
+
+      return salesHistory;
     } catch (error) {
-      console.error("❌ Error getting available exercise prices:", error);
-      throw error;
+      console.error("Error loading sales history:", error);
+      // Initialize empty on error
+      if (app) {
+        app.salesData = [];
+      }
+      return [];
     }
   },
+
+  /**
+   * Load grant history data via IPC
+   * MOVED FROM: renderer.js loadGrantHistory()
+   * @param {Object} app - Application instance for data storage
+   * @returns {Array} Grant history data
+   */
+  async loadGrantHistory(app) {
+    try {
+      const grantHistory = await window.ipcRenderer.invoke("get-grant-history");
+
+      console.log("Grant history received:", grantHistory);
+
+      if (grantHistory.error) {
+        console.error("Error loading grant history:", grantHistory.error);
+
+        // Show error message in table if app instance provided
+        if (app) {
+          const tableBody = document.getElementById("grantTableBody");
+          if (tableBody) {
+            tableBody.innerHTML = `
+              <tr class="no-data">
+                <td colspan="7">
+                  <div class="no-data-message">
+                    <p>Error loading grant history: ${grantHistory.error}</p>
+                  </div>
+                </td>
+              </tr>
+            `;
+          }
+
+          // Initialize grant filters and empty data
+          if (app.initializeGrantFilters) {
+            app.initializeGrantFilters();
+          }
+          app.grantData = [];
+        }
+
+        return [];
+      }
+
+      // Store data for sorting if app instance provided
+      if (app) {
+        app.grantData = grantHistory;
+      }
+
+      // Use HTML generator to render
+      if (app && app.htmlGen) {
+        app.htmlGen.renderGrantTable(grantHistory);
+      }
+
+      return grantHistory;
+    } catch (error) {
+      console.error("Error loading grant history:", error);
+      // Initialize empty on error
+      if (app) {
+        app.grantData = [];
+      }
+      return [];
+    }
+  },
+  /**
+   * Get portfolio events for chart annotations
+   * @returns {Array} Portfolio events data
+   */
   async getPortfolioEvents() {
     try {
       return await window.ipcRenderer.invoke("get-portfolio-events");

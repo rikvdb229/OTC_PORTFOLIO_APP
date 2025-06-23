@@ -1769,6 +1769,9 @@ const StatsManager = {
 /**
  * Table management for sorting and display
  */
+/**
+ * Table management for sorting and display
+ */
 const TableManager = {
   /**
    * Initialize table sorting state
@@ -1785,34 +1788,27 @@ const TableManager = {
    * @param {string} column - Column to sort by
    */
   smartSort(app, column) {
-    console.log(`🔄 Smart sorting by column: ${column}`);
+    console.log(`🎯 Smart sort requested for column: ${column}`);
 
-    // Detect active tab and get corresponding data
-    const tabInfo = this.detectActiveTabAndData(app);
+    // Determine the active tab and get appropriate data mapping
+    const tabInfo = this.getActiveTabInfo(app);
     if (!tabInfo) {
-      console.warn("Could not detect active tab or data");
+      console.warn("Cannot determine active tab for smart sorting");
       return;
     }
 
-    const { tabName, data, updateMethod } = tabInfo;
+    console.log(`📊 Sorting ${tabInfo.tabName} table by ${column}`);
 
-    // Check if we have data to sort
-    if (!data || data.length === 0) {
-      console.warn(`No data available for ${tabName} tab`);
-      return;
-    }
-
-    // Perform the sorting
-    this.sortTable(app, column, data, updateMethod);
-    console.log(`✅ ${tabName} table sorted by ${column}`);
+    // Perform the sort using the tab-specific data and callback
+    this.sortTable(app, column, tabInfo.data, tabInfo.updateMethod);
   },
 
   /**
-   * Detect which tab is active and return corresponding data and update method
+   * Determine the active tab and return relevant data mapping
    * @param {Object} app - Application instance
-   * @returns {Object|null} Tab information with data and update method
+   * @returns {Object|null} Tab info with data and update method
    */
-  detectActiveTabAndData(app) {
+  getActiveTabInfo(app) {
     const activeTab = document.querySelector(".nav-tab.active");
     if (!activeTab) {
       console.warn("No active tab found");
@@ -1820,8 +1816,9 @@ const TableManager = {
     }
 
     const tabText = activeTab.textContent.trim().toLowerCase();
+    console.log(`🔍 Active tab detected: ${tabText}`);
 
-    // Map tabs to their data and update methods
+    // Define mappings between tab keywords and data sources
     const tabMappings = [
       {
         keywords: ["portfolio"],
@@ -1829,7 +1826,7 @@ const TableManager = {
         getData: () => app.portfolioData,
         updateMethod: (sortedData) => {
           app.portfolioData = sortedData;
-          app.updatePortfolioTable(sortedData);
+          app.htmlGen.renderPortfolioTable(sortedData);
         },
       },
       {
@@ -2041,6 +2038,142 @@ const TableManager = {
       `;
     }
     // If hiding, the calling function should update with actual content
+  },
+
+  /**
+   * ===== GRANT HISTORY FILTERING FUNCTIONALITY =====
+   * MOVED FROM: renderer.js filterGrantHistory()
+   * Apply filtering logic to grant history table rows
+   * @param {Object} app - Application instance (optional, for future extension)
+   */
+  filterGrantHistory(app = null) {
+    console.log("🎛️ Applying grant filters with improved matching...");
+
+    // Get active filter states
+    const activeFilters = new Set();
+    document
+      .querySelectorAll("#grant-history-tab-header .filter-toggle.active")
+      .forEach((toggle) => {
+        activeFilters.add(toggle.dataset.filter);
+      });
+
+    console.log("Active filters:", Array.from(activeFilters));
+
+    // Apply filtering to table rows - ROBUST STATUS MATCHING
+    const tableRows = document.querySelectorAll(
+      "#grantTableBody tr:not(.no-data)"
+    );
+    let visibleCount = 0;
+    let totalCount = 0;
+
+    tableRows.forEach((row) => {
+      totalCount++;
+      const statusCell = row.querySelector("td:last-child"); // Status column
+
+      if (statusCell) {
+        // Get the actual text content and normalize it
+        const statusText = statusCell.textContent.toLowerCase().trim();
+
+        // Debug log for each row
+        console.log(`Row status text: "${statusText}"`);
+
+        let shouldShow = false;
+
+        // ROBUST MATCHING - Handle all variations
+        if (activeFilters.has("active")) {
+          if (statusText === "active" || statusText.includes("active")) {
+            shouldShow = true;
+          }
+        }
+
+        if (activeFilters.has("partially-sold")) {
+          if (
+            statusText === "partially sold" ||
+            statusText.includes("partially sold") ||
+            statusText.includes("partially") ||
+            statusText === "partial"
+          ) {
+            shouldShow = true;
+          }
+        }
+
+        if (activeFilters.has("sold")) {
+          if (
+            (statusText === "sold" || statusText.includes("sold")) &&
+            !statusText.includes("partially")
+          ) {
+            shouldShow = true;
+          }
+        }
+
+        // Clear any existing filter classes first
+        row.classList.remove("filtered-hidden");
+        row.style.display = "";
+
+        // Then apply filtering
+        if (shouldShow) {
+          visibleCount++;
+        } else {
+          row.classList.add("filtered-hidden");
+          row.style.display = "none";
+        }
+      }
+    });
+
+    console.log(
+      `✅ Grant filtering applied: ${visibleCount}/${totalCount} rows visible`
+    );
+    console.log(
+      `Filter states: Active=${activeFilters.has(
+        "active"
+      )}, Partially-Sold=${activeFilters.has(
+        "partially-sold"
+      )}, Sold=${activeFilters.has("sold")}`
+    );
+
+    // Update filter summary
+    this.updateGrantFilterSummary(activeFilters, visibleCount, totalCount);
+  },
+
+  /**
+   * Update grant filter summary display
+   * MOVED FROM: renderer.js updateGrantFilterSummary()
+   * @param {Set} activeFilters - Set of active filter names
+   * @param {number} visibleCount - Number of visible rows
+   * @param {number} totalCount - Total number of rows
+   */
+  updateGrantFilterSummary(activeFilters, visibleCount, totalCount) {
+    const filterCount = activeFilters.size;
+
+    if (filterCount === 3 || filterCount === 0) {
+      console.log(`📊 All filters active: ${totalCount} grants shown`);
+    } else {
+      const filterNames = Array.from(activeFilters).join(", ");
+      console.log(
+        `📊 Filtered by: ${filterNames} (${visibleCount}/${totalCount} grants shown)`
+      );
+    }
+  },
+
+  /**
+   * Initialize grant filters to active state
+   * MOVED FROM: renderer.js initializeGrantFilters()
+   * @param {Object} app - Application instance (optional, for consistency)
+   */
+  initializeGrantFilters(app = null) {
+    console.log("🔧 Initializing grant filters...");
+
+    // Set all filters to active by default
+    const toggles = document.querySelectorAll(
+      "#grant-history-tab-header .filter-toggle"
+    );
+    toggles.forEach((toggle) => {
+      toggle.classList.add("active");
+      toggle.classList.remove("inactive");
+    });
+
+    // Apply initial filtering (should show all)
+    this.filterGrantHistory(app);
   },
 };
 /**

@@ -1255,168 +1255,26 @@ class EnhancedPortfolioApp {
     window.UIStateManager.switchTab(tabName);
   }
 
-  // ===== SALES HISTORY TAB =====
-  async loadSalesHistory() {
-    try {
-      const salesHistory = await ipcRenderer.invoke("get-sales-history");
-
-      if (salesHistory.error) {
-        console.error("Error loading sales history:", salesHistory.error);
-        return;
-      }
-
-      // ADD THIS LINE - Store data for sorting:
-      this.salesData = salesHistory;
-
-      // Use HTML generator
-      this.htmlGen.renderSalesTable(salesHistory);
-    } catch (error) {
-      console.error("Error loading sales history:", error);
-      // ADD THIS LINE - Initialize empty on error:
-      this.salesData = [];
-    }
-  }
-
   // ===== GRANT HISTORY TAB =====
-  async loadGrantHistory() {
-    try {
-      const grantHistory = await ipcRenderer.invoke("get-grant-history");
-
-      console.log("Grant history received:", grantHistory);
-
-      if (grantHistory.error) {
-        console.error("Error loading grant history:", grantHistory.error);
-        const tableBody = document.getElementById("grantTableBody");
-        if (tableBody) {
-          tableBody.innerHTML = `
-        <tr class="no-data">
-          <td colspan="7">
-            <div class="no-data-message">
-              <p>Error loading grant history: ${grantHistory.error}</p>
-            </div>
-          </td>
-        </tr>
-      `;
-        }
-        this.initializeGrantFilters();
-        return;
-      }
-
-      // ADD THIS LINE - Store data for sorting:
-      this.grantData = grantHistory;
-
-      // Use HTML generator
-      this.htmlGen.renderGrantTable(grantHistory);
-    } catch (error) {
-      console.error("Error loading grant history:", error);
-      // ADD THIS LINE - Initialize empty on error:
-      this.grantData = [];
-    }
+  async loadSalesHistory() {
+    return await window.IPCCommunication.Portfolio.loadSalesHistory(this);
   }
-  // ===== GRANT HISTORY FILTERING =====
-  // ===== MODERN GRANT FILTERING - HIDE ROWS =====
-  // ===== MODERN GRANT FILTERING - FIXED MATCHING LOGIC =====
-  filterGrantHistory() {
-    console.log("🎛️ Applying grant filters with improved matching...");
 
-    // Get active filter states
-    const activeFilters = new Set();
-    document
-      .querySelectorAll("#grant-history-tab-header .filter-toggle.active")
-      .forEach((toggle) => {
-        activeFilters.add(toggle.dataset.filter);
-      });
-
-    console.log("Active filters:", Array.from(activeFilters));
-
-    // Apply filtering to table rows - ROBUST STATUS MATCHING
-    const tableRows = document.querySelectorAll(
-      "#grantTableBody tr:not(.no-data)"
-    );
-    let visibleCount = 0;
-    let totalCount = 0;
-
-    tableRows.forEach((row) => {
-      totalCount++;
-      const statusCell = row.querySelector("td:last-child"); // Status column
-
-      if (statusCell) {
-        // Get the actual text content and normalize it
-        const statusText = statusCell.textContent.toLowerCase().trim();
-
-        // Debug log for each row
-        console.log(`Row status text: "${statusText}"`);
-
-        let shouldShow = false;
-
-        // ROBUST MATCHING - Handle all variations
-        if (activeFilters.has("active")) {
-          if (statusText === "active" || statusText.includes("active")) {
-            shouldShow = true;
-          }
-        }
-
-        if (activeFilters.has("partially-sold")) {
-          if (
-            statusText === "partially sold" ||
-            statusText.includes("partially sold") ||
-            statusText.includes("partially") ||
-            statusText === "partial"
-          ) {
-            shouldShow = true;
-          }
-        }
-
-        if (activeFilters.has("sold")) {
-          if (
-            (statusText === "sold" || statusText.includes("sold")) &&
-            !statusText.includes("partially")
-          ) {
-            shouldShow = true;
-          }
-        }
-
-        // Clear any existing filter classes first
-        row.classList.remove("filtered-hidden");
-        row.style.display = "";
-
-        // Then apply filtering
-        if (shouldShow) {
-          visibleCount++;
-        } else {
-          row.classList.add("filtered-hidden");
-          row.style.display = "none";
-        }
-      }
-    });
-
-    console.log(
-      `✅ Grant filtering applied: ${visibleCount}/${totalCount} rows visible`
-    );
-    console.log(
-      `Filter states: Active=${activeFilters.has(
-        "active"
-      )}, Partially-Sold=${activeFilters.has(
-        "partially-sold"
-      )}, Sold=${activeFilters.has("sold")}`
-    );
-
-    // Update filter summary
-    this.updateGrantFilterSummary(activeFilters, visibleCount, totalCount);
+  // ===== SALES HISTORY TAB =====
+  async loadGrantHistory() {
+    return await window.IPCCommunication.Portfolio.loadGrantHistory(this);
   }
 
   // ===== UPDATE GRANT FILTER SUMMARY =====
   updateGrantFilterSummary(activeFilters, visibleCount, totalCount) {
-    const filterCount = activeFilters.size;
-
-    if (filterCount === 3 || filterCount === 0) {
-      console.log(`📊 All filters active: ${totalCount} grants shown`);
-    } else {
-      const filterNames = Array.from(activeFilters).join(", ");
-      console.log(
-        `📊 Filtered by: ${filterNames} (${visibleCount}/${totalCount} grants shown)`
-      );
-    }
+    window.UIStateManager.Tables.updateGrantFilterSummary(
+      activeFilters,
+      visibleCount,
+      totalCount
+    );
+  }
+  filterGrantHistory() {
+    window.UIStateManager.Tables.filterGrantHistory(this);
   }
 
   // ===== UPDATE FILTER BUTTON COUNTS =====
@@ -1456,19 +1314,7 @@ class EnhancedPortfolioApp {
 
   // ===== INITIALIZE GRANT FILTERS =====
   initializeGrantFilters() {
-    console.log("🔧 Initializing grant filters...");
-
-    // Set all filters to active by default
-    const toggles = document.querySelectorAll(
-      "#grant-history-tab-header .filter-toggle"
-    );
-    toggles.forEach((toggle) => {
-      toggle.classList.add("active");
-      toggle.classList.remove("inactive");
-    });
-
-    // Apply initial filtering (should show all)
-    this.filterGrantHistory();
+    window.UIStateManager.Tables.initializeGrantFilters(this);
   }
 
   // ===== DATABASE MANAGEMENT =====
