@@ -156,7 +156,7 @@ class HTMLGenerators {
               <div class="no-grants-content">
                 <h3>🎯 Ready to Add Your First Grant!</h3>
                 <p>Price data is available. Now you can add your option grants.</p>
-                <p>Use the "➕ Add Options" button above to start building your portfolio.</p>
+                <p>Use the "➕ Add Grants" button above to start building your portfolio.</p>
               </div>
             </div>
           </td>

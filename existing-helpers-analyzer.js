@@ -155,7 +155,7 @@ class ExistingHelpersAnalyzer {
       "updateActionButtons",
       "getSellingStatusText",
       "showDeleteConfirmModal",
-      "showAddOptionsModal",
+      "showaddGrantsModal",
       "showMergeGrantsModal",
       "showSellModal",
       "showDeleteDatabaseModal",

@@ -427,14 +427,11 @@ const ModalManager = {
 
     const modals = window.DOMHelpers.safeQuerySelectorAll(".modal");
     modals.forEach((modal) => {
-      // 🆕 ADD THIS: Check if Add Options modal is being closed BEFORE removing active class
-      if (
-        modal.id === "addOptionsModal" &&
-        modal.classList.contains("active")
-      ) {
-        console.log("🧹 Clearing Add Options form on modal close");
-        if (app && app.clearAddOptionsForm) {
-          app.clearAddOptionsForm();
+      // 🆕 ADD THIS: Check if Add Grants modal is being closed BEFORE removing active class
+      if (modal.id === "addGrantsModal" && modal.classList.contains("active")) {
+        console.log("🧹 Clearing Add Grants form on modal close");
+        if (app && app.clearaddGrantsForm) {
+          app.clearaddGrantsForm();
         }
       }
 
@@ -508,11 +505,11 @@ const ModalManager = {
   },
 
   /**
-   * Show Add Options modal with setup
+   * Show Add Grants modal with setup
    * @param {Object} app - Application instance
    */
-  showAddOptionsModal(app) {
-    this.showModal("addOptionsModal", () => {
+  showaddGrantsModal(app) {
+    this.showModal("addGrantsModal", () => {
       // Reset form fields
       window.DOMHelpers.safeSetContent(
         window.DOMHelpers.safeGetElementById("grantDate"),
@@ -1494,19 +1491,19 @@ const ActionButtonManager = {
    * @param {boolean} hasData - Whether portfolio has data
    */
   updateActionButtons(app, hasData) {
-    if (!app.addOptionsBtn) return;
+    if (!app.addGrantsBtn) return;
 
-    app.addOptionsBtn.disabled = !hasData;
+    app.addGrantsBtn.disabled = !hasData;
 
     if (!hasData) {
-      app.addOptionsBtn.textContent = "➕ Add Options";
-      app.addOptionsBtn.title =
+      app.addGrantsBtn.textContent = "➕ Add Grants";
+      app.addGrantsBtn.title =
         "Please update prices first to enable adding options";
-      app.addOptionsBtn.classList.add("btn-disabled");
+      app.addGrantsBtn.classList.add("btn-disabled");
     } else {
-      app.addOptionsBtn.textContent = "➕ Add Options";
-      app.addOptionsBtn.title = "Add new option grants to your portfolio";
-      app.addOptionsBtn.classList.remove("btn-disabled");
+      app.addGrantsBtn.textContent = "➕ Add Grants";
+      app.addGrantsBtn.title = "Add new option grants to your portfolio";
+      app.addGrantsBtn.classList.remove("btn-disabled");
     }
   },
 
@@ -2163,14 +2160,14 @@ const TableManager = {
   },
 };
 /**
- * Form management - handles Add Options form logic
+ * Form management - handles Add Grants form logic
  */
 const FormManager = {
   /**
-   * Clear the add options form
-   * MIGRATED FROM: config.js FormManager.clearAddOptionsForm()
+   * Clear the Add Grants form
+   * MIGRATED FROM: config.js FormManager.clearaddGrantsForm()
    */
-  clearAddOptionsForm(app) {
+  clearaddGrantsForm(app) {
     try {
       const grantDateElement = document.getElementById("grantDate");
       const exercisePriceElement = document.getElementById("exercisePrice");

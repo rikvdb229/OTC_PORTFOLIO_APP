@@ -130,10 +130,10 @@ const PortfolioActionHandlers = {
   initialize(app) {
     console.log("💼 Setting up portfolio action handlers...");
 
-    // Add options button
-    if (app.addOptionsBtn) {
-      window.DOMHelpers.safeAddEventListener(app.addOptionsBtn, "click", () => {
-        app.showAddOptionsModal();
+    // Add Grants button
+    if (app.addGrantsBtn) {
+      window.DOMHelpers.safeAddEventListener(app.addGrantsBtn, "click", () => {
+        app.showaddGrantsModal();
       });
     }
     console.log("✅ Portfolio action handlers initialized");
@@ -280,9 +280,9 @@ const ModalHandlers = {
   setupModalButtons(app) {
     // Define modal button mappings
     const modalButtons = [
-      // Add Options Modal
-      { id: "cancelAddOptions", handler: () => app.closeModals() },
-      { id: "confirmAddOptions", handler: () => app.addOptions() },
+      // Add Grants Modal
+      { id: "canceladdGrants", handler: () => app.closeModals() },
+      { id: "confirmaddGrants", handler: () => app.addGrants() },
 
       // Merge Grants Modal
       { id: "cancelMergeGrants", handler: () => app.closeModals() },
@@ -330,7 +330,7 @@ const FormHandlers = {
 
     // Define form input mappings
     const formInputs = [
-      // Add Options form
+      // Add Grants form
       {
         id: "grantDate",
         event: "change",
