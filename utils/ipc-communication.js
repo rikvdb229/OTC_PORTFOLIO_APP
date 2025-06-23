@@ -185,6 +185,10 @@ const PriceOperations = {
       if (latestPrice === today) {
         // We have today's prices from KBC
         window.UIStateManager.Notifications.hidePriceUpdateNotification(app);
+        console.log(
+          "🔔 Attempting to hide notification - element found:",
+          !!document.getElementById("priceUpdateNotification")
+        );
         app.updatePricesBtn.disabled = true;
         app.updatePricesBtn.textContent = "✅ Updated";
         app.updatePricesBtn.title = `Latest prices from KBC: ${new Date(

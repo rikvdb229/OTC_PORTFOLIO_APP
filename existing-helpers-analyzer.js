@@ -142,6 +142,25 @@ class ExistingHelpersAnalyzer {
         ],
       },
     };
+
+    // Known migrated functions (manually curated list)
+    this.knownMigratedFunctions = [
+      "toggleNotes",
+      "openSettings",
+      "closeSettingsPanel",
+      "closeModals",
+      "updatePortfolioStats",
+      "showPriceUpdateNotification",
+      "hidePriceUpdateNotification",
+      "updateActionButtons",
+      "getSellingStatusText",
+      "showDeleteConfirmModal",
+      "showAddOptionsModal",
+      "showMergeGrantsModal",
+      "showSellModal",
+      "showDeleteDatabaseModal",
+      "checkPriceUpdateStatus",
+    ];
   }
 
   analyze() {
@@ -190,13 +209,20 @@ class ExistingHelpersAnalyzer {
   }
 
   /**
-   * NEW: Identify functions that are already migrated (wrapper functions)
-   * These only contain a single call to a helper function
+   * IMPROVED: Identify functions that are already migrated (wrapper functions)
+   * Uses both pattern detection AND known migrated function list
    */
   identifyWrapperFunctions() {
     this.wrapperFunctions = [];
 
     this.functions.forEach((funcName) => {
+      // Check if it's in our known migrated list
+      if (this.knownMigratedFunctions.includes(funcName)) {
+        this.wrapperFunctions.push(funcName);
+        return;
+      }
+
+      // Check if it's a wrapper function by analyzing the body
       const funcBody = this.extractFunctionBody(funcName);
       if (this.isWrapperFunction(funcBody)) {
         this.wrapperFunctions.push(funcName);
@@ -223,52 +249,96 @@ class ExistingHelpersAnalyzer {
   }
 
   /**
-   * Extract the body of a specific function
+   * Extract the body of a specific function with better bracket matching
    */
   extractFunctionBody(funcName) {
-    const funcRegex = new RegExp(
-      `${funcName}\\s*\\([^)]*\\)\\s*\\{([\\s\\S]*?)^\\s*\\}`,
-      "gm"
+    const lines = this.content.split("\n");
+    let inFunction = false;
+    let bracketCount = 0;
+    let funcBody = [];
+    let startFound = false;
+
+    // Create regex to match function start
+    const funcStartRegex = new RegExp(
+      `^\\s*(?:async\\s+)?${funcName}\\s*\\([^)]*\\)\\s*\\{`
     );
 
-    const match = funcRegex.exec(this.content);
-    return match ? match[1].trim() : "";
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+
+      if (!inFunction && funcStartRegex.test(line)) {
+        inFunction = true;
+        startFound = true;
+        // Count opening braces in the function declaration line
+        const openBraces = (line.match(/\{/g) || []).length;
+        const closeBraces = (line.match(/\}/g) || []).length;
+        bracketCount = openBraces - closeBraces;
+        continue;
+      }
+
+      if (inFunction) {
+        // Count braces in current line
+        const openBraces = (line.match(/\{/g) || []).length;
+        const closeBraces = (line.match(/\}/g) || []).length;
+        bracketCount += openBraces - closeBraces;
+
+        // If we haven't closed all braces, add this line to function body
+        if (bracketCount > 0) {
+          funcBody.push(line);
+        } else {
+          // Function ended
+          break;
+        }
+      }
+    }
+
+    return funcBody.join("\n").trim();
   }
 
   /**
-   * Check if a function is a wrapper (only calls helper)
+   * IMPROVED: Check if a function is a wrapper (only calls helper)
    */
   isWrapperFunction(funcBody) {
-    // Remove comments and whitespace
+    if (!funcBody) return false;
+
+    // Remove comments and normalize whitespace
     const cleanBody = funcBody
       .replace(/\/\*[\s\S]*?\*\//g, "") // Remove block comments
       .replace(/\/\/.*$/gm, "") // Remove line comments
       .replace(/\s+/g, " ") // Normalize whitespace
       .trim();
 
-    // Check for common wrapper patterns (updated for all helpers)
+    // If body is empty or very short, might be a wrapper
+    if (cleanBody.length === 0) return false;
+
+    // Check for common wrapper patterns
     const wrapperPatterns = [
-      /^(return\s+)?window\.UIStateManager\./,
-      /^(return\s+)?window\.IPCCommunication\./,
-      /^(return\s+)?this\.helpers\./,
-      /^(return\s+)?window\.DOMHelpers\./,
-      /^(return\s+)?window\.EventHandlers\./,
-      /^(return\s+)?window\.AppHelpers/,
-      /^(return\s+)?window\.FormatHelpers\./,
-      /^(return\s+)?window\.ChartVisualization\./,
-      /^(return\s+)?window\.PortfolioCalculations\./,
-      /^(return\s+)?window\.Config\./,
-      /^(return\s+)?window\.HTMLGenerators\./,
-      /^(return\s+)?this\.htmlGenerators\./,
-      /^(return\s+)?this\.chartVisualization\./,
-      /^(return\s+)?this\.portfolioCalculations\./,
+      /window\.UIStateManager\./,
+      /window\.IPCCommunication\./,
+      /this\.helpers\./,
+      /window\.DOMHelpers\./,
+      /window\.EventHandlers\./,
+      /window\.AppHelpers/,
+      /window\.FormatHelpers\./,
+      /window\.ChartVisualization\./,
+      /window\.PortfolioCalculations\./,
+      /window\.Config\./,
+      /window\.HTMLGenerators\./,
+      /this\.htmlGen\./,
     ];
 
-    // If the function body matches a wrapper pattern and is short
-    return (
-      wrapperPatterns.some((pattern) => pattern.test(cleanBody)) &&
-      cleanBody.length < 100
-    ); // Simple wrapper functions should be short
+    // Check if the function body contains mainly helper calls
+    const hasHelperCall = wrapperPatterns.some((pattern) =>
+      pattern.test(cleanBody)
+    );
+
+    // Check if it's a simple function (few lines, mostly helper calls)
+    const lines = cleanBody
+      .split(/[;\n]/)
+      .filter((line) => line.trim().length > 0);
+    const isSimple = lines.length <= 3; // Simple functions have 3 or fewer statements
+
+    return hasHelperCall && isSimple;
   }
 
   isValidFunction(name) {

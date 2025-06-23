@@ -335,7 +335,7 @@ textarea {
   white-space: nowrap;
   font-family: inherit;
 }
-#priceUpdateNotification,
+#priceUpdateNotification:not([style*="display: none"]),
 #settingsToggle,
 #updatePricesBtn {
   display: flex !important;
@@ -2910,4 +2910,8 @@ body {
   .notes-full {
     padding-right: 22px; /* Adjust for smaller button */
   }
+}
+/* Force hide notification when JavaScript sets display: none */
+#priceUpdateNotification[style*="display: none"] {
+  display: none !important;
 }

@@ -35,7 +35,7 @@ class EnhancedPortfolioApp {
     this.loadPortfolioData();
     this.loadSettings();
     this.checkDataAvailability();
-    this.checkPriceUpdateStatus();
+    window.IPCCommunication.Price.checkPriceUpdateStatus(this);
     this.checkAutoUpdate();
   }
 
@@ -533,7 +533,7 @@ class EnhancedPortfolioApp {
 
   // ===== PRICE UPDATE FUNCTIONALITY =====
   async checkPriceUpdateStatus() {
-    window.IPCCommunication.Price.checkPriceUpdateStatus(this);
+    await window.IPCCommunication.Price.checkPriceUpdateStatus(this);
   }
 
   // UPDATED: After successful price update, recheck status
@@ -562,8 +562,7 @@ class EnhancedPortfolioApp {
         // Reload data
         await this.loadPortfolioData();
         await this.checkDataAvailability();
-        await this.checkPriceUpdateStatus();
-
+        await window.IPCCommunication.Price.checkPriceUpdateStatus(this);
         setTimeout(() => {
           // Use UI State Manager to close modal
           window.UIStateManager.Modals.closeAllModals(this);
