@@ -1104,6 +1104,228 @@ const ModalManager = {
       }
     });
   },
+  /**
+   * Show detailed option information modal with chart
+   * @param {Object} app - Application instance
+   * @param {number} entryId - Entry ID to show info for
+   */
+  async showOptionInfoModal(app, entryId) {
+    const entry = app.portfolioData.find((e) => e.id === entryId);
+    if (!entry) {
+      alert("Portfolio entry not found");
+      return;
+    }
+
+    try {
+      console.log("📊 Loading option info for entry:", entryId);
+
+      // Get price history for this option
+      const priceHistory = await window.ipcRenderer.invoke(
+        "get-option-price-history",
+        entry.exercise_price,
+        entry.grant_date
+      );
+
+      console.log("Price history data:", priceHistory);
+
+      // Show modal with setup callback
+      this.showModal("optionInfoModal", () => {
+        // Populate modal title
+        document.getElementById("optionInfoTitle").textContent =
+          `${app.helpers.formatFundName(entry.fund_name)} Option Details`;
+
+        // Populate option summary
+        document.querySelector(".option-summary").innerHTML = `
+          <div class="option-fund-info">
+            <h5>📊 Fund Information</h5>
+            <div class="fund-details">
+              <div class="fund-detail">
+                <strong>Underlying Fund:</strong>
+                <span>${entry.fund_name || "Unknown Fund"}</span>
+              </div>
+              <div class="fund-detail">
+                <strong>Grant Date:</strong>
+                <span>${new Date(entry.grant_date).toLocaleDateString()}</span>
+              </div>
+              <div class="fund-detail">
+                <strong>Exercise Price:</strong>
+                <span>${app.helpers.formatCurrency(entry.exercise_price)}</span>
+              </div>
+              <div class="fund-detail">
+                <strong>Quantity:</strong>
+                <span>${entry.quantity_remaining.toLocaleString()} options</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="info-stats">
+            <div class="info-stat">
+              <h4>Current Value</h4>
+              <div class="stat-value">${app.helpers.formatCurrency(
+                entry.current_value || 0
+              )}</div>
+            </div>
+            <div class="info-stat">
+              <h4>Total Value</h4>
+              <div class="stat-value">${app.helpers.formatCurrency(
+                entry.current_total_value || 0
+              )}</div>
+            </div>
+            <div class="info-stat">
+              <h4>P&L vs Target</h4>
+              <div class="stat-value ${
+                entry.profit_loss_vs_target >= 0 ? "positive" : "negative"
+              }">
+                ${app.helpers.formatCurrency(entry.profit_loss_vs_target || 0)}
+              </div>
+            </div>
+            <div class="info-stat">
+              <h4>Return %</h4>
+              <div class="stat-value ${app.helpers.getReturnPercentageClass(
+                entry.current_return_percentage,
+                app.targetPercentage?.value || 65
+              )}">
+                ${
+                  entry.current_return_percentage
+                    ? entry.current_return_percentage.toFixed(1) + "%"
+                    : "N/A"
+                }
+              </div>
+            </div>
+          </div>
+          
+          <div class="option-restrictions">
+            <h5>🔒 Selling Information</h5>
+            <p><strong>Status:</strong> ${app.getSellingStatusText(
+              entry.selling_status
+            )}</p>
+            ${
+              entry.selling_status === "WAITING_PERIOD"
+                ? `<p><strong>Can sell after:</strong> ${new Date(
+                    entry.can_sell_after
+                  ).toLocaleDateString()}</p>`
+                : ""
+            }
+            ${
+              entry.selling_status === "EXPIRING_SOON" ||
+              entry.selling_status === "EXPIRED"
+                ? `<p><strong>Expires on:</strong> ${new Date(
+                    entry.expires_on
+                  ).toLocaleDateString()}</p>`
+                : ""
+            }
+          </div>
+        `;
+
+        // Handle chart creation using existing ChartUtils
+        const chartContainer = document.querySelector(
+          ".option-chart-container"
+        );
+        chartContainer.innerHTML = '<canvas id="optionInfoChart"></canvas>';
+
+        // Small delay to ensure DOM is ready
+        setTimeout(() => {
+          if (!window.ChartUtils.isChartLibraryAvailable()) {
+            window.ChartUtils.displayChartError(
+              "optionInfoChart",
+              "Chart Library Missing",
+              "Chart.js library not loaded"
+            );
+            return;
+          }
+
+          if (!priceHistory || priceHistory.length === 0) {
+            window.ChartUtils.displayNoDataMessage("optionInfoChart");
+            return;
+          }
+
+          // Create chart configuration for option price history
+          const chartConfig = {
+            type: "line",
+            data: {
+              labels: priceHistory.map((p) =>
+                new Date(p.price_date).toLocaleDateString()
+              ),
+              datasets: [
+                {
+                  label: "Price History",
+                  data: priceHistory.map((p) => p.current_value),
+                  borderColor: "#007acc",
+                  backgroundColor: "rgba(0, 122, 204, 0.1)",
+                  borderWidth: 2,
+                  fill: true,
+                  tension: 0.1,
+                  // 🆕 SUBTLE POINTS (only appear on hover):
+                  pointRadius: 0, // No visible points normally
+                  pointHoverRadius: 4, // Small points on hover
+                  pointBackgroundColor: "#007acc",
+                  pointBorderColor: "#ffffff",
+                  pointBorderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                title: {
+                  display: true,
+                  text: `${app.helpers.formatFundName(entry.fund_name)} Price History`,
+                  font: { size: 14, weight: "bold" },
+                },
+                legend: {
+                  display: false,
+                },
+                tooltip: {
+                  mode: "index",
+                  intersect: false,
+                  backgroundColor: "rgba(0, 0, 0, 0.8)",
+                  titleColor: "#fff",
+                  bodyColor: "#fff",
+                  callbacks: {
+                    title: function (tooltipItems) {
+                      return `Date: ${tooltipItems[0].label}`;
+                    },
+                    label: function (context) {
+                      return `Value: €${context.parsed.y.toFixed(2)}`;
+                    },
+                  },
+                },
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: {
+                    callback: function (value) {
+                      return "€" + value.toFixed(2);
+                    },
+                  },
+                },
+              },
+            },
+          };
+
+          // Use existing ChartUtils to create the chart
+          const chart = window.ChartUtils.createChart(
+            "optionInfoChart",
+            chartConfig
+          );
+          if (chart) {
+            console.log("✅ Option info chart created successfully");
+          } else {
+            window.ChartUtils.displayChartError(
+              "optionInfoChart",
+              "Chart Creation Failed",
+              "Unable to create price history chart"
+            );
+          }
+        }, 50);
+      });
+    } catch (error) {
+      console.error("Error showing option info:", error);
+      alert("Error loading option information: " + error.message);
+    }
+  },
 };
 
 /**
