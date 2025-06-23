@@ -133,6 +133,150 @@ const PortfolioOperations = {
  * Price update operations
  */
 const PriceOperations = {
+  /**
+   * Check price update status and show appropriate notifications
+   * @param {Object} app - Application instance
+   */
+  async checkPriceUpdateStatus(app) {
+    try {
+      // Get the latest price_date from the database (this comes from CSV column 6)
+      const latestPriceDate = await window.ipcRenderer.invoke(
+        "get-latest-price-date"
+      );
+
+      if (!latestPriceDate) {
+        // No price data at all
+        window.UIStateManager.Notifications.showNotification(
+          "priceUpdateNotification",
+          "No data available",
+          "info"
+        );
+        app.updatePricesBtn.disabled = false;
+        app.updatePricesBtn.textContent = "📊 Update Prices";
+        app.updatePricesBtn.title =
+          "No price data available - click to download from KBC";
+
+        // Add tooltip for notification
+        const notification = document.getElementById("priceUpdateNotification");
+        if (notification) {
+          notification.title =
+            "No price data available. Click 'Update Prices' to download from KBC.";
+          // Set info icon
+          const iconElement = notification.querySelector(".notification-icon");
+          if (iconElement) {
+            iconElement.textContent = "📊";
+          }
+        }
+        return;
+      }
+
+      // Get current time and date info
+      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+      const latestPrice = new Date(latestPriceDate).toISOString().split("T")[0];
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentDay = now.getDay(); // 0=Sunday, 6=Saturday
+      const isWeekend = currentDay === 0 || currentDay === 6;
+
+      console.log(
+        `Price date comparison: Latest from KBC: ${latestPrice}, Today: ${today}, Hour: ${currentHour}, Weekend: ${isWeekend}`
+      );
+
+      if (latestPrice === today) {
+        // We have today's prices from KBC
+        window.UIStateManager.Notifications.hidePriceUpdateNotification(app);
+        app.updatePricesBtn.disabled = true;
+        app.updatePricesBtn.textContent = "✅ Updated";
+        app.updatePricesBtn.title = `Latest prices from KBC: ${new Date(
+          latestPriceDate
+        ).toLocaleDateString()}`;
+      } else {
+        // Prices are from a previous day - show context-aware notification
+        const daysDiff = Math.floor(
+          (new Date(today) - new Date(latestPrice)) / (1000 * 60 * 60 * 24)
+        );
+
+        // Determine context-aware message and icon
+        let notificationMessage = "";
+        let notificationIcon = "";
+        let buttonTooltip = "";
+        let notificationTooltip = "";
+
+        if (isWeekend) {
+          notificationMessage = "Weekend: Friday's prices";
+          notificationIcon = "📅";
+          buttonTooltip = `Latest available: ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
+          notificationTooltip = `Markets closed on weekends. Latest prices from ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
+        } else if (currentHour < 9) {
+          notificationMessage = "Before 09:00: Yesterday's prices";
+          notificationIcon = "🕒";
+          buttonTooltip = `Current: ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates at 09:00 today.`;
+          notificationTooltip = `Too early for today's update. KBC publishes new prices at 09:00 on weekdays. Current prices from ${new Date(latestPriceDate).toLocaleDateString()}.`;
+        } else if (daysDiff === 1) {
+          notificationMessage = "Yesterday's prices - Check for update";
+          notificationIcon = "📊";
+          buttonTooltip = `Prices from ${new Date(latestPriceDate).toLocaleDateString()}. Click to check for today's update.`;
+          notificationTooltip = `Prices are from yesterday (${new Date(latestPriceDate).toLocaleDateString()}). Click 'Update Prices' to check for today's data.
+Note: KBC doesn't update on bank holidays.`;
+        } else {
+          // Same day but something's off
+          notificationMessage = "Check for updates";
+          notificationIcon = "🔄";
+          buttonTooltip = "Click to check for latest prices from KBC";
+          notificationTooltip =
+            "Click 'Update Prices' to check for the latest data from KBC.";
+        }
+
+        // Show notification with appropriate type
+        const notificationType = daysDiff > 2 ? "warning" : "info";
+        window.UIStateManager.Notifications.showNotification(
+          "priceUpdateNotification",
+          notificationMessage,
+          notificationType
+        );
+
+        // Configure button
+        app.updatePricesBtn.disabled = false;
+        app.updatePricesBtn.textContent = "📊 Update Prices";
+        app.updatePricesBtn.title = buttonTooltip;
+
+        // Configure notification details
+        const notification = document.getElementById("priceUpdateNotification");
+        if (notification) {
+          notification.title = notificationTooltip;
+
+          // Set appropriate icon
+          const iconElement = notification.querySelector(".notification-icon");
+          if (iconElement) {
+            iconElement.textContent = notificationIcon;
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error checking price update status:", error);
+      // Fallback to allow updates on error
+      window.UIStateManager.Notifications.showNotification(
+        "priceUpdateNotification",
+        "Status unknown",
+        "warning"
+      );
+      app.updatePricesBtn.disabled = false;
+      app.updatePricesBtn.textContent = "📊 Update Prices";
+      app.updatePricesBtn.title =
+        "Error checking price status - click to update";
+
+      // Add tooltip for notification
+      const notification = document.getElementById("priceUpdateNotification");
+      if (notification) {
+        notification.title =
+          "Error checking price status. Click 'Update Prices' to try again.";
+        const iconElement = notification.querySelector(".notification-icon");
+        if (iconElement) {
+          iconElement.textContent = "❓";
+        }
+      }
+    }
+  },
   async updatePrices() {
     try {
       return await window.ipcRenderer.invoke("scrape-data");

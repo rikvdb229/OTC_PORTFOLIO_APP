@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
 /**
- * ===== EXISTING HELPERS ANALYZER - PORTFOLIO TRACKER =====
+ * ===== IMPROVED EXISTING HELPERS ANALYZER - PORTFOLIO TRACKER =====
  * Analyzes renderer.js functions and maps them to existing helper files
+ * NOW IGNORES WRAPPER FUNCTIONS (already migrated functions)
  *
  * USAGE: node existing-helpers-analyzer.js
  *
@@ -21,12 +22,18 @@ class ExistingHelpersAnalyzer {
   constructor() {
     this.rendererPath = path.join(process.cwd(), "renderer.js");
     this.functions = [];
+    this.wrapperFunctions = [];
 
     // Map of existing helper files and their purposes
     this.existingHelpers = {
       "ui-state-management.js": {
         purpose: "Modals, tabs, notifications, UI state",
-        sections: ["Modals", "TabManager", "Notifications", "ActionButtons"],
+        sections: [
+          "ModalManager",
+          "TabManager",
+          "Notifications",
+          "ActionButtons",
+        ],
         patterns: [
           /modal/i,
           /tab/i,
@@ -69,6 +76,8 @@ class ExistingHelpersAnalyzer {
           /attach.*Listener/i,
           /setup.*Listener/i,
           /initialize.*Element/i,
+          /query/i,
+          /selector/i,
         ],
       },
       "event-handlers.js": {
@@ -82,15 +91,66 @@ class ExistingHelpersAnalyzer {
           /attach.*Event/i,
         ],
       },
+      "formatters.js": {
+        purpose: "Data formatting and display utilities",
+        sections: ["FormatHelpers class methods"],
+        patterns: [/format/i, /currency/i, /date/i, /percentage/i, /number/i],
+      },
+      "chart-visualization.js": {
+        purpose: "Chart creation and data visualization",
+        sections: ["Chart utilities and rendering"],
+        patterns: [
+          /chart/i,
+          /graph/i,
+          /visual/i,
+          /plot/i,
+          /render.*Chart/i,
+          /create.*Chart/i,
+        ],
+      },
+      "portfolio-calculations.js": {
+        purpose: "Business logic calculations",
+        sections: ["Portfolio math and calculations"],
+        patterns: [
+          /calculate/i,
+          /compute/i,
+          /math/i,
+          /total/i,
+          /sum/i,
+          /average/i,
+          /percentage/i,
+          /profit/i,
+          /loss/i,
+        ],
+      },
+      "config.js": {
+        purpose: "Configuration and settings management",
+        sections: ["Config utilities"],
+        patterns: [/config/i, /setting/i, /preference/i, /option/i],
+      },
+      "html-generators.js": {
+        purpose: "HTML generation and table rendering (ui/ folder)",
+        sections: ["HTMLGenerators class methods"],
+        patterns: [
+          /render/i,
+          /generate/i,
+          /html/i,
+          /table/i,
+          /row/i,
+          /cell/i,
+          /template/i,
+        ],
+      },
     };
   }
 
   analyze() {
-    console.log("🎯 EXISTING HELPERS ANALYZER");
-    console.log("============================\n");
+    console.log("🎯 IMPROVED EXISTING HELPERS ANALYZER");
+    console.log("====================================\n");
 
     try {
       this.extractFunctions();
+      this.identifyWrapperFunctions();
       this.categorizeFunctions();
       this.generateMigrationPlan();
       this.createImplementationGuide();
@@ -127,6 +187,88 @@ class ExistingHelpersAnalyzer {
     console.log(
       `📄 Analyzed renderer.js: found ${this.functions.length} functions\n`
     );
+  }
+
+  /**
+   * NEW: Identify functions that are already migrated (wrapper functions)
+   * These only contain a single call to a helper function
+   */
+  identifyWrapperFunctions() {
+    this.wrapperFunctions = [];
+
+    this.functions.forEach((funcName) => {
+      const funcBody = this.extractFunctionBody(funcName);
+      if (this.isWrapperFunction(funcBody)) {
+        this.wrapperFunctions.push(funcName);
+      }
+    });
+
+    // Remove wrapper functions from the main functions list
+    this.functions = this.functions.filter(
+      (func) => !this.wrapperFunctions.includes(func)
+    );
+
+    if (this.wrapperFunctions.length > 0) {
+      console.log("✅ ALREADY MIGRATED (Wrapper Functions):");
+      this.wrapperFunctions.forEach((func, i) => {
+        console.log(`   ${i + 1}. ${func}() - ✅ Already moved to helper`);
+      });
+      console.log("");
+    }
+
+    console.log(
+      `🔍 Functions still needing migration: ${this.functions.length}`
+    );
+    console.log("");
+  }
+
+  /**
+   * Extract the body of a specific function
+   */
+  extractFunctionBody(funcName) {
+    const funcRegex = new RegExp(
+      `${funcName}\\s*\\([^)]*\\)\\s*\\{([\\s\\S]*?)^\\s*\\}`,
+      "gm"
+    );
+
+    const match = funcRegex.exec(this.content);
+    return match ? match[1].trim() : "";
+  }
+
+  /**
+   * Check if a function is a wrapper (only calls helper)
+   */
+  isWrapperFunction(funcBody) {
+    // Remove comments and whitespace
+    const cleanBody = funcBody
+      .replace(/\/\*[\s\S]*?\*\//g, "") // Remove block comments
+      .replace(/\/\/.*$/gm, "") // Remove line comments
+      .replace(/\s+/g, " ") // Normalize whitespace
+      .trim();
+
+    // Check for common wrapper patterns (updated for all helpers)
+    const wrapperPatterns = [
+      /^(return\s+)?window\.UIStateManager\./,
+      /^(return\s+)?window\.IPCCommunication\./,
+      /^(return\s+)?this\.helpers\./,
+      /^(return\s+)?window\.DOMHelpers\./,
+      /^(return\s+)?window\.EventHandlers\./,
+      /^(return\s+)?window\.AppHelpers/,
+      /^(return\s+)?window\.FormatHelpers\./,
+      /^(return\s+)?window\.ChartVisualization\./,
+      /^(return\s+)?window\.PortfolioCalculations\./,
+      /^(return\s+)?window\.Config\./,
+      /^(return\s+)?window\.HTMLGenerators\./,
+      /^(return\s+)?this\.htmlGenerators\./,
+      /^(return\s+)?this\.chartVisualization\./,
+      /^(return\s+)?this\.portfolioCalculations\./,
+    ];
+
+    // If the function body matches a wrapper pattern and is short
+    return (
+      wrapperPatterns.some((pattern) => pattern.test(cleanBody)) &&
+      cleanBody.length < 100
+    ); // Simple wrapper functions should be short
   }
 
   isValidFunction(name) {
@@ -184,6 +326,8 @@ class ExistingHelpersAnalyzer {
     console.log("📋 MIGRATION PLAN TO EXISTING HELPERS");
     console.log("=====================================\n");
 
+    let totalFunctionsToMove = 0;
+
     Object.entries(this.categorized).forEach(([helperFile, functions]) => {
       if (functions.length > 0) {
         const config = this.existingHelpers[helperFile];
@@ -198,6 +342,7 @@ class ExistingHelpersAnalyzer {
           console.log(`      ${i + 1}. ${riskIcon} ${func}() - ${risk} risk`);
         });
         console.log("");
+        totalFunctionsToMove += functions.length;
       }
     });
 
@@ -208,7 +353,20 @@ class ExistingHelpersAnalyzer {
         console.log(`      ${i + 1}. ${func}() - manual categorization needed`);
       });
       console.log("");
+      totalFunctionsToMove += this.uncategorized.length;
     }
+
+    console.log(`📊 SUMMARY:`);
+    console.log(
+      `   ✅ Already migrated: ${this.wrapperFunctions.length} functions`
+    );
+    console.log(
+      `   🔄 Still need migration: ${totalFunctionsToMove} functions`
+    );
+    console.log(
+      `   📄 Total functions analyzed: ${this.wrapperFunctions.length + totalFunctionsToMove}`
+    );
+    console.log("");
   }
 
   assessRisk(funcName) {
@@ -239,7 +397,7 @@ class ExistingHelpersAnalyzer {
     });
 
     if (day1Functions.length > 0) {
-      console.log("🎯 DAY 1 - LOW RISK (Safe to start):");
+      console.log("🎯 NEXT TO MIGRATE - LOW RISK (Safe to start):");
       day1Functions.forEach(({ func, helper }, i) => {
         console.log(`   ${i + 1}. Move ${func}() → ${helper}`);
       });
@@ -257,7 +415,7 @@ class ExistingHelpersAnalyzer {
     });
 
     if (day2Functions.length > 0) {
-      console.log("⚠️ DAY 2 - MEDIUM RISK:");
+      console.log("⚠️ MEDIUM RISK (After low risk ones):");
       day2Functions.forEach(({ func, helper }, i) => {
         console.log(`   ${i + 1}. Move ${func}() → ${helper}`);
       });
@@ -275,10 +433,19 @@ class ExistingHelpersAnalyzer {
     });
 
     if (day3Functions.length > 0) {
-      console.log("🔴 DAY 3 - HIGH RISK (Expert level):");
+      console.log("🔴 HIGH RISK (Expert level):");
       day3Functions.forEach(({ func, helper }, i) => {
         console.log(`   ${i + 1}. Move ${func}() → ${helper}`);
       });
+      console.log("");
+    }
+
+    // Show next recommended function
+    if (day1Functions.length > 0) {
+      const nextFunc = day1Functions[0];
+      console.log("🎯 NEXT RECOMMENDED FUNCTION TO MIGRATE:");
+      console.log(`   ${nextFunc.func}() → ${nextFunc.helper}`);
+      console.log(`   Risk: LOW ✅`);
       console.log("");
     }
 
@@ -316,64 +483,6 @@ class ExistingHelpersAnalyzer {
     console.log("5. COMMIT:");
     console.log('   git add . && git commit -m "Move: [function] to [helper]"');
     console.log("");
-
-    this.generateExampleMigration();
-  }
-
-  generateExampleMigration() {
-    // Find a good example function for demonstration
-    const exampleFunc =
-      this.categorized["ui-state-management.js"]?.[0] ||
-      this.categorized["app-helpers.js"]?.[0] ||
-      this.functions[0];
-
-    if (!exampleFunc) return;
-
-    console.log("💡 EXAMPLE MIGRATION");
-    console.log("====================\n");
-    console.log(`Example: Moving ${exampleFunc}() to appropriate helper\n`);
-
-    console.log("STEP 1 - Find function in renderer.js:");
-    console.log(`${exampleFunc}() {`);
-    console.log("  // ... existing function code");
-    console.log("}\n");
-
-    console.log("STEP 2 - Add to helper file:");
-    const targetHelper =
-      Object.keys(this.categorized).find((helper) =>
-        this.categorized[helper].includes(exampleFunc)
-      ) || "app-helpers.js";
-
-    console.log(`// In utils/${targetHelper}:`);
-    if (targetHelper === "ui-state-management.js") {
-      console.log("const Modals = {");
-      console.log("  // ... existing methods");
-      console.log("");
-      console.log(`  ${exampleFunc}(app) {`);
-      console.log("    // ... paste function code here");
-      console.log('    // Change "this" to "app"');
-      console.log("  }");
-      console.log("};\n");
-    } else if (targetHelper === "app-helpers.js") {
-      console.log("class AppHelpers {");
-      console.log("  // ... existing methods");
-      console.log("");
-      console.log(`  ${exampleFunc}() {`);
-      console.log("    // ... paste function code here");
-      console.log("  }");
-      console.log("};\n");
-    }
-
-    console.log("STEP 3 - Update renderer.js:");
-    console.log(`${exampleFunc}() {`);
-    if (targetHelper === "ui-state-management.js") {
-      console.log(`  window.UIStateManager.Modals.${exampleFunc}(this);`);
-    } else if (targetHelper === "app-helpers.js") {
-      console.log(`  this.helpers.${exampleFunc}();`);
-    }
-    console.log("}\n");
-
-    console.log("STEP 4 - Test and commit!");
   }
 
   suggestManualReview() {
