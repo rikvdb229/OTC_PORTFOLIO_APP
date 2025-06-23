@@ -41,37 +41,7 @@ class EnhancedPortfolioApp {
 
   // ADD HERE: New method to initialize footer (add this method to your class)
   initializeFooter() {
-    try {
-      const appVersionElement = document.getElementById("appVersion");
-      const appStatusElement = document.getElementById("appStatus");
-      const buildDateElement = document.getElementById("buildDate");
-
-      if (appVersionElement) {
-        appVersionElement.textContent =
-          window.AppConfig.APP_CONFIG.getFullVersion();
-      }
-
-      if (appStatusElement) {
-        appStatusElement.textContent = window.AppConfig.APP_CONFIG.STATUS;
-        if (window.AppConfig.APP_CONFIG.isDevVersion()) {
-          appStatusElement.classList.add("dev-version");
-        }
-      }
-
-      if (buildDateElement) {
-        buildDateElement.textContent = `Build: ${window.AppConfig.APP_CONFIG.BUILD_DATE}`;
-      }
-
-      document.title = window.AppConfig.APP_CONFIG.getFullVersion();
-
-      console.log(
-        `🚀 ${window.AppConfig.APP_CONFIG.getFullVersion()} - ${
-          window.AppConfig.APP_CONFIG.STATUS
-        } initialized`
-      );
-    } catch (error) {
-      console.error("Error initializing footer:", error);
-    }
+    window.UIStateManager.Footer.initializeFooter(this);
   }
 
   initializeElements() {
@@ -497,38 +467,7 @@ class EnhancedPortfolioApp {
   }
   // UPDATE your existing clearAddOptionsForm function to also clear stored data:
   clearAddOptionsForm() {
-    try {
-      const grantDateElement = document.getElementById("grantDate");
-      const exercisePriceElement = document.getElementById("exercisePrice");
-      const quantityElement = document.getElementById("quantity");
-      const actualTaxAmountElement = document.getElementById("actualTaxAmount");
-      const estimatedTaxElement = document.getElementById("estimatedTax");
-      const helpTextElement = document.getElementById("exercisePriceHelp");
-
-      if (grantDateElement) grantDateElement.value = "";
-
-      if (exercisePriceElement) {
-        exercisePriceElement.innerHTML =
-          '<option value="">First enter grant date...</option>';
-        exercisePriceElement.disabled = true;
-      }
-
-      if (quantityElement) quantityElement.value = "";
-      if (actualTaxAmountElement) actualTaxAmountElement.value = "";
-      if (estimatedTaxElement) estimatedTaxElement.textContent = "€ 0.00";
-
-      if (helpTextElement) {
-        helpTextElement.textContent =
-          "Options will appear after entering grant date";
-      }
-
-      // Clear stored form data
-      this.currentFormData = null;
-
-      console.log("✅ Form and stored data cleared");
-    } catch (error) {
-      console.warn("⚠️ Error clearing form:", error);
-    }
+    window.AppConfig.FormManager.clearAddOptionsForm(this);
   }
 
   // ===== PRICE UPDATE FUNCTIONALITY =====
@@ -967,10 +906,6 @@ class EnhancedPortfolioApp {
       console.error("Error deleting portfolio entry:", error);
       alert("Error deleting entry");
     }
-  }
-
-  closeModals() {
-    window.UIStateManager.Modals.closeAllModals(this);
   }
 
   // ===== ADD OPTIONS FUNCTIONALITY =====

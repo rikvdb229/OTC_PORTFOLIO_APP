@@ -7,9 +7,45 @@
 /**
  * Tab navigation management
  */
-/**
- * Enhanced Tab navigation management
- */
+const FooterManager = {
+  /**
+   * Initialize footer with version info
+   * @param {Object} app - Application instance
+   */
+  initializeFooter(app) {
+    try {
+      const appVersionElement = document.getElementById("appVersion");
+      const appStatusElement = document.getElementById("appStatus");
+      const buildDateElement = document.getElementById("buildDate");
+
+      if (appVersionElement) {
+        appVersionElement.textContent =
+          window.AppConfig.APP_CONFIG.getFullVersion();
+      }
+
+      if (appStatusElement) {
+        appStatusElement.textContent = window.AppConfig.APP_CONFIG.STATUS;
+        if (window.AppConfig.APP_CONFIG.isDevVersion()) {
+          appStatusElement.classList.add("dev-version");
+        }
+      }
+
+      if (buildDateElement) {
+        buildDateElement.textContent = `Build: ${window.AppConfig.APP_CONFIG.BUILD_DATE}`;
+      }
+
+      document.title = window.AppConfig.APP_CONFIG.getFullVersion();
+
+      console.log(
+        `🚀 ${window.AppConfig.APP_CONFIG.getFullVersion()} - ${
+          window.AppConfig.APP_CONFIG.STATUS
+        } initialized`
+      );
+    } catch (error) {
+      console.error("Error initializing footer:", error);
+    }
+  },
+};
 const TabManager = {
   /**
    * Switch to a specific tab (ENHANCED VERSION)
@@ -391,6 +427,17 @@ const ModalManager = {
 
     const modals = window.DOMHelpers.safeQuerySelectorAll(".modal");
     modals.forEach((modal) => {
+      // 🆕 ADD THIS: Check if Add Options modal is being closed BEFORE removing active class
+      if (
+        modal.id === "addOptionsModal" &&
+        modal.classList.contains("active")
+      ) {
+        console.log("🧹 Clearing Add Options form on modal close");
+        if (app && app.clearAddOptionsForm) {
+          app.clearAddOptionsForm();
+        }
+      }
+
       modal.classList.remove("active");
 
       // 🆕 Clear user input fields only (not display elements)
@@ -2027,6 +2074,7 @@ const UIStateManager = {
   ActionButtons: ActionButtonManager,
   Stats: StatsManager,
   Tables: TableManager,
+  Footer: FooterManager,
 
   // Convenience methods for easy access
   updatePortfolioStats(overview, targetPercentage = 65) {
