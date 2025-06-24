@@ -2914,3 +2914,27 @@ body {
 #priceUpdateNotification[style*="display: none"] {
   display: none !important;
 }
+/* Enhanced button states for form validation */
+.btn-disabled {
+  background-color: #6c757d !important;
+  border-color: #6c757d !important;
+  color: #fff !important;
+  opacity: 0.65;
+  cursor: not-allowed !important;
+}
+
+.prohibition-icon {
+  font-size: 0.9em;
+  margin-right: 5px;
+}
+
+@keyframes pulse-warning {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+/* Modal-safe tooltip system for disabled buttons */

@@ -282,11 +282,17 @@ const ModalHandlers = {
     const modalButtons = [
       // Add Grants Modal
       { id: "canceladdGrants", handler: () => app.closeModals() },
-      { id: "confirmaddGrants", handler: () => app.addGrants() },
+      {
+        id: "confirmaddGrants",
+        handler: () => window.IPCCommunication.Grants.addGrants(app),
+      },
 
       // Merge Grants Modal
       { id: "cancelMergeGrants", handler: () => app.closeModals() },
-      { id: "confirmMergeGrants", handler: () => app.confirmMergeGrants() },
+      {
+        id: "confirmMergeGrants",
+        handler: () => window.IPCCommunication.Grants.confirmMergeGrants(app),
+      },
 
       // Sell Options Modal
       { id: "cancelSellOptions", handler: () => app.closeModals() },

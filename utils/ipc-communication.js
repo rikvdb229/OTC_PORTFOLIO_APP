@@ -243,287 +243,6 @@ const PortfolioOperations = {
     }
   },
   /**
-   * Add new stock option grants to portfolio
-   * MIGRATED FROM: renderer.js addGrants() method
-   * @param {Object} app - Application instance for UI updates
-   */
-  /**
-   * CORRECTED addGrants() function for your PortfolioOperations
-   * Replace the addGrants function you added with this version
-   */
-  async addGrants(app) {
-    try {
-      console.log("🔄 Starting addGrants process...");
-
-      // Get form values safely
-      const grantDateElement = document.getElementById("grantDate");
-      const exercisePriceElement = document.getElementById("exercisePrice");
-      const quantityElement = document.getElementById("quantity");
-      const actualTaxAmountElement = document.getElementById("actualTaxAmount");
-
-      if (!grantDateElement || !exercisePriceElement || !quantityElement) {
-        throw new Error("Required form elements not found");
-      }
-
-      const grantDate = grantDateElement.value;
-      const exercisePrice = parseFloat(exercisePriceElement.value);
-      const quantity = parseInt(quantityElement.value);
-      const actualTaxAmount = actualTaxAmountElement
-        ? parseFloat(actualTaxAmountElement.value) || null
-        : null;
-
-      // Validate form data
-      if (!grantDate) {
-        alert("Please select a grant date");
-        return;
-      }
-
-      if (!exercisePrice || exercisePrice <= 0) {
-        alert("Please select an exercise price");
-        return;
-      }
-
-      if (!quantity || quantity <= 0) {
-        alert("Please enter a valid quantity");
-        return;
-      }
-
-      // Check for future dates
-      const grantDateObj = new Date(grantDate);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999);
-
-      if (grantDateObj > today) {
-        alert("Grant date cannot be in the future");
-        return;
-      }
-
-      console.log("📝 Form data validated:", {
-        grantDate,
-        exercisePrice,
-        quantity,
-        actualTaxAmount,
-      });
-
-      // Store form data for potential merge handling
-      app.currentFormData = {
-        grantDate,
-        exercisePrice,
-        quantity,
-        actualTaxAmount,
-      };
-
-      // Check for existing grants using the existing method
-      console.log("🔍 Checking for existing grants...");
-      try {
-        const existingGrant = await this.checkExistingGrant(
-          grantDate,
-          exercisePrice
-        );
-
-        if (existingGrant && existingGrant.length > 0) {
-          console.log(`📋 Found existing grant, showing merge modal`);
-          app.existingGrants = [existingGrant]; // Wrap in array for consistency
-          app.showMergeGrantsModal([existingGrant], quantity);
-          return;
-        }
-      } catch (checkError) {
-        console.warn("⚠️ Could not check for existing grants:", checkError);
-        // Continue with addition anyway
-      }
-
-      // No existing grants - proceed with direct addition
-      console.log("➕ No existing grants found, proceeding with addition...");
-      await this.proceedWithDirectAddition(app);
-    } catch (error) {
-      console.error("❌ Critical error in addGrants:", error);
-      alert(
-        "Error adding grants: " + (error.message || "Unknown error occurred")
-      );
-
-      // Ensure modal can be closed even if there's an error
-      try {
-        app.closeModals();
-      } catch (modalError) {
-        console.error("❌ Could not close modal:", modalError);
-      }
-    }
-  },
-  /**
-   * Add these functions to your IPCCommunication.Portfolio object
-   * (Add them alongside your existing addGrants function)
-   */
-
-  /**
-   * Confirm and process merge grants decision
-   * MIGRATED FROM: renderer.js confirmMergeGrants()
-   */
-  async confirmMergeGrants(app) {
-    try {
-      console.log("🔄 Processing merge grants decision...");
-
-      // Get user's choice from radio buttons
-      const mergeChoice = document.querySelector(
-        'input[name="grantChoice"]:checked'
-      );
-
-      if (!mergeChoice) {
-        alert("Please select an option (Merge or Keep Separate)");
-        return;
-      }
-
-      const choice = mergeChoice.value; // "merge" or "separate"
-      console.log("📋 User choice:", choice);
-
-      if (choice === "separate") {
-        console.log("➕ User chose to keep separate");
-        await this.proceedWithSeparateGrant(app);
-        return;
-      }
-
-      if (choice === "merge") {
-        if (app.existingGrants && app.existingGrants.length > 1) {
-          console.log(
-            "🔄 Multiple grants merge - keeping modal open for selection"
-          );
-          await this.proceedWithMergeGrant(app);
-        } else {
-          console.log("🔄 Single grant merge - can close modal");
-          app.closeModals();
-          await this.proceedWithMergeGrant(app);
-        }
-        return;
-      }
-    } catch (error) {
-      console.error("❌ Error in confirmMergeGrants:", error);
-      alert("Error processing grant choice: " + error.message);
-    }
-  },
-
-  /**
-   * Proceed with separate grant creation
-   * MIGRATED FROM: renderer.js proceedWithSeparateGrant()
-   */
-  async proceedWithSeparateGrant(app) {
-    try {
-      console.log("➕ Proceeding with separate grant creation...");
-
-      // Use stored form data
-      const formData = app.currentFormData;
-
-      if (!formData) {
-        console.error("❌ No stored form data found!");
-        alert("Error: Form data lost. Please try adding the grants again.");
-        app.closeModals();
-        return;
-      }
-
-      const { grantDate, exercisePrice, quantity, actualTaxAmount } = formData;
-
-      console.log("📝 Using stored form data for separate grant:", formData);
-
-      // Validate the stored data
-      if (!grantDate || !exercisePrice || !quantity) {
-        console.error("❌ Invalid stored form data:", formData);
-        alert("Error: Invalid form data. Please try adding the grants again.");
-        app.closeModals();
-        return;
-      }
-
-      // Close modal first
-      app.closeModals();
-
-      // Proceed with direct addition using our existing method
-      await this.proceedWithDirectAddition(app);
-
-      console.log("✅ Separate grant created successfully");
-    } catch (error) {
-      console.error("❌ Error in proceedWithSeparateGrant:", error);
-      alert("Error creating separate grant: " + error.message);
-      app.closeModals();
-    }
-  },
-
-  /**
-   * Proceed with merging grants
-   * MIGRATED FROM: renderer.js proceedWithMergeGrant()
-   */
-  async proceedWithMergeGrant(app) {
-    try {
-      console.log("🔄 Proceeding with grant merge...");
-
-      // Use stored form data
-      const formData = app.currentFormData;
-
-      if (!formData) {
-        console.error("❌ No stored form data found!");
-        alert("Error: Form data lost. Please try adding the grants again.");
-        app.closeModals();
-        return;
-      }
-
-      const { grantDate, exercisePrice, quantity, actualTaxAmount } = formData;
-
-      // Get the target grant to merge with
-      let targetGrantId;
-
-      if (app.existingGrants && app.existingGrants.length === 1) {
-        // Single existing grant - merge with it
-        targetGrantId = app.existingGrants[0].id;
-      } else if (app.existingGrants && app.existingGrants.length > 1) {
-        // Multiple grants - get user selection
-        const selectedGrant = document.querySelector(
-          'input[name="existingGrant"]:checked'
-        );
-        if (!selectedGrant) {
-          alert("Please select which grant to merge with");
-          return;
-        }
-        targetGrantId = parseInt(selectedGrant.value);
-      } else {
-        console.error("❌ No existing grants found for merge");
-        alert("Error: No existing grants found to merge with");
-        app.closeModals();
-        return;
-      }
-
-      console.log("📝 Merging with grant ID:", targetGrantId);
-
-      // Perform the merge via IPC
-      const result = await window.ipcRenderer.invoke(
-        "merge-grants",
-        targetGrantId,
-        quantity,
-        actualTaxAmount
-      );
-
-      if (result.error) {
-        console.error("❌ Merge error:", result.error);
-        alert("Error merging grants: " + result.error);
-        return;
-      }
-
-      console.log("✅ Grants merged successfully");
-
-      // Close modal
-      app.closeModals();
-
-      // Refresh UI
-      await this.refreshUIAfterGrantOperation(app);
-
-      // Clear form
-      this.clearGrantForm();
-
-      // Show success feedback
-      this.showSuccessFeedback("Merged");
-    } catch (error) {
-      console.error("❌ Error in proceedWithMergeGrant:", error);
-      alert("Error merging grants: " + error.message);
-      app.closeModals();
-    }
-  },
-
-  /**
    * Refresh UI after grant operations
    * HELPER METHOD
    */
@@ -1040,6 +759,369 @@ const IPCEventListeners = {
     }
   },
 };
+/**
+ * Grant management operations
+ * These handle the complex grant addition, merging, and form management
+ */
+/**
+ * Grant management operations
+ * These handle the complex grant addition, merging, and form management
+ */
+const GrantOperations = {
+  /**
+   * Add grants with merge checking
+   * @param {Object} app - Application instance with context
+   */
+  async addGrants(app) {
+    try {
+      console.log("🔄 Starting addGrants process...");
+      console.log("📱 App context available:", !!app);
+
+      // Get form elements
+      const grantDateElement = document.getElementById("grantDate");
+      const exercisePriceElement = document.getElementById("exercisePrice");
+      const quantityElement = document.getElementById("quantity");
+      const actualTaxAmountElement = document.getElementById("actualTaxAmount");
+
+      if (!grantDateElement || !exercisePriceElement || !quantityElement) {
+        alert("Required form elements not found");
+        return;
+      }
+
+      // Get form values
+      const grantDate = grantDateElement.value;
+      const exercisePrice = parseFloat(exercisePriceElement.value);
+      const quantity = parseInt(quantityElement.value);
+      const actualTaxAmount = actualTaxAmountElement?.value
+        ? parseFloat(actualTaxAmountElement.value) || null
+        : null;
+
+      console.log("📝 Form data validated:", {
+        grantDate,
+        exercisePrice,
+        quantity,
+        actualTaxAmount,
+      });
+
+      // ✅ Enhanced validation - the button should already be disabled if invalid
+      // But we'll do a final check for safety
+      const validation =
+        window.UIStateManager.Validation.validateAddGrantsForm(app);
+      if (!validation.isValid) {
+        console.warn("⚠️ Form validation failed:", validation.errors);
+        return; // Don't show alert, button should already be disabled
+      }
+
+      // ✅ STORE FORM DATA in app context
+      app.currentFormData = {
+        grantDate: grantDate,
+        exercisePrice: exercisePrice,
+        quantity: quantity,
+        actualTaxAmount: actualTaxAmount,
+      };
+
+      console.log("📝 Form data stored successfully:", app.currentFormData);
+
+      // Add verification log
+      if (app.currentFormData && app.currentFormData.grantDate) {
+        console.log("✅ Form data verification passed");
+      } else {
+        console.error("❌ Form data verification failed!", app.currentFormData);
+      }
+
+      console.log("🔍 Checking for existing grants...");
+
+      // Check for existing grants
+      try {
+        const existingGrants = await window.ipcRenderer.invoke(
+          "check-existing-grant",
+          grantDate,
+          exercisePrice
+        );
+
+        console.log("🔍 Existing grants check result:", existingGrants);
+
+        if (existingGrants && !existingGrants.error) {
+          console.log("📋 Found existing grant, showing merge modal");
+
+          // ✅ STORE existing grants in app context
+          app.existingGrants = Array.isArray(existingGrants)
+            ? existingGrants
+            : [existingGrants];
+
+          // Show merge modal using UI state manager
+          window.UIStateManager.Modals.showMergeGrantsModal(
+            app,
+            existingGrants,
+            quantity,
+            actualTaxAmount
+          );
+          return;
+        } else {
+          console.log(
+            "✅ No existing grants found, proceeding with normal add"
+          );
+        }
+      } catch (mergeCheckError) {
+        console.warn(
+          "⚠️ Error checking for existing grants, proceeding with add:",
+          mergeCheckError
+        );
+      }
+
+      // No existing grant found, proceed with normal addition
+      console.log("➕ Proceeding with normal grant addition...");
+
+      const result = await window.ipcRenderer.invoke(
+        "add-portfolio-entry",
+        grantDate,
+        exercisePrice,
+        quantity,
+        actualTaxAmount
+      );
+
+      if (result.error) {
+        console.error("❌ Error adding grant:", result.error);
+        alert("Error adding options: " + result.error);
+        return;
+      }
+
+      console.log("✅ Grant added successfully:", result);
+
+      // Refresh UI
+      await app.loadPortfolioData();
+      await app.loadEvolutionData("all");
+      await app.checkDataAvailability();
+
+      // Clear form using UI state manager
+      window.UIStateManager.Forms.clearaddGrantsForm(app);
+      app.currentFormData = null;
+
+      console.log(`🎉 Successfully added ${quantity} options`);
+    } catch (error) {
+      console.error("❌ Error in addGrants:", error);
+      alert("Error adding options: " + error.message);
+    }
+  },
+
+  /**
+   * Confirm merge grants decision
+   * @param {Object} app - Application instance with context
+   */
+  async confirmMergeGrants(app) {
+    try {
+      console.log("🔄 Processing merge grants decision...");
+
+      // Get user's choice from radio buttons
+      const mergeChoice = document.querySelector(
+        'input[name="grantChoice"]:checked'
+      );
+
+      if (!mergeChoice) {
+        alert("Please select an option (Merge or Keep Separate)");
+        return;
+      }
+
+      const choice = mergeChoice.value; // "merge" or "separate"
+      console.log("📋 User choice:", choice);
+
+      if (choice === "separate") {
+        console.log("➕ User chose to keep separate");
+        await this.proceedWithSeparateGrant(app);
+        return;
+      }
+
+      if (choice === "merge") {
+        console.log("🔄 Single grant merge - processing without closing modal");
+        await this.proceedWithMergeGrant(app);
+        return;
+      }
+    } catch (error) {
+      console.error("❌ Error in confirmMergeGrants:", error);
+      alert("Error processing grant choice: " + error.message);
+    }
+  },
+
+  /**
+   * Proceed with separate grant creation
+   * @param {Object} app - Application instance with context
+   */
+  async proceedWithSeparateGrant(app) {
+    try {
+      console.log("➕ Proceeding with separate grant creation...");
+
+      // Use stored form data from app context
+      const formData = app.currentFormData;
+
+      if (!formData) {
+        console.error("❌ No stored form data found!");
+        alert("Error: Form data lost. Please try adding the grants again.");
+        window.UIStateManager.Modals.closeAllModals(app);
+        return;
+      }
+
+      const { grantDate, exercisePrice, quantity, actualTaxAmount } = formData;
+
+      console.log("📝 Using stored form data for separate grant:", formData);
+
+      // Validate the stored data
+      if (!grantDate || !exercisePrice || !quantity) {
+        console.error("❌ Invalid stored form data:", formData);
+        alert("Error: Invalid form data. Please try adding the grants again.");
+        window.UIStateManager.Modals.closeAllModals(app);
+        return;
+      }
+
+      // Close modal BEFORE making the API call
+      window.UIStateManager.Modals.closeAllModals(app);
+
+      const result = await window.ipcRenderer.invoke(
+        "add-portfolio-entry",
+        grantDate,
+        exercisePrice,
+        quantity,
+        actualTaxAmount
+      );
+
+      if (result.error) {
+        console.error("❌ Error adding separate grant:", result.error);
+        alert("Error adding options: " + result.error);
+        return;
+      }
+
+      console.log("✅ Separate grant added successfully:", result);
+
+      // Refresh UI
+      await app.loadPortfolioData();
+      await app.loadEvolutionData("all");
+      await app.checkDataAvailability();
+
+      // Clear form AND stored data using UI state manager
+      window.UIStateManager.Forms.clearaddGrantsForm(app);
+      app.currentFormData = null;
+
+      console.log(
+        `🎉 Successfully added ${quantity} options as separate grant`
+      );
+    } catch (error) {
+      console.error("❌ Error in proceedWithSeparateGrant:", error);
+      alert("Error creating separate grant: " + error.message);
+      try {
+        window.UIStateManager.Modals.closeAllModals(app);
+      } catch (modalError) {
+        console.error("❌ Could not close modal:", modalError);
+      }
+    }
+  },
+
+  /**
+   * Proceed with merge grant
+   * @param {Object} app - Application instance with context
+   */
+  async proceedWithMergeGrant(app) {
+    try {
+      console.log("🔄 Processing grant merge...");
+      console.log("🔍 Available data when merging:", {
+        currentFormData: app.currentFormData,
+        hasExistingGrants: !!app.existingGrants,
+        existingGrantsLength: app.existingGrants
+          ? app.existingGrants.length
+          : 0,
+      });
+
+      // Use stored form data from app context
+      const formData = app.currentFormData;
+
+      if (!formData) {
+        console.error("❌ No stored form data found!");
+        alert("Error: Form data lost. Please try adding the grants again.");
+        window.UIStateManager.Modals.closeAllModals(app);
+        return;
+      }
+
+      const { quantity, actualTaxAmount } = formData;
+
+      // Get the target grant to merge with
+      let targetGrantId;
+
+      // ✅ Fix: Check if existingGrants exists and has data
+      if (!app.existingGrants || app.existingGrants.length === 0) {
+        console.error("❌ No existing grants found!");
+        alert("Error: No grants to merge with. Please try again.");
+        app.closeModals();
+        return;
+      }
+
+      if (app.existingGrants.length === 1) {
+        // Single grant scenario
+        targetGrantId = app.existingGrants[0].id;
+        console.log("📝 Single grant merge with ID:", targetGrantId);
+      } else {
+        // Multiple grants scenario - get selected grant
+        const selectedRadio = document.querySelector(
+          'input[name="grantSelection"]:checked'
+        );
+
+        if (!selectedRadio) {
+          console.error("❌ No radio button selected!");
+          alert("Please select which grant to merge with");
+          return; // Don't close modal - let user select
+        }
+        targetGrantId = parseInt(selectedRadio.value);
+        console.log(
+          "📝 Multiple grants merge with selected ID:",
+          targetGrantId
+        );
+      }
+
+      // ✅ Close modal AFTER getting all the data we need
+      window.UIStateManager.Modals.closeAllModals(app);
+
+      console.log("📝 Merge data:", {
+        targetGrantId,
+        newQuantity: quantity,
+        newTaxAmount: actualTaxAmount,
+      });
+
+      // Call backend to perform the merge
+      const result = await window.ipcRenderer.invoke(
+        "merge-grant",
+        targetGrantId,
+        quantity,
+        actualTaxAmount
+      );
+
+      if (result.error) {
+        console.error("❌ Merge error:", result.error);
+        alert("Error merging grants: " + result.error);
+        return;
+      }
+
+      console.log("✅ Grant merge successful:", result);
+
+      // Refresh UI
+      await app.loadPortfolioData();
+      await app.loadEvolutionData("all");
+      await app.checkDataAvailability();
+
+      // ✅ Clear form data AFTER successful operation using UI state manager
+      window.UIStateManager.Forms.clearaddGrantsForm(app);
+      app.currentFormData = null;
+
+      console.log(
+        `🎉 Successfully merged ${quantity} options into existing grant`
+      );
+    } catch (error) {
+      console.error("❌ Error in proceedWithMergeGrant:", error);
+      alert("Error merging grants: " + error.message);
+      try {
+        app.closeModals();
+      } catch (modalError) {
+        console.error("❌ Could not close modal:", modalError);
+      }
+    }
+  },
+};
 
 /**
  * Main IPC Communication coordinator
@@ -1078,6 +1160,7 @@ const IPCCommunication = {
   // Expose all operation groups
   Window: WindowOperations,
   Portfolio: PortfolioOperations,
+  Grants: GrantOperations,
   Price: PriceOperations,
   Settings: SettingsOperations,
   Sales: SalesOperations,

@@ -234,18 +234,21 @@ class EnhancedPortfolioApp {
     window.UIStateManager.Modals.closeSettings(app);
   }
   async confirmMergeGrants() {
-    return window.IPCCommunication.Portfolio.confirmMergeGrants(this);
+    // Delegate to IPC communication layer with app context
+    await window.IPCCommunication.Grants.confirmMergeGrants(this);
   }
 
   // ADD/REPLACE these functions in your renderer.js file in the modal management section:
 
   // REPLACE your existing proceedWithSeparateGrant function with this:
   async proceedWithSeparateGrant() {
-    return window.IPCCommunication.Portfolio.proceedWithSeparateGrant(this);
+    // Delegate to IPC communication layer with app context
+    await window.IPCCommunication.Grants.proceedWithSeparateGrant(this);
   }
   // ADD this new function for merge grant processing:
   async proceedWithMergeGrant() {
-    return window.IPCCommunication.Portfolio.proceedWithMergeGrant(this);
+    // Delegate to IPC communication layer with app context
+    await window.IPCCommunication.Grants.proceedWithMergeGrant(this);
   }
   showDeleteConfirmModal(
     entryId,
@@ -731,8 +734,9 @@ class EnhancedPortfolioApp {
   // FIXED: Enhanced Add Grants with better error handling
   // REPLACE your existing addGrants() function in renderer.js with this complete version:
 
-  async addGrants() {
-    return window.IPCCommunication.Portfolio.addGrants(this);
+  async addOptions() {
+    // Delegate to IPC communication layer with app context
+    await window.IPCCommunication.Grants.addGrants(this);
   }
   /**
    * Confirm and save sale edits

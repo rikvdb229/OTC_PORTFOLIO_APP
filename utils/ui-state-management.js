@@ -510,38 +510,17 @@ const ModalManager = {
    */
   showaddGrantsModal(app) {
     this.showModal("addGrantsModal", () => {
-      // Reset form fields
-      window.DOMHelpers.safeSetContent(
-        window.DOMHelpers.safeGetElementById("grantDate"),
-        ""
-      );
+      // ✅ REPLACE all the reset code with just this:
+      window.UIStateManager.Forms.clearaddGrantsForm(app);
 
-      const exercisePriceSelect =
-        window.DOMHelpers.safeGetElementById("exercisePrice");
-      if (exercisePriceSelect) {
-        exercisePriceSelect.innerHTML =
-          '<option value="">First enter grant date...</option>';
-        exercisePriceSelect.disabled = true;
-      }
+      // ✅ ADD validation setup:
+      // Set up enhanced validation
+      window.UIStateManager.Validation.setupValidationListeners(app);
 
-      // Reset other form fields
-      const fieldsToReset = ["quantity", "actualTaxAmount"];
-      fieldsToReset.forEach((fieldId) => {
-        const field = window.DOMHelpers.safeGetElementById(fieldId);
-        if (field) field.value = "";
-      });
+      // Initial button state (should be disabled)
+      window.UIStateManager.Validation.validateAddGrantsForm(app);
 
-      // Reset estimated tax display
-      window.DOMHelpers.safeSetContent(
-        window.DOMHelpers.safeGetElementById("estimatedTax"),
-        "€ 0.00"
-      );
-
-      // Reset help text
-      window.DOMHelpers.safeSetContent(
-        window.DOMHelpers.safeGetElementById("exercisePriceHelp"),
-        "Options will appear after entering grant date"
-      );
+      console.log("✅ Add Grants modal opened with enhanced validation");
     });
   },
 
@@ -2188,7 +2167,6 @@ const FormManager = {
 
       if (actualTaxAmountElement) {
         actualTaxAmountElement.value = "";
-        actualTaxAmountElement.placeholder = "15,000.00";
       }
 
       if (estimatedTaxElement) estimatedTaxElement.textContent = "€ 0.00";
@@ -2200,7 +2178,7 @@ const FormManager = {
 
       // Clear stored form data
       app.currentFormData = null;
-
+      window.UIStateManager.Validation.validateAddGrantsForm(app);
       console.log("✅ Form and stored data cleared");
     } catch (error) {
       console.warn("⚠️ Error clearing form:", error);
@@ -2315,6 +2293,139 @@ const FormManager = {
     );
 
     // Could add visual feedback here if needed
+  },
+};
+// ADD this enhanced validation system to your FormManager in ui-state-management.js
+
+/**
+ * Enhanced form validation with real-time button state management
+ */
+const FormValidation = {
+  /**
+   * Validate form and update button state
+   * @param {Object} app - Application instance
+   */
+  validateAddGrantsForm(app) {
+    const grantDate = document.getElementById("grantDate")?.value;
+    const quantity = document.getElementById("quantity")?.value;
+
+    // ✅ FIX: Use the correct button ID
+    const confirmButton = document.getElementById("confirmaddGrants");
+
+    // ALWAYS create validation object first
+    const validation = {
+      isValid: true,
+      errors: [],
+    };
+
+    // Check grant date
+    if (!grantDate) {
+      validation.isValid = false;
+      validation.errors.push("Grant date is required");
+    } else if (!this.isValidDate(grantDate)) {
+      validation.isValid = false;
+      validation.errors.push("Grant date must be a valid date<");
+    } else if (this.isFutureDate(grantDate)) {
+      validation.isValid = false;
+      validation.errors.push("Grant date cannot be in the future");
+    }
+
+    // Check quantity
+    if (!quantity) {
+      validation.isValid = false;
+      validation.errors.push("Quantity is required");
+    } else if (
+      !Number.isInteger(parseInt(quantity)) ||
+      parseInt(quantity) <= 0
+    ) {
+      validation.isValid = false;
+      validation.errors.push("Quantity must be a positive whole number");
+    }
+
+    // Try to update button state
+    if (confirmButton) {
+      this.updateButtonState(confirmButton, validation);
+      console.log(
+        "✅ Button state updated:",
+        validation.isValid ? "enabled" : "disabled"
+      );
+    } else {
+      console.warn("⚠️ confirmaddGrants button not found");
+    }
+
+    // ALWAYS return validation object
+    return validation;
+  },
+
+  /**
+   * Update button state and tooltip
+   * @param {Element} button - The button element
+   * @param {Object} validation - Validation result
+   */
+  updateButtonState(button, validation) {
+    if (validation.isValid) {
+      // Enable button
+      button.disabled = false;
+      button.classList.remove("btn-disabled");
+      button.classList.add("btn-primary");
+      button.title = "Add grants to portfolio";
+    } else {
+      // Disable button
+      button.disabled = true;
+      button.classList.add("btn-disabled");
+      button.classList.remove("btn-primary");
+
+      // ✅ Clean tooltip - prohibition icon only in text, not on button
+      const tooltip = validation.errors.map((error) => `${error}`).join("\n");
+      button.title = tooltip;
+    }
+  },
+  /**
+   * Validate if string is a valid date
+   * @param {string} dateString - Date string to validate
+   * @returns {boolean}
+   */
+  isValidDate(dateString) {
+    const date = new Date(dateString);
+    return date instanceof Date && !isNaN(date.getTime());
+  },
+
+  /**
+   * Check if date is in the future
+   * @param {string} dateString - Date string to check
+   * @returns {boolean}
+   */
+  isFutureDate(dateString) {
+    const inputDate = new Date(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of day
+    return inputDate > today;
+  },
+
+  /**
+   * Set up real-time validation listeners
+   * @param {Object} app - Application instance
+   */
+  setupValidationListeners(app) {
+    const fieldsToWatch = ["grantDate", "exercisePrice", "quantity"];
+
+    fieldsToWatch.forEach((fieldId) => {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        // Validate on input change
+        field.addEventListener("input", () => {
+          this.validateAddGrantsForm(app);
+        });
+
+        // Validate on focus out
+        field.addEventListener("blur", () => {
+          this.validateAddGrantsForm(app);
+        });
+      }
+    });
+
+    // Initial validation
+    this.validateAddGrantsForm(app);
   },
 };
 /**
@@ -2448,6 +2559,7 @@ const UIStateManager = {
   Tables: TableManager,
   Footer: FooterManager,
   Forms: FormManager,
+  Validation: FormValidation,
   Database: DatabaseManager,
 
   // Convenience methods for easy access
