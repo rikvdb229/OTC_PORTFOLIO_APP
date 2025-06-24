@@ -304,7 +304,10 @@ const ModalHandlers = {
 
       // Delete Confirmation Modal
       { id: "cancelDelete", handler: () => app.closeModals() },
-      { id: "confirmDelete", handler: () => app.confirmDelete() },
+      {
+        id: "confirmDelete",
+        handler: () => windows.Modals.showDeleteConfirmModal,
+      },
 
       // Option Info Modal
       { id: "closeOptionInfo", handler: () => app.closeModals() },

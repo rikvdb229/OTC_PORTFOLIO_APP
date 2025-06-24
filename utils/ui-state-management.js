@@ -1097,35 +1097,34 @@ const ModalManager = {
    * @param {number} exercisePrice - Exercise price
    * @param {number} currentValue - Current value
    */
-  showDeleteConfirmModal(
-    app,
-    entryId,
-    grantDate,
-    quantity,
-    exercisePrice,
-    currentValue
-  ) {
-    app.currentDeletingEntryId = entryId;
+  /**
+   * Show delete confirmation modal for portfolio entry
+   * ✅ EXTRACTED FROM: renderer.js showDeleteConfirmModal() method
+   * @param {Object} app - Portfolio app instance
+   * @param {number} entryId - ID of entry to delete
+   */
+  async showDeleteConfirmModal(app, entryId) {
+    try {
+      console.log(`🗑️ Showing delete confirmation for entry ID: ${entryId}`);
 
-    this.showModal("deleteConfirmModal", () => {
-      const fields = {
-        deleteGrantDate: new Date(grantDate).toLocaleDateString(),
-        deleteQuantity: quantity.toLocaleString(),
-        deleteExercisePrice: app.formatCurrency
-          ? app.formatCurrency(exercisePrice)
-          : `€${exercisePrice.toFixed(2)}`,
-        deleteCurrentValue: app.formatCurrency
-          ? app.formatCurrency(currentValue)
-          : `€${parseFloat(currentValue || 0).toFixed(2)}`, // Ensure proper formatting
-      };
+      // Store the entry ID for deletion
+      app.currentDeletingEntryId = entryId;
 
-      for (const [fieldId, value] of Object.entries(fields)) {
-        window.DOMHelpers.safeSetContent(
-          window.DOMHelpers.safeGetElementById(fieldId),
-          value
-        );
+      // Enable/disable confirm button based on entry ID
+      if (app.confirmDeleteEntry) {
+        app.confirmDeleteEntry.disabled = false;
       }
-    });
+
+      // Show the delete confirmation modal (for portfolio entries, not database)
+      if (app.deleteConfirmModal) {
+        app.deleteConfirmModal.classList.add("active");
+        console.log("✅ Delete confirmation modal displayed");
+      } else {
+        console.error("❌ Delete confirmation modal element not found");
+      }
+    } catch (error) {
+      console.error("❌ Error showing delete confirmation modal:", error);
+    }
   },
   /**
    * Show detailed option information modal with chart

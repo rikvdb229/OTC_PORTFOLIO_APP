@@ -93,21 +93,8 @@ class EnhancedPortfolioApp {
     // Delegate to IPC communication layer with app context
     await window.IPCCommunication.Grants.proceedWithMergeGrant(this);
   }
-  showDeleteConfirmModal(
-    entryId,
-    grantDate,
-    quantity,
-    exercisePrice,
-    currentValue
-  ) {
-    window.UIStateManager.Modals.showDeleteConfirmModal(
-      this,
-      entryId,
-      grantDate,
-      quantity,
-      exercisePrice,
-      currentValue
-    );
+  showDeleteConfirmModal(entryId) {
+    window.UIStateManager.Modals.showDeleteConfirmModal(this, entryId);
   }
 
   async confirmDelete() {
