@@ -22,6 +22,13 @@ function initializeApplicationElements(app) {
     settingsSidebar: "#settingsSidebar",
     settingsOverlay: "#settingsOverlay",
     closeSettings: "#closeSettings",
+    // ===== ADD THESE MISSING SETTINGS FORM ELEMENTS =====
+    saveSettingsBtn: "#saveSettingsBtn", // ← ADD THIS
+    targetPercentage: "#targetPercentage", // ← ADD THIS
+    taxRate: "#taxRate", // ← ADD THIS
+    currencySymbol: "#currencySymbol", // ← ADD THIS
+    autoUpdatePrices: "#autoUpdatePrices", // ← ADD THIS
+    // ===== END MISSING ELEMENTS =====
 
     // Portfolio stats elements
     totalPortfolioValue: "#totalPortfolioValue",
