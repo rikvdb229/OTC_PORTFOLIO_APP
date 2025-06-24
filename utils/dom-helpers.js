@@ -441,7 +441,24 @@ window.DOMHelpers = {
   safeSetContent,
   safeToggleVisibility,
   safeGetFormData,
+  attachApplicationEventListeners,
 };
+/**
+ * Attach all event listeners for the application
+ * MIGRATED FROM: renderer.js attachEventListeners()
+ * @param {Object} app - Application instance
+ */
+function attachApplicationEventListeners(app) {
+  console.log("🎯 Setting up event listeners with organized handlers...");
+
+  // Use the event handler coordinator to set up all listeners
+  window.EventHandlers.EventHandlerCoordinator.initializeAll(app);
+
+  // Initialize delete database functionality using migrated method
+  window.UIStateManager.Database.initializeDeleteDatabase(app);
+
+  console.log("✅ All event listeners attached successfully");
+}
 
 // Debug logging
 console.log("✅ DOM Helpers loaded:", Object.keys(window.DOMHelpers));

@@ -21,7 +21,7 @@ class EnhancedPortfolioApp {
       window.AppConfig?.SettingsManager?.loadSettings
     );
     window.DOMHelpers.initializeApplicationElements(this);
-    this.attachEventListeners();
+    window.DOMHelpers.attachApplicationEventListeners(this); // <-- NEW LINE
     window.IPCCommunication.setupIpcListeners(this);
     this.isScrapingInProgress = false;
     this.currentEditingTaxId = null;
@@ -52,18 +52,6 @@ class EnhancedPortfolioApp {
   // ADD HERE: New method to initialize footer (add this method to your class)
   initializeFooter() {
     window.UIStateManager.Footer.initializeFooter(this);
-  }
-
-  attachEventListeners() {
-    console.log("🎯 Setting up event listeners with organized handlers...");
-
-    // Use the event handler coordinator to set up all listeners
-    window.EventHandlers.EventHandlerCoordinator.initializeAll(this);
-
-    // NEW: Use DatabaseManager instead of local method
-    window.UIStateManager.Database.initializeDeleteDatabase(this);
-
-    console.log("✅ All event listeners attached successfully");
   }
   /**
    * Toggle notes expansion/collapse in evolution table
