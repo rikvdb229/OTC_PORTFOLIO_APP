@@ -362,6 +362,20 @@ const PortfolioOperations = {
       alert("Error deleting entry");
     }
   },
+  /**
+   * Check if price data exists in the database
+   * ✅ EXTRACTED FROM: renderer.js checkIfPriceDataExists() method
+   * @returns {Promise<boolean>} True if price data exists
+   */
+  async checkIfPriceDataExists() {
+    try {
+      const prices = await ipcRenderer.invoke("get-available-exercise-prices");
+      return prices && prices.length > 0 && !prices.error;
+    } catch (error) {
+      console.error("Error checking price data existence:", error);
+      return false;
+    }
+  },
 };
 
 /**

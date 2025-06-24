@@ -160,12 +160,7 @@ class EnhancedPortfolioApp {
   }
   // FIXED: Check if price data exists
   async checkIfPriceDataExists() {
-    try {
-      const prices = await ipcRenderer.invoke("get-available-exercise-prices");
-      return prices && prices.length > 0 && !prices.error;
-    } catch (error) {
-      return false;
-    }
+    return await window.IPCCommunication.Portfolio.checkIfPriceDataExists();
   }
   // ===== TABLE SORTING =====
   sortTable(column) {
