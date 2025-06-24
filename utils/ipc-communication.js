@@ -925,7 +925,7 @@ const GrantOperations = {
       }
 
       console.log("✅ Grant added successfully:", result);
-
+      window.UIStateManager.Modals.closeAllModals(app);
       // Refresh UI
       await app.loadPortfolioData();
       await app.loadEvolutionData("all");

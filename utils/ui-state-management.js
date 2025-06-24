@@ -2781,7 +2781,10 @@ const DatabaseManager = {
     try {
       console.log("📤 Starting database export...");
       const result = await window.IPCCommunication.Database.exportDatabase();
-
+      if (app) {
+        window.UIStateManager.Modals.closeSettings(app);
+        console.log("✅ Settings modal closed before export");
+      }
       if (result.success) {
         alert(`Database exported successfully to:\n${result.filePath}`);
         console.log("✅ Database export completed successfully");
@@ -2811,6 +2814,11 @@ const DatabaseManager = {
       if (!confirm(confirmMessage)) {
         console.log("📥 Database import cancelled by user");
         return;
+      }
+      // ✅ FIX: Close settings modal after user confirms but before starting import
+      if (app) {
+        window.UIStateManager.Modals.closeSettings(app);
+        console.log("✅ Settings modal closed before import");
       }
 
       const result =
@@ -2954,8 +2962,14 @@ const DatabaseManager = {
       if (result && result.success) {
         console.log("✅ Database deleted successfully");
 
-        // Close the modal
-        window.UIStateManager.closeAllModals(app);
+        // ✅ FIX: Close ALL modals including settings modal
+        window.UIStateManager.Modals.closeAllModals(app);
+
+        // ✅ FIX: Explicitly close settings modal in case it's still open
+        if (app) {
+          window.UIStateManager.Modals.closeSettings(app);
+          console.log("✅ Settings modal explicitly closed after delete");
+        }
 
         // Reload the application
         await this.handlePostDeleteCleanup(app);
