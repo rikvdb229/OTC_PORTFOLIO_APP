@@ -1375,6 +1375,40 @@ const ModalManager = {
       app.settingsOverlay.classList.remove("active");
     }
   },
+  /**
+   * Update progress during modal operations
+   * @param {Object} app - Application instance
+   * @param {string} progressText - Progress text to display
+   */
+  updateProgress(app, progressText) {
+    console.log(`📊 Progress update: ${progressText}`);
+
+    if (!progressText) return;
+
+    // Update progress text
+    if (app.updateProgressText) {
+      app.updateProgressText.textContent = progressText;
+    }
+
+    // Update status output
+    if (app.updateStatusOutput) {
+      app.updateStatusOutput.textContent = progressText;
+    }
+
+    // Calculate progress percentage based on text content
+    let percentage = 10; // Default progress
+    if (progressText.includes("Starting")) percentage = 10;
+    else if (progressText.includes("Connecting")) percentage = 20;
+    else if (progressText.includes("Found")) percentage = 40;
+    else if (progressText.includes("Processing")) percentage = 70;
+    else if (progressText.includes("Downloading")) percentage = 90;
+    else if (progressText.includes("Complete")) percentage = 100;
+
+    // Update progress bar
+    if (app.updateProgressBar) {
+      app.updateProgressBar.style.width = percentage + "%";
+    }
+  },
 };
 
 /**

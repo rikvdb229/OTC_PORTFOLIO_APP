@@ -366,20 +366,7 @@ class EnhancedPortfolioApp {
     this.helpers.checkAutoUpdate();
   }
   updateProgress(progressText) {
-    if (this.updateProgressText) {
-      this.updateProgressText.textContent = progressText;
-    }
-
-    let percentage = 0;
-    if (progressText.includes("Connecting")) percentage = 20;
-    else if (progressText.includes("Loading")) percentage = 50;
-    else if (progressText.includes("Processing")) percentage = 70;
-    else if (progressText.includes("Downloading")) percentage = 90;
-    else if (progressText.includes("Complete")) percentage = 100;
-
-    if (this.updateProgressBar) {
-      this.updateProgressBar.style.width = percentage + "%";
-    }
+    window.UIStateManager.Modals.updateProgress(this, progressText);
   }
 
   // ===== PORTFOLIO DATA MANAGEMENT =====
