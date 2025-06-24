@@ -350,6 +350,209 @@ class AppHelpers {
       alert("Error updating tax amount");
     }
   }
+  async updatePrices(app) {
+    if (app.isScrapingInProgress) return;
+
+    app.isScrapingInProgress = true;
+    app.updatePricesBtn.disabled = true;
+    app.updatePricesBtn.textContent = "⏳ Updating...";
+
+    // Use UI State Manager to show modal
+    window.UIStateManager.Modals.showModal("updatePricesModal", () => {
+      app.updateProgressBar.style.width = "0%";
+      app.updateProgressText.textContent = "Starting price update...";
+      app.updateStatusOutput.textContent = "Connecting to KBC servers...";
+    });
+
+    try {
+      const result = await window.IPCCommunication.Price.updatePrices();
+
+      if (result.success) {
+        app.updateProgressBar.style.width = "100%";
+        app.updateProgressText.textContent = "Update Complete!";
+        app.updateStatusOutput.textContent = `✅ Successfully updated prices\nFile: ${result.fileName}`;
+
+        // CRITICAL: Complete data refresh cycle (this was missing!)
+        console.log("🔄 Refreshing data after successful price update...");
+
+        // 1. Reload portfolio data with new prices
+        await app.loadPortfolioData();
+        console.log("✅ Portfolio data refreshed");
+
+        // 2. CRITICAL: Check data availability (this determines if "No data available" shows)
+        await app.checkDataAvailability();
+        console.log("✅ Data availability checked");
+
+        // 3. Update price status notifications
+        await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
+        console.log("✅ Price status updated");
+
+        // Close modal after delay
+        setTimeout(() => {
+          window.UIStateManager.Modals.closeAllModals(app);
+        }, 2000);
+      } else {
+        throw new Error(result.error || "Price update failed");
+      }
+    } catch (error) {
+      console.error("❌ Price update error:", error);
+      app.updateProgressBar.style.width = "0%";
+      app.updateProgressText.textContent = "Update Failed";
+      app.updateStatusOutput.textContent = `❌ Error: ${error.message}`;
+
+      setTimeout(() => {
+        window.UIStateManager.Modals.closeAllModals(app);
+      }, 3000);
+    } finally {
+      app.isScrapingInProgress = false;
+      app.updatePricesBtn.disabled = false;
+      app.updatePricesBtn.textContent = "🔄 Update Prices";
+    }
+  }
+  /**
+   * Confirm and execute sale transaction
+   * MIGRATED FROM: renderer.js confirmSale() method
+   * @param {Object} app - Application instance
+   */
+  async confirmSale(app) {
+    if (!app.currentSellEntry) return;
+
+    try {
+      const quantityToSell = parseInt(
+        document.getElementById("quantityToSell").value
+      );
+      const salePrice = parseFloat(document.getElementById("salePrice").value);
+      const notes = document.getElementById("saleNotes").value || null;
+      const saleDate = new Date().toISOString().split("T")[0];
+
+      // Validation
+      if (
+        !quantityToSell ||
+        !salePrice ||
+        quantityToSell <= 0 ||
+        salePrice <= 0
+      ) {
+        alert("Please enter valid quantity and sale price");
+        return;
+      }
+
+      if (quantityToSell > app.currentSellEntry.quantity_remaining) {
+        alert("Cannot sell more options than available");
+        return;
+      }
+
+      // FIXED: Use the correct IPC handler name
+      const result = await window.ipcRenderer.invoke(
+        "record-sale-transaction", // ✅ CORRECT: matches main.js handler
+        app.currentSellEntry.id, // portfolioEntryId
+        saleDate, // saleDate
+        quantityToSell, // quantitySold
+        salePrice, // salePrice
+        notes // notes
+      );
+
+      if (result.error) {
+        alert("Error recording sale: " + result.error);
+        return;
+      }
+
+      console.log("✅ Sale recorded successfully:", result);
+
+      // Close modal and refresh data
+      app.closeModals();
+      await app.loadPortfolioData();
+      await app.loadSalesHistory();
+
+      // FIXED: Also refresh evolution data like the original function
+      await app.loadEvolutionData("all");
+
+      // Show success notification
+      window.UIStateManager.showSuccess(
+        `✅ Sold ${quantityToSell.toLocaleString()} options at €${salePrice}`
+      );
+    } catch (error) {
+      console.error("Error confirming sale:", error);
+      alert("Error confirming sale: " + error.message);
+    }
+  }
+  async confirmEditSale(app) {
+    try {
+      console.log("💾 Saving sale edits...");
+
+      // Get updated values
+      const updatedSale = {
+        id: app.currentEditingSaleId,
+        sale_date: document.getElementById("editSaleDate").value,
+        sale_price: parseFloat(document.getElementById("editSalePrice").value),
+        notes: document.getElementById("editSaleNotes").value.trim(),
+      };
+
+      // Validate inputs
+      if (!updatedSale.sale_date) {
+        alert("Please enter a sale date");
+        return;
+      }
+
+      if (!updatedSale.sale_price || updatedSale.sale_price <= 0) {
+        alert("Please enter a valid sale price");
+        return;
+      }
+
+      // Check if date is not in future
+      const saleDate = new Date(updatedSale.sale_date);
+      const today = new Date();
+      today.setHours(23, 59, 59, 999); // End of today
+
+      if (saleDate > today) {
+        alert("Sale date cannot be in the future");
+        return;
+      }
+
+      console.log("📊 Updating sale with data:", updatedSale);
+
+      // Save to database
+      const result = await window.ipcRenderer.invoke(
+        "update-sale",
+        updatedSale
+      );
+
+      if (result.error) {
+        alert("Error updating sale: " + result.error);
+        return;
+      }
+
+      console.log("✅ Sale updated successfully:", result);
+
+      // Close modal first
+      app.closeModals();
+
+      // Complete data refresh to ensure all calculations are updated
+      console.log("🔄 Refreshing all data after sale update...");
+
+      // 1. Refresh sales table (shows the updated sale)
+      await app.loadSalesHistory();
+      console.log("✅ Sales history refreshed");
+
+      // 2. Refresh portfolio overview (main table with P&L calculations)
+      await app.loadPortfolioData();
+      console.log("✅ Portfolio data refreshed");
+
+      // 3. Refresh evolution data (affects portfolio calculations)
+      await app.loadEvolutionData("all");
+      console.log("✅ Evolution data refreshed");
+
+      // 4. Refresh grant history (if it exists and could be affected)
+      if (typeof app.loadGrantHistory === "function") {
+        await app.loadGrantHistory();
+        console.log("✅ Grant history refreshed");
+      }
+
+      console.log("🎉 All data successfully refreshed after sale update");
+    } catch (error) {
+      console.error("❌ Error updating sale:", error);
+      alert("Error updating sale: " + error.message);
+    }
+  }
 }
 
 // Export to global scope for use in renderer.js

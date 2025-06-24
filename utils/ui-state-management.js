@@ -2645,6 +2645,89 @@ const DatabaseManager = {
       return null;
     }
   },
+  /**
+   * Execute database deletion with full cleanup
+   * @param {Object} app - Application instance
+   */
+  async executeDeleteDatabase(app) {
+    console.log("🗑️ Executing database deletion...");
+
+    try {
+      // Show loading state
+      if (app.confirmDeleteDatabase) {
+        app.confirmDeleteDatabase.textContent = "Deleting...";
+        app.confirmDeleteDatabase.disabled = true;
+      }
+
+      // Call the backend to delete the database
+      console.log("📡 Calling backend delete database method...");
+      const result = await window.IPCCommunication.Database.deleteDatabase();
+
+      console.log("📡 Backend response:", result);
+
+      if (result && result.success) {
+        console.log("✅ Database deleted successfully");
+
+        // Close the modal
+        window.UIStateManager.closeAllModals(app);
+
+        // Reload the application
+        await this.handlePostDeleteCleanup(app);
+      } else {
+        const errorMsg =
+          result?.error || result?.message || "Unknown error occurred";
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      console.error("❌ Error deleting database:", error);
+      console.error("❌ Full error object:", error);
+
+      alert("Error deleting database: " + (error.message || error.toString()));
+
+      // Reset button state
+      if (app.confirmDeleteDatabase) {
+        app.confirmDeleteDatabase.textContent = "🗑️ DELETE DATABASE";
+        app.confirmDeleteDatabase.disabled = false;
+      }
+    }
+  },
+
+  /**
+   * Handle cleanup after database deletion
+   * @param {Object} app - Application instance
+   */
+  async handlePostDeleteCleanup(app) {
+    try {
+      console.log("🧹 Performing post-delete cleanup...");
+
+      // Clear current portfolio data
+      app.portfolioData = [];
+      app.salesData = [];
+      app.evolutionData = [];
+
+      // Reset UI elements
+      if (app.portfolioTableBody) {
+        app.portfolioTableBody.innerHTML =
+          '<tr><td colspan="100%">No data available</td></tr>';
+      }
+
+      // Clear header stats
+      if (app.totalPortfolioValue)
+        app.totalPortfolioValue.textContent = "€0.00";
+      if (app.totalOptions) app.totalOptions.textContent = "0";
+      if (app.lastPriceUpdate) app.lastPriceUpdate.textContent = "Never";
+
+      // Switch to portfolio tab
+      window.UIStateManager.switchTab("portfolio");
+
+      console.log("✅ Post-delete cleanup completed");
+
+      // Show success message
+      window.UIStateManager.showSuccess("Database deleted successfully", 5000);
+    } catch (error) {
+      console.error("❌ Error during post-delete cleanup:", error);
+    }
+  },
 };
 
 /**

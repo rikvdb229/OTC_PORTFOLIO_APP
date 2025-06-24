@@ -286,63 +286,7 @@ class EnhancedPortfolioApp {
 
   // UPDATED: After successful price update, recheck status
   async updatePrices() {
-    if (this.isScrapingInProgress) return;
-
-    this.isScrapingInProgress = true;
-    this.updatePricesBtn.disabled = true;
-    this.updatePricesBtn.textContent = "⏳ Updating...";
-
-    // Use UI State Manager to show modal
-    window.UIStateManager.Modals.showModal("updatePricesModal", () => {
-      this.updateProgressBar.style.width = "0%";
-      this.updateProgressText.textContent = "Starting price update...";
-      this.updateStatusOutput.textContent = "Connecting to KBC servers...";
-    });
-
-    try {
-      const result = await window.IPCCommunication.Price.updatePrices();
-
-      if (result.success) {
-        this.updateProgressBar.style.width = "100%";
-        this.updateProgressText.textContent = "Update Complete!";
-        this.updateStatusOutput.textContent = `✅ Successfully updated prices\nFile: ${result.fileName}`;
-
-        // Reload data
-        await this.loadPortfolioData();
-        await this.checkDataAvailability();
-        await window.IPCCommunication.Price.checkPriceUpdateStatus(this);
-        setTimeout(() => {
-          // Use UI State Manager to close modal
-          window.UIStateManager.Modals.closeAllModals(this);
-        }, 2000);
-      } else {
-        this.updateProgressBar.style.width = "0%";
-        this.updateProgressText.textContent = "Update Failed";
-        this.updateStatusOutput.textContent = `❌ Failed to update prices\nError: ${result.error}`;
-
-        this.updatePricesBtn.textContent = "📊 Update Prices";
-        this.updatePricesBtn.disabled = false;
-
-        setTimeout(() => {
-          // Use UI State Manager to close modal
-          window.UIStateManager.Modals.closeAllModals(this);
-        }, 5000);
-      }
-    } catch (error) {
-      this.updateProgressBar.style.width = "0%";
-      this.updateProgressText.textContent = "Update Error";
-      this.updateStatusOutput.textContent = `❌ Update error: ${error.message}`;
-
-      this.updatePricesBtn.textContent = "📊 Update Prices";
-      this.updatePricesBtn.disabled = false;
-
-      setTimeout(() => {
-        // Use UI State Manager to close modal
-        window.UIStateManager.Modals.closeAllModals(this);
-      }, 5000);
-    } finally {
-      this.isScrapingInProgress = false;
-    }
+    await this.helpers.updatePrices(this);
   }
 
   async checkAutoUpdate() {
@@ -513,58 +457,7 @@ class EnhancedPortfolioApp {
   }
 
   async confirmSale() {
-    if (!this.currentSellEntry) return;
-
-    try {
-      const quantityToSell = parseInt(
-        document.getElementById("quantityToSell").value
-      );
-      const salePrice = parseFloat(document.getElementById("salePrice").value);
-      const notes = document.getElementById("saleNotes").value || null;
-      const saleDate = new Date().toISOString().split("T")[0];
-
-      // Validation
-      if (
-        !quantityToSell ||
-        !salePrice ||
-        quantityToSell <= 0 ||
-        salePrice <= 0
-      ) {
-        alert("Please enter valid quantity and sale price");
-        return;
-      }
-
-      if (quantityToSell > this.currentSellEntry.quantity_remaining) {
-        alert("Cannot sell more options than available");
-        return;
-      }
-
-      const result = await ipcRenderer.invoke(
-        "record-sale-transaction",
-        this.currentSellEntry.id,
-        saleDate,
-        quantityToSell,
-        salePrice,
-        notes
-      );
-
-      if (result.error) {
-        alert("Error recording sale: " + result.error);
-        return;
-      }
-
-      this.closeModals();
-      await this.loadPortfolioData();
-      await this.loadEvolutionData("all"); // FIXED: Update evolution after sale
-      console.log(
-        `✅ Recorded sale of ${quantityToSell} options at ${this.helpers.formatCurrency(
-          salePrice
-        )}`
-      );
-    } catch (error) {
-      console.error("Error confirming sale:", error);
-      alert("Error recording sale: " + (error.message || error));
-    }
+    await this.helpers.confirmSale(this);
   }
 
   async showOptionInfo(entryId) {
@@ -658,79 +551,7 @@ class EnhancedPortfolioApp {
    * Confirm and save sale edits
    */
   async confirmEditSale() {
-    try {
-      console.log("💾 Saving sale edits...");
-
-      // Get updated values
-      const updatedSale = {
-        id: this.currentEditingSaleId,
-        sale_date: document.getElementById("editSaleDate").value,
-        sale_price: parseFloat(document.getElementById("editSalePrice").value),
-        notes: document.getElementById("editSaleNotes").value.trim(),
-      };
-
-      // Validate inputs
-      if (!updatedSale.sale_date) {
-        alert("Please enter a sale date");
-        return;
-      }
-
-      if (!updatedSale.sale_price || updatedSale.sale_price <= 0) {
-        alert("Please enter a valid sale price");
-        return;
-      }
-
-      // Check if date is not in future
-      const saleDate = new Date(updatedSale.sale_date);
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); // End of today
-
-      if (saleDate > today) {
-        alert("Sale date cannot be in the future");
-        return;
-      }
-
-      console.log("📊 Updating sale with data:", updatedSale);
-
-      // Save to database
-      const result = await ipcRenderer.invoke("update-sale", updatedSale);
-
-      if (result.error) {
-        alert("Error updating sale: " + result.error);
-        return;
-      }
-
-      console.log("✅ Sale updated successfully:", result);
-
-      // Close modal first
-      this.closeModals();
-
-      // FIXED: Complete data refresh to ensure all calculations are updated
-      console.log("🔄 Refreshing all data after sale update...");
-
-      // 1. Refresh sales table (shows the updated sale)
-      await this.loadSalesHistory();
-      console.log("✅ Sales history refreshed");
-
-      // 2. Refresh portfolio overview (main table with P&L calculations)
-      await this.loadPortfolioData();
-      console.log("✅ Portfolio data refreshed");
-
-      // 3. CRITICAL: Refresh evolution data (affects portfolio calculations)
-      await this.loadEvolutionData("all");
-      console.log("✅ Evolution data refreshed");
-
-      // 4. Refresh grant history (if it exists and could be affected)
-      if (typeof this.loadGrantHistory === "function") {
-        await this.loadGrantHistory();
-        console.log("✅ Grant history refreshed");
-      }
-
-      console.log("🎉 All data successfully refreshed after sale update");
-    } catch (error) {
-      console.error("❌ Error updating sale:", error);
-      alert("Error updating sale: " + error.message);
-    }
+    await this.helpers.confirmEditSale(this);
   }
 
   async updateTax() {
@@ -962,87 +783,7 @@ class EnhancedPortfolioApp {
    * Execute the database deletion
    */
   async executeDeleteDatabase() {
-    console.log("🗑️ Executing database deletion...");
-
-    try {
-      // Show loading state
-      if (this.confirmDeleteDatabase) {
-        this.confirmDeleteDatabase.textContent = "Deleting...";
-        this.confirmDeleteDatabase.disabled = true;
-      }
-
-      // Call the backend to delete the database
-      console.log("📡 Calling backend delete database method...");
-      const result = await window.IPCCommunication.Database.deleteDatabase();
-
-      console.log("📡 Backend response:", result);
-
-      if (result && result.success) {
-        console.log("✅ Database deleted successfully");
-
-        // Close the modal
-        window.UIStateManager.closeAllModals(this);
-        // Reload the application
-        await this.handlePostDeleteCleanup();
-      } else {
-        const errorMsg =
-          result?.error || result?.message || "Unknown error occurred";
-        throw new Error(errorMsg);
-      }
-    } catch (error) {
-      console.error("❌ Error deleting database:", error);
-      console.error("❌ Full error object:", error);
-
-      alert("Error deleting database: " + (error.message || error.toString()));
-
-      // Reset button state
-      if (this.confirmDeleteDatabase) {
-        this.confirmDeleteDatabase.textContent = "🗑️ DELETE DATABASE";
-        this.confirmDeleteDatabase.disabled = false;
-      }
-    }
-  }
-
-  /**
-   * Handle cleanup after database deletion
-   */
-  async handlePostDeleteCleanup() {
-    try {
-      console.log("🧹 Performing post-delete cleanup...");
-
-      // Clear current portfolio data
-      this.portfolioData = [];
-      this.salesData = [];
-      this.evolutionData = [];
-
-      // Reset UI elements
-      if (this.portfolioTableBody) {
-        this.portfolioTableBody.innerHTML =
-          '<tr><td colspan="10" class="no-data">No portfolio data available</td></tr>';
-      }
-
-      if (this.totalPortfolioValue) {
-        this.totalPortfolioValue.textContent = "€0.00";
-      }
-
-      // Reset charts if they exist
-      if (this.portfolioChart) {
-        this.portfolioChart.destroy();
-        this.portfolioChart = null;
-      }
-
-      // Switch to portfolio tab
-      this.switchTab("portfolio");
-
-      // Reload the app to ensure clean state
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error) {
-      console.error("❌ Error in post-delete cleanup:", error);
-      // Force reload anyway
-      window.location.reload();
-    }
+    await window.UIStateManager.Database.executeDeleteDatabase(this);
   }
   async exportDatabase() {
     return await window.UIStateManager.Database.exportDatabase(this);
