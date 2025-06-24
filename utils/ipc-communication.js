@@ -338,6 +338,30 @@ const PortfolioOperations = {
       }, 2000);
     }
   },
+  /**
+   * Confirm and execute portfolio entry deletion
+   * @param {Object} app - Application instance
+   */
+  async confirmDelete(app) {
+    try {
+      const result = await window.ipcRenderer.invoke(
+        "delete-portfolio-entry",
+        app.currentDeletingEntryId
+      );
+
+      if (result.error) {
+        alert("Error deleting entry: " + result.error);
+        return;
+      }
+
+      app.closeModals();
+      await app.loadPortfolioData();
+      console.log(`✅ Deleted portfolio entry`);
+    } catch (error) {
+      console.error("Error deleting portfolio entry:", error);
+      alert("Error deleting entry");
+    }
+  },
 };
 
 /**

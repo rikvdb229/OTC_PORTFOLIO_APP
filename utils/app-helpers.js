@@ -280,6 +280,76 @@ class AppHelpers {
       console.warn("⚠️ Chart legend container not found");
     }
   }
+  calculateSaleProceeds(app) {
+    if (!app.currentSellEntry) return;
+
+    const quantityToSell =
+      parseInt(document.getElementById("quantityToSell").value) || 0;
+    const salePrice =
+      parseFloat(document.getElementById("salePrice").value) || 0;
+
+    if (
+      quantityToSell > 0 &&
+      salePrice > 0 &&
+      app.currentSellEntry.quantity > 0
+    ) {
+      const totalSaleValue = quantityToSell * salePrice;
+
+      // Calculate proportional tax that will be reduced from remaining portfolio
+      const totalTax =
+        app.currentSellEntry.tax_amount ||
+        app.currentSellEntry.tax_auto_calculated ||
+        0;
+      const taxAllocatedToSold =
+        totalTax > 0
+          ? (totalTax * quantityToSell) / app.currentSellEntry.quantity
+          : 0;
+
+      // Net proceeds = full sale value (tax was already paid when granted)
+      const netProceeds = totalSaleValue;
+
+      document.getElementById("totalSaleValue").textContent =
+        app.helpers.formatCurrency(totalSaleValue);
+      document.getElementById("proportionalTax").textContent =
+        app.helpers.formatCurrency(taxAllocatedToSold);
+      document.getElementById("netProceeds").textContent =
+        app.helpers.formatCurrency(netProceeds);
+    } else {
+      document.getElementById("totalSaleValue").textContent = "€ 0.00";
+      document.getElementById("proportionalTax").textContent = "€ 0.00";
+      document.getElementById("netProceeds").textContent = "€ 0.00";
+    }
+  }
+  async updateTax(app) {
+    try {
+      const newTaxAmount = parseFloat(
+        document.getElementById("newTaxAmount").value
+      );
+
+      if (isNaN(newTaxAmount) || newTaxAmount < 0) {
+        alert("Please enter a valid tax amount");
+        return;
+      }
+
+      const result = await window.ipcRenderer.invoke(
+        "update-tax-amount",
+        app.currentEditingTaxId,
+        newTaxAmount
+      );
+
+      if (result.error) {
+        alert("Error updating tax: " + result.error);
+        return;
+      }
+
+      app.closeModals();
+      await app.loadPortfolioData();
+      console.log(`✅ Updated tax amount to €${newTaxAmount}`);
+    } catch (error) {
+      console.error("Error updating tax:", error);
+      alert("Error updating tax amount");
+    }
+  }
 }
 
 // Export to global scope for use in renderer.js

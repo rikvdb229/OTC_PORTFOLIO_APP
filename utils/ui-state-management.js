@@ -1760,6 +1760,31 @@ const StatsManager = {
       avgReturn: stats.avgReturn,
     });
   },
+  /**
+   * Update header statistics display
+   * @param {Object} app - Application instance
+   * @param {Array} overview - Portfolio overview data
+   */
+  updateHeaderStats(app, overview) {
+    const stats = window.PortfolioCalculations.generatePortfolioStats(overview);
+
+    // Update header values using calculated stats
+    const headerTotalValue = document.getElementById("totalPortfolioValue");
+    const headerActiveOptions = document.getElementById("totalOptions");
+    const headerLastUpdate = document.getElementById("lastPriceUpdate");
+
+    if (headerTotalValue) {
+      headerTotalValue.textContent = app.helpers.formatCurrency(
+        stats.totalValue
+      );
+    }
+    if (headerActiveOptions) {
+      headerActiveOptions.textContent = stats.totalQuantityFormatted;
+    }
+    if (headerLastUpdate) {
+      headerLastUpdate.textContent = stats.latestUpdateFormatted;
+    }
+  },
 };
 
 /**
@@ -2171,6 +2196,28 @@ const TableManager = {
     // Apply initial filtering (should show all)
     this.filterGrantHistory(app);
   },
+  /**
+   * Update grant filter counts display
+   * @param {Object} app - Application instance
+   * @param {Set} activeFilters - Currently active filters
+   */
+  updateGrantFilterCounts(app, activeFilters) {
+    // Summary cards should NOT change with filtering
+    // They represent the actual data totals, not filtered view
+
+    // Only log the filtering state for debugging
+    const visibleRows = document.querySelectorAll(
+      "#grantTableBody tr:not(.no-data):not(.filtered-hidden)"
+    );
+    console.log(
+      `📊 Filter applied: ${visibleRows.length} grants visible in current view`
+    );
+
+    // Summary cards remain unchanged - they show actual totals
+    // Total Grants = all grants in database
+    // Total Options Granted = all options ever granted
+    // Still Active = Active + Partially Sold (regardless of filter)
+  },
 };
 /**
  * Form management - handles Add Grants form logic
@@ -2460,6 +2507,45 @@ const FormValidation = {
 
     // Initial validation
     this.validateAddGrantsForm(app);
+  },
+  /**
+   * Validate delete database confirmation text
+   * @param {Object} app - Application instance
+   */
+  validateDeleteConfirmation(app) {
+    const input = app.deleteDatabaseConfirmText;
+    const confirmBtn = app.confirmDeleteDatabase;
+
+    if (!input || !confirmBtn) {
+      console.warn("⚠️ Delete confirmation elements not found");
+      return;
+    }
+
+    const requiredText = "delete database";
+    const userInput = input.value.toLowerCase().trim();
+
+    console.log(
+      `🔍 Validating input: "${userInput}" vs required: "${requiredText}"`
+    );
+
+    // Remove previous validation classes
+    input.classList.remove("valid", "invalid");
+
+    if (userInput === requiredText) {
+      // Valid input
+      input.classList.add("valid");
+      confirmBtn.disabled = false;
+      console.log("✅ Delete confirmation text validated - button enabled");
+    } else if (userInput.length > 0) {
+      // Invalid input (but user is typing)
+      input.classList.add("invalid");
+      confirmBtn.disabled = true;
+      console.log(`❌ Invalid input: "${userInput}" - button disabled`);
+    } else {
+      // Empty input
+      confirmBtn.disabled = true;
+      console.log("📝 Empty input - button disabled");
+    }
   },
 };
 /**

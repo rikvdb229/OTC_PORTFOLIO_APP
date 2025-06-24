@@ -449,6 +449,21 @@ window.ChartUtils = {
       activeBtn.classList.add("btn-primary");
     }
   },
-};
 
+  createSimpleChartLegend() {
+    const legendContainer = document.querySelector(".chart-legend");
+    if (legendContainer) {
+      legendContainer.innerHTML = `
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #007acc;"></span>
+        <span>Portfolio Value</span>
+      </div>
+      <div class="legend-item">
+        <span class="legend-line"></span>
+        <span>Event</span>
+      </div>
+    `;
+    }
+  },
+};
 console.log("✅ Chart visualization utilities loaded");

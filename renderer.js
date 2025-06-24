@@ -268,24 +268,7 @@ class EnhancedPortfolioApp {
   }
 
   async confirmDelete() {
-    try {
-      const result = await ipcRenderer.invoke(
-        "delete-portfolio-entry",
-        this.currentDeletingEntryId
-      );
-
-      if (result.error) {
-        alert("Error deleting entry: " + result.error);
-        return;
-      }
-
-      this.closeModals();
-      await this.loadPortfolioData();
-      console.log(`✅ Deleted portfolio entry`);
-    } catch (error) {
-      console.error("Error deleting portfolio entry:", error);
-      alert("Error deleting entry");
-    }
+    await window.IPCCommunication.Portfolio.confirmDelete(this);
   }
 
   closeModals() {
@@ -376,24 +359,7 @@ class EnhancedPortfolioApp {
 
   // FIXED: Update header stats method
   updateHeaderStats(overview) {
-    const stats = window.PortfolioCalculations.generatePortfolioStats(overview);
-
-    // Update header values using calculated stats
-    const headerTotalValue = document.getElementById("totalPortfolioValue");
-    const headerActiveOptions = document.getElementById("totalOptions");
-    const headerLastUpdate = document.getElementById("lastPriceUpdate");
-
-    if (headerTotalValue) {
-      headerTotalValue.textContent = this.helpers.formatCurrency(
-        stats.totalValue
-      );
-    }
-    if (headerActiveOptions) {
-      headerActiveOptions.textContent = stats.totalQuantityFormatted;
-    }
-    if (headerLastUpdate) {
-      headerLastUpdate.textContent = stats.latestUpdateFormatted;
-    }
+    window.UIStateManager.Stats.updateHeaderStats(this, overview);
   }
 
   updatePortfolioStats(overview, targetPercentage = 65) {
@@ -543,44 +509,7 @@ class EnhancedPortfolioApp {
   }
 
   calculateSaleProceeds() {
-    if (!this.currentSellEntry) return;
-
-    const quantityToSell =
-      parseInt(document.getElementById("quantityToSell").value) || 0;
-    const salePrice =
-      parseFloat(document.getElementById("salePrice").value) || 0;
-
-    if (
-      quantityToSell > 0 &&
-      salePrice > 0 &&
-      this.currentSellEntry.quantity > 0
-    ) {
-      const totalSaleValue = quantityToSell * salePrice;
-
-      // Calculate proportional tax that will be reduced from remaining portfolio
-      const totalTax =
-        this.currentSellEntry.tax_amount ||
-        this.currentSellEntry.tax_auto_calculated ||
-        0;
-      const taxAllocatedToSold =
-        totalTax > 0
-          ? (totalTax * quantityToSell) / this.currentSellEntry.quantity
-          : 0;
-
-      // Net proceeds = full sale value (tax was already paid when granted)
-      const netProceeds = totalSaleValue;
-
-      document.getElementById("totalSaleValue").textContent =
-        this.helpers.formatCurrency(totalSaleValue);
-      document.getElementById("proportionalTax").textContent =
-        this.helpers.formatCurrency(taxAllocatedToSold);
-      document.getElementById("netProceeds").textContent =
-        this.helpers.formatCurrency(netProceeds);
-    } else {
-      document.getElementById("totalSaleValue").textContent = "€ 0.00";
-      document.getElementById("proportionalTax").textContent = "€ 0.00";
-      document.getElementById("netProceeds").textContent = "€ 0.00";
-    }
+    this.helpers.calculateSaleProceeds(this);
   }
 
   async confirmSale() {
@@ -805,34 +734,7 @@ class EnhancedPortfolioApp {
   }
 
   async updateTax() {
-    try {
-      const newTaxAmount = parseFloat(
-        document.getElementById("newTaxAmount").value
-      );
-
-      if (isNaN(newTaxAmount) || newTaxAmount < 0) {
-        alert("Please enter a valid tax amount");
-        return;
-      }
-
-      const result = await ipcRenderer.invoke(
-        "update-tax-amount",
-        this.currentEditingTaxId,
-        newTaxAmount
-      );
-
-      if (result.error) {
-        alert("Error updating tax: " + result.error);
-        return;
-      }
-
-      this.closeModals();
-      await this.loadPortfolioData();
-      console.log(`✅ Updated tax amount to €${newTaxAmount}`);
-    } catch (error) {
-      console.error("Error updating tax:", error);
-      alert("Error updating tax amount");
-    }
+    await this.helpers.updateTax(this);
   }
 
   // ===== EVOLUTION TAB =====
@@ -858,19 +760,7 @@ class EnhancedPortfolioApp {
 
   // ADD this function to renderer.js:
   createSimpleChartLegend() {
-    const legendContainer = document.querySelector(".chart-legend");
-    if (legendContainer) {
-      legendContainer.innerHTML = `
-      <div class="legend-item">
-        <span class="legend-color" style="background-color: #007acc;"></span>
-        <span>Portfolio Value</span>
-      </div>
-      <div class="legend-item">
-        <span class="legend-line"></span>
-        <span>Event</span>
-      </div>
-    `;
-    }
+    window.ChartVisualization.createSimpleChartLegend();
   }
 
   // UPDATED: Switch tab method to handle renamed chart tab
@@ -903,21 +793,7 @@ class EnhancedPortfolioApp {
   // ===== UPDATE FILTER BUTTON COUNTS =====
   // ===== UPDATE FILTER BUTTON COUNTS (FIXED LOGIC) =====
   updateGrantFilterCounts(activeFilters) {
-    // Summary cards should NOT change with filtering
-    // They represent the actual data totals, not filtered view
-
-    // Only log the filtering state for debugging
-    const visibleRows = document.querySelectorAll(
-      "#grantTableBody tr:not(.no-data):not(.filtered-hidden)"
-    );
-    console.log(
-      `📊 Filter applied: ${visibleRows.length} grants visible in current view`
-    );
-
-    // Summary cards remain unchanged - they show actual totals
-    // Total Grants = all grants in database
-    // Total Options Granted = all options ever granted
-    // Still Active = Active + Partially Sold (regardless of filter)
+    window.UIStateManager.Tables.updateGrantFilterCounts(this, activeFilters);
   }
   // ===== UPDATE GRANT FILTER SUMMARY =====
   // ===== MODERN GRANT FILTERING =====
@@ -1080,41 +956,8 @@ class EnhancedPortfolioApp {
    * Validate the confirmation text input
    */
   validateDeleteConfirmation() {
-    const input = this.deleteDatabaseConfirmText;
-    const confirmBtn = this.confirmDeleteDatabase;
-
-    if (!input || !confirmBtn) {
-      console.warn("⚠️ Delete confirmation elements not found");
-      return;
-    }
-
-    const requiredText = "delete database";
-    const userInput = input.value.toLowerCase().trim();
-
-    console.log(
-      `🔍 Validating input: "${userInput}" vs required: "${requiredText}"`
-    );
-
-    // Remove previous validation classes
-    input.classList.remove("valid", "invalid");
-
-    if (userInput === requiredText) {
-      // Valid input
-      input.classList.add("valid");
-      confirmBtn.disabled = false;
-      console.log("✅ Delete confirmation text validated - button enabled");
-    } else if (userInput.length > 0) {
-      // Invalid input (but user is typing)
-      input.classList.add("invalid");
-      confirmBtn.disabled = true;
-      console.log(`❌ Invalid input: "${userInput}" - button disabled`);
-    } else {
-      // Empty input
-      confirmBtn.disabled = true;
-      console.log("📝 Empty input - button disabled");
-    }
+    window.UIStateManager.Validation.validateDeleteConfirmation(this);
   }
-
   /**
    * Execute the database deletion
    */
@@ -1209,17 +1052,7 @@ class EnhancedPortfolioApp {
     return await window.UIStateManager.Database.importDatabase(this, mergeMode);
   }
   debugDeleteElements() {
-    console.log("🔍 Element access test:");
-    console.log("Input via this:", this.deleteDatabaseConfirmText);
-    console.log(
-      "Input via DOM:",
-      document.getElementById("deleteDatabaseConfirmText")
-    );
-    console.log("Button via this:", this.confirmDeleteDatabase);
-    console.log(
-      "Button via DOM:",
-      document.getElementById("confirmDeleteDatabase")
-    );
+    window.DOMHelpers.debugDeleteElements(this);
   }
 
   // ===== SETTINGS MANAGEMENT =====

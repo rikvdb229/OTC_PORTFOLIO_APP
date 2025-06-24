@@ -229,6 +229,26 @@ function safeGetElementWithFallbacks(selectors) {
   }
   return null;
 }
+function debugDeleteElements() {
+  console.log("🔍 DEBUG: Delete database elements");
+  console.log("Modal:", app.deleteDatabaseModal);
+  console.log("Input:", app.deleteDatabaseConfirmText);
+  console.log("Confirm button:", app.confirmDeleteDatabase);
+  console.log("Cancel button:", app.cancelDeleteDatabase);
+
+  if (app.deleteDatabaseConfirmText) {
+    console.log("Input value:", app.deleteDatabaseConfirmText.value);
+    console.log(
+      "Input classes:",
+      app.deleteDatabaseConfirmText.classList.toString()
+    );
+  }
+
+  if (app.confirmDeleteDatabase) {
+    console.log("Button disabled:", app.confirmDeleteDatabase.disabled);
+    console.log("Button text:", app.confirmDeleteDatabase.textContent);
+  }
+}
 
 // Export to global scope for use in renderer.js
 window.DOMHelpers = {
