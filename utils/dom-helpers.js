@@ -4,7 +4,185 @@
  *
  * STEP 2.1: Create this file as utils/dom-helpers.js
  */
+/**
+ * Initialize all DOM elements for the application
+ * MIGRATED FROM: renderer.js initializeElements()
+ * @param {Object} app - Application instance
+ */
+function initializeApplicationElements(app) {
+  console.log("🔍 Initializing DOM elements with helpers...");
 
+  // Define all elements in one organized structure
+  const elementMap = {
+    // Header elements
+    updatePricesBtn: "#updatePricesBtn",
+    settingsToggle: "#settingsToggle",
+
+    // Settings
+    settingsSidebar: "#settingsSidebar",
+    settingsOverlay: "#settingsOverlay",
+    closeSettings: "#closeSettings",
+
+    // Portfolio stats elements
+    totalPortfolioValue: "#totalPortfolioValue",
+    totalUnrealizedGains: "#totalUnrealizedGains",
+    totalRealizedGains: "#totalRealizedGains",
+    totalInvestment: "#totalInvestment",
+    targetStatus: "#targetStatus",
+    targetProgress: "#targetProgress",
+
+    // Table elements
+    portfolioTableBody: "#portfolioTableBody",
+    evolutionTableBody: "#evolutionTableBody",
+    salesTableBody: "#salesTableBody",
+    grantsTableBody: "#grantsTableBody",
+
+    // Navigation
+    portfolioTab: "#portfolioTab",
+    evolutionTab: "#evolutionTab",
+    salesTab: "#salesTab",
+    grantsTab: "#grantsTab",
+    chartTab: "#chartTab",
+
+    // Action buttons
+    addGrantsBtn: "#addGrantsBtn",
+    exportDatabaseBtn: "#exportDatabaseBtn",
+    importDatabaseBtn: "#importDatabaseBtn",
+    importMergeBtn: "#importMergeBtn",
+    deleteDatabaseBtn: "#deleteDatabaseBtn",
+
+    // Modals - Add Grants
+    addGrantsModal: "#addGrantsModal",
+    canceladdGrants: "#canceladdGrants",
+    confirmaddGrants: "#confirmaddGrants",
+    grantDate: "#grantDate",
+    exercisePrice: "#exercisePrice",
+    quantity: "#quantity",
+    actualTaxAmount: "#actualTaxAmount",
+    estimatedTax: "#estimatedTax",
+    exercisePriceHelp: "#exercisePriceHelp",
+
+    // Modals - Delete confirmation
+    deleteConfirmModal: "#deleteConfirmModal",
+    cancelDelete: "#cancelDelete",
+    confirmDelete: "#confirmDelete",
+    deleteEntryDetails: "#deleteEntryDetails",
+
+    // Modals - Sell
+    sellModal: "#sellModal",
+    cancelSell: "#cancelSell",
+    confirmSell: "#confirmSell",
+    sellQuantity: "#sellQuantity",
+    sellPrice: "#sellPrice",
+    sellOptionDetails: "#sellOptionDetails",
+
+    // Modals - Edit Sale
+    editSaleModal: "#editSaleModal",
+    cancelEditSale: "#cancelEditSale",
+    confirmEditSale: "#confirmEditSale",
+    editSaleQuantity: "#editSaleQuantity",
+    editSalePrice: "#editSalePrice",
+    editSaleDate: "#editSaleDate",
+    editSaleDetails: "#editSaleDetails",
+
+    // Modals - Edit Tax
+    editTaxModal: "#editTaxModal",
+    cancelEditTax: "#cancelEditTax",
+    confirmEditTax: "#confirmEditTax",
+    editTaxAmount: "#editTaxAmount",
+    editTaxDetails: "#editTaxDetails",
+
+    // Modals - Settings
+    autoUpdateToggle: "#autoUpdateToggle",
+    autoUpdateStatus: "#autoUpdateStatus",
+    autoUpdateInterval: "#autoUpdateInterval",
+
+    // Modals - Delete Database
+    deleteDatabaseModal: "#deleteDatabaseModal",
+    cancelDeleteDatabase: "#cancelDeleteDatabase",
+    confirmDeleteDatabase: "#confirmDeleteDatabase",
+    deleteDatabaseConfirmText: "#deleteDatabaseConfirmText",
+
+    // Evolution filters
+    evolutionDaysFilter: "#evolutionDaysFilter",
+
+    // Progress and notifications
+    updateProgress: "#updateProgress",
+    priceUpdateNotification: "#priceUpdateNotification",
+    closeNotificationBtn: "#closeNotificationBtn",
+
+    // Charts
+    chartContainer: "#chartContainer",
+
+    // Grant filters
+    fundFilter: "#fundFilter",
+    statusFilter: "#statusFilter",
+    filterSummary: "#filterSummary",
+
+    // Merge grants modal
+    mergeGrantsModal: "#mergeGrantsModal",
+    cancelMergeGrants: "#cancelMergeGrants",
+    proceedSeparateGrant: "#proceedSeparateGrant",
+    proceedMergeGrant: "#proceedMergeGrant",
+    singleGrantMerge: "#singleGrantMerge",
+    existingQuantity: "#existingQuantity",
+    newQuantitySingle: "#newQuantitySingle",
+    multipleGrantsMerge: "#multipleGrantsMerge",
+    existingGrantsList: "#existingGrantsList",
+    mergeDetails: "#mergeDetails",
+    mergeModalTitle: "#mergeModalTitle",
+  };
+
+  // Use your existing initializeElements function
+  const initResults = initializeElements(elementMap, app);
+
+  // Handle NodeList elements separately (arrays of elements)
+  app.navTabs = safeQuerySelectorAll(".nav-tab");
+  app.tabContents = safeQuerySelectorAll(".tab-content");
+
+  // Log initialization results
+  console.log(
+    `✅ DOM Elements initialized: ${initResults.success.length}/${initResults.total}`
+  );
+
+  if (initResults.failed.length > 0) {
+    console.warn(
+      `⚠️ Missing ${initResults.failed.length} elements (may be added dynamically):`,
+      initResults.failed
+    );
+  }
+
+  // Special debug for critical missing elements
+  const criticalElements = [
+    "portfolioTableBody",
+    "addGrantsBtn",
+    "updatePricesBtn",
+    "settingsToggle",
+    "totalPortfolioValue",
+  ];
+
+  const missingCritical = criticalElements.filter((el) =>
+    initResults.failed.includes(el)
+  );
+
+  if (missingCritical.length > 0) {
+    console.error(`❌ Critical elements missing:`, missingCritical);
+  }
+
+  // Debug merge modal specifically (known issue from previous attempts)
+  if (!app.mergeGrantsModal) {
+    console.log("🔍 Debugging merge modal...");
+    const mergeModal = safeQuerySelector("#mergeGrantsModal");
+    if (mergeModal) {
+      console.log("✅ Merge modal found with selector, assigning...");
+      app.mergeGrantsModal = mergeModal;
+    } else {
+      console.warn("⚠️ Merge modal not found - may be added dynamically");
+    }
+  }
+
+  return initResults;
+}
 /**
  * Safe element selection with error handling
  * @param {string} selector - CSS selector or element ID
@@ -252,6 +430,7 @@ function debugDeleteElements() {
 
 // Export to global scope for use in renderer.js
 window.DOMHelpers = {
+  initializeApplicationElements,
   safeQuerySelector,
   safeGetElementById,
   safeQuerySelectorAll,

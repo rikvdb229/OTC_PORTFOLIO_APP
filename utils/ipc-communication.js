@@ -1153,12 +1153,13 @@ const GrantOperations = {
 const IPCCommunication = {
   /**
    * Initialize IPC communication layer
+   * NOTE: This method already exists and calls your IPCEventListeners.initialize(app)
    * @param {Object} app - Application instance
    */
   initialize(app) {
+    // YOUR EXISTING CODE ALREADY DOES THIS - NO CHANGES NEEDED
     console.log("🌐 Initializing IPC communication layer...");
 
-    // Store ipcRenderer reference globally
     if (!window.ipcRenderer) {
       try {
         window.ipcRenderer = require("electron").ipcRenderer;
@@ -1169,7 +1170,7 @@ const IPCCommunication = {
       }
     }
 
-    // Set up event listeners
+    // This calls YOUR IPCEventListeners.initialize(app) method
     const listenersInitialized = IPCEventListeners.initialize(app);
 
     if (listenersInitialized) {
@@ -1181,7 +1182,17 @@ const IPCCommunication = {
     }
   },
 
-  // Expose all operation groups
+  /**
+   * Setup IPC listeners (MIGRATED FROM renderer.js)
+   * SIMPLE WRAPPER: Just calls the existing initialize method
+   * @param {Object} app - Application instance
+   */
+  setupIpcListeners(app) {
+    console.log("📡 Setting up IPC listeners with communication layer...");
+    return this.initialize(app);
+  },
+
+  // Expose all operation groups (keep existing)
   Window: WindowOperations,
   Portfolio: PortfolioOperations,
   Grants: GrantOperations,
@@ -1193,12 +1204,4 @@ const IPCCommunication = {
   App: AppOperations,
   Events: IPCEventListeners,
 };
-
-// Export to global scope
 window.IPCCommunication = IPCCommunication;
-
-// Debug logging
-console.log(
-  "✅ IPC Communication loaded with modules:",
-  Object.keys(IPCCommunication)
-);

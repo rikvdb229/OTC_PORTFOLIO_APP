@@ -20,9 +20,9 @@ class EnhancedPortfolioApp {
       "loadSettings method:",
       window.AppConfig?.SettingsManager?.loadSettings
     );
-    this.initializeElements();
+    window.DOMHelpers.initializeApplicationElements(this);
     this.attachEventListeners();
-    this.setupIpcListeners();
+    window.IPCCommunication.setupIpcListeners(this);
     this.isScrapingInProgress = false;
     this.currentEditingTaxId = null;
     this.currentDeletingEntryId = null;
@@ -54,146 +54,15 @@ class EnhancedPortfolioApp {
     window.UIStateManager.Footer.initializeFooter(this);
   }
 
-  initializeElements() {
-    console.log("🔍 Initializing DOM elements with helpers...");
-
-    // Define all elements in one organized structure
-    const elementMap = {
-      // Header elements
-      updatePricesBtn: "#updatePricesBtn",
-      settingsToggle: "#settingsToggle",
-
-      // Settings
-      settingsSidebar: "#settingsSidebar",
-      settingsOverlay: "#settingsOverlay",
-      closeSettings: "#closeSettings",
-
-      // Portfolio stats elements
-      totalPortfolioValue: "#totalPortfolioValue",
-      portfolioChange: "#portfolioChange",
-      totalOptions: "#totalOptions",
-      lastPriceUpdate: "#lastPriceUpdate",
-      portfolioTableBody: "#portfolioTableBody",
-
-      // Price update notification
-      priceUpdateNotification: "#priceUpdateNotification",
-      dismissNotification: "#dismissNotification",
-
-      // Action buttons
-      addGrantsBtn: "#addGrantsBtn",
-
-      // Update prices modal
-      updatePricesModal: "#updatePricesModal",
-      updateProgressBar: "#updateProgressBar",
-      updateProgressText: "#updateProgressText",
-      updateStatusOutput: "#updateStatusOutput",
-
-      // Modal elements
-      addGrantsModal: "#addGrantsModal",
-      mergeGrantsModal: "#mergeGrantsModal",
-      sellOptionsModal: "#sellOptionsModal",
-      editTaxModal: "#editTaxModal",
-      deleteConfirmModal: "#deleteConfirmModal",
-      optionInfoModal: "#optionInfoModal",
-      // ADD THIS LINE:
-      editSaleModal: "#editSaleModal",
-
-      // Settings form elements
-      targetPercentage: "#targetPercentage",
-      taxRate: "#taxRate",
-      currencySymbol: "#currencySymbol",
-      autoUpdatePrices: "#autoUpdatePrices",
-      saveSettingsBtn: "#saveSettingsBtn",
-
-      // Tab content table bodies
-      evolutionTableBody: "#evolutionTableBody",
-      salesTableBody: "#salesTableBody",
-      grantTableBody: "#grantTableBody",
-
-      // Database management
-      exportDatabaseBtn: "#exportDatabaseBtn",
-      importDatabaseBtn: "#importDatabaseBtn",
-      importMergeBtn: "#importMergeBtn",
-      deleteDatabaseBtn: "#deleteDatabaseBtn",
-
-      // Delete database modal elements
-      deleteDatabaseModal: "#deleteDatabaseModal",
-      deleteDatabaseConfirmText: "#deleteDatabaseConfirmText",
-      confirmDeleteDatabase: "#confirmDeleteDatabase",
-      cancelDeleteDatabase: "#cancelDeleteDatabase",
-      // ✅ FIXED: Updated merge grants modal elements to match your HTML
-      existingGrantDate: "#existingGrantDate",
-      existingExercisePrice: "#existingExercisePrice",
-      existingQuantity: "#existingQuantity",
-
-      // Both versions for single/multiple grant scenarios
-      newQuantitySingle: "#newQuantitySingle", // ✅ EXISTS in HTML
-      newQuantityMultiple: "#newQuantityMultiple", // ✅ EXISTS in HTML
-
-      // Additional merge modal elements that exist in your HTML
-      singleGrantMerge: "#singleGrantMerge", // ✅ EXISTS
-      multipleGrantsMerge: "#multipleGrantsMerge", // ✅ EXISTS
-      existingGrantsList: "#existingGrantsList", // ✅ EXISTS
-      mergeDetails: "#mergeDetails", // ✅ EXISTS
-      mergeModalTitle: "#mergeModalTitle", // ✅ EXISTS
-    };
-
-    // Use DOM helpers to initialize all elements
-    const initResults = window.DOMHelpers.initializeElements(elementMap, this);
-
-    // Handle NodeList elements separately (arrays of elements)
-    this.navTabs = window.DOMHelpers.safeQuerySelectorAll(".nav-tab");
-    this.tabContents = window.DOMHelpers.safeQuerySelectorAll(".tab-content");
-
-    // Log initialization results
-    console.log(
-      `✅ DOM Elements initialized: ${initResults.success.length}/${initResults.total}`
-    );
-
-    if (initResults.failed.length > 0) {
-      console.warn(
-        `⚠️ Missing ${initResults.failed.length} elements (may be added dynamically):`,
-        initResults.failed
-      );
-    }
-
-    // Special debug for critical missing elements
-    const criticalElements = [
-      "portfolioTableBody",
-      "addGrantsBtn",
-      "updatePricesBtn",
-      "settingsToggle",
-      "totalPortfolioValue",
-    ];
-
-    const missingCritical = criticalElements.filter((el) =>
-      initResults.failed.includes(el)
-    );
-
-    if (missingCritical.length > 0) {
-      console.error(`❌ Critical elements missing:`, missingCritical);
-    }
-
-    // Debug merge modal specifically (known issue from previous attempts)
-    if (!this.mergeGrantsModal) {
-      console.log("🔍 Debugging merge modal...");
-      const mergeModal =
-        window.DOMHelpers.safeQuerySelector("#mergeGrantsModal");
-      if (mergeModal) {
-        console.log("✅ Merge modal found with selector, assigning...");
-        this.mergeGrantsModal = mergeModal;
-      } else {
-        console.warn("⚠️ Merge modal not found - may be added dynamically");
-      }
-    }
-  }
-
   attachEventListeners() {
     console.log("🎯 Setting up event listeners with organized handlers...");
 
     // Use the event handler coordinator to set up all listeners
     window.EventHandlers.EventHandlerCoordinator.initializeAll(this);
-    this.initializeDeleteDatabase();
+
+    // NEW: Use DatabaseManager instead of local method
+    window.UIStateManager.Database.initializeDeleteDatabase(this);
+
     console.log("✅ All event listeners attached successfully");
   }
   /**
@@ -204,20 +73,6 @@ class EnhancedPortfolioApp {
   toggleNotes(noteId, expand) {
     window.UIStateManager.Tabs.toggleNotes(this, noteId, expand);
   }
-
-  setupIpcListeners() {
-    console.log("📡 Setting up IPC listeners with communication layer...");
-
-    // Initialize IPC communication layer
-    const ipcInitialized = window.IPCCommunication.initialize(this);
-
-    if (ipcInitialized) {
-      console.log("✅ IPC communication layer ready");
-    } else {
-      console.error("❌ Failed to initialize IPC communication");
-    }
-  }
-
   // ===== TAB NAVIGATION =====
   switchTab(tabName) {
     if (window.UIStateManager && window.UIStateManager.Tabs) {
@@ -636,64 +491,6 @@ class EnhancedPortfolioApp {
   initializeGrantFilters() {
     window.UIStateManager.Tables.initializeGrantFilters(this);
   }
-
-  // ===== DATABASE MANAGEMENT =====
-  initializeDeleteDatabase() {
-    console.log("🗑️ Initializing delete database functionality...");
-
-    // Delete database button click handler
-    if (this.deleteDatabaseBtn) {
-      this.deleteDatabaseBtn.addEventListener("click", () => {
-        this.showDeleteDatabaseModal();
-      });
-    }
-
-    // Cancel delete database
-    if (this.cancelDeleteDatabase) {
-      this.cancelDeleteDatabase.addEventListener("click", () => {
-        this.closeModals();
-      });
-    }
-
-    // Confirm delete database
-    if (this.confirmDeleteDatabase) {
-      this.confirmDeleteDatabase.addEventListener("click", () => {
-        this.executeDeleteDatabase();
-      });
-    }
-
-    // Text input validation - use direct DOM query as fallback
-    const textInput =
-      this.deleteDatabaseConfirmText ||
-      document.getElementById("deleteDatabaseConfirmText");
-    if (textInput) {
-      console.log("✅ Found text input element, attaching validation listener");
-
-      // Add multiple event listeners for better responsiveness
-      ["input", "keyup", "paste", "change"].forEach((eventType) => {
-        textInput.addEventListener(eventType, (e) => {
-          console.log(
-            `🔍 Text input event triggered: ${eventType}, value: "${e.target.value}"`
-          );
-          // Small delay to ensure paste events are processed
-          setTimeout(() => this.validateDeleteConfirmation(), 10);
-        });
-      });
-
-      // Test the validation immediately
-      console.log("🧪 Testing validation function...");
-      this.validateDeleteConfirmation();
-    } else {
-      console.error("❌ Delete confirmation text input not found!");
-      console.log(
-        "Available element:",
-        document.getElementById("deleteDatabaseConfirmText")
-      );
-    }
-
-    console.log("✅ Delete database functionality initialized");
-  }
-
   /**
    * Show the delete database confirmation modal
    */

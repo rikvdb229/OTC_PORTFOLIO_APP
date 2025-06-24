@@ -2646,6 +2646,73 @@ const DatabaseManager = {
     }
   },
   /**
+   * Initialize delete database functionality
+   * MIGRATED FROM: renderer.js initializeDeleteDatabase()
+   * @param {Object} app - Application instance
+   */
+  initializeDeleteDatabase(app) {
+    console.log("🗑️ Initializing delete database functionality...");
+
+    // Delete database button click handler
+    if (app.deleteDatabaseBtn) {
+      app.deleteDatabaseBtn.addEventListener("click", () => {
+        window.UIStateManager.Modals.showDeleteDatabaseModal(app);
+      });
+    }
+
+    // Cancel delete database
+    if (app.cancelDeleteDatabase) {
+      app.cancelDeleteDatabase.addEventListener("click", () => {
+        window.UIStateManager.Modals.closeAllModals(app);
+      });
+    }
+
+    // Confirm delete database
+    if (app.confirmDeleteDatabase) {
+      app.confirmDeleteDatabase.addEventListener("click", () => {
+        this.executeDeleteDatabase(app);
+      });
+    }
+
+    // Text input validation - use direct DOM query as fallback
+    const textInput =
+      app.deleteDatabaseConfirmText ||
+      document.getElementById("deleteDatabaseConfirmText");
+    if (textInput) {
+      console.log("✅ Found text input element, attaching validation listener");
+
+      // Add multiple event listeners for better responsiveness
+      ["input", "keyup", "paste", "change"].forEach((eventType) => {
+        textInput.addEventListener(eventType, (e) => {
+          console.log(
+            `🔍 Text input event triggered: ${eventType}, value: "${e.target.value}"`
+          );
+          // Small delay to ensure paste events are processed
+          setTimeout(
+            () =>
+              window.UIStateManager.Validation.validateDeleteConfirmation(app),
+            10
+          );
+        });
+      });
+
+      // Test the validation immediately
+      console.log("🧪 Testing validation function...");
+      setTimeout(
+        () => window.UIStateManager.Validation.validateDeleteConfirmation(app),
+        10
+      );
+    } else {
+      console.error("❌ Delete confirmation text input not found!");
+      console.log(
+        "Available element:",
+        document.getElementById("deleteDatabaseConfirmText")
+      );
+    }
+
+    console.log("✅ Delete database functionality initialized");
+  },
+  /**
    * Execute database deletion with full cleanup
    * @param {Object} app - Application instance
    */
