@@ -1477,6 +1477,157 @@ const ModalManager = {
       app.updateProgressBar.style.width = percentage + "%";
     }
   },
+  // Add to ModalManager section in ui-state-management.js
+  selectGrant(app, grantId) {
+    console.log("📋 User selected grant ID:", grantId);
+
+    app.selectedGrantId = grantId;
+
+    // Update visual selection
+    document.querySelectorAll(".grant-selection-item").forEach((item) => {
+      item.classList.remove("selected");
+    });
+    document
+      .querySelector(`[data-grant-id="${grantId}"]`)
+      .classList.add("selected");
+
+    // Update radio button
+    document.querySelector(`input[value="${grantId}"]`).checked = true;
+
+    // Update merge details
+    const selectedGrant = app.existingGrants.find((g) => g.id === grantId);
+    if (selectedGrant) {
+      const mergeDetails = document.getElementById("mergeDetails");
+      const totalAfter = selectedGrant.quantity + app.newGrantQuantity;
+      mergeDetails.textContent = `- Add to selected grant (Total: ${totalAfter.toLocaleString()} options)`;
+    }
+  },
+  // Add to ModalManager section in ui-state-management.js
+  async showSellModal(app, entryId) {
+    const entry = app.portfolioData.find((e) => e.id === entryId);
+    if (!entry) {
+      alert("Portfolio entry not found");
+      return;
+    }
+
+    app.currentSellEntry = entry;
+
+    // Enhanced sell modal with fund information
+    document.getElementById("sellOptionDetails").innerHTML = `
+    <div class="option-details">
+      <h4>📊 ${app.helpers.formatFundName(entry.fund_name)} Option</h4>
+      <p><strong>Underlying Fund:</strong> <span class="fund-highlight">${
+        entry.fund_name || "Unknown Fund"
+      }</span></p>
+      <p><strong>Grant Date:</strong> ${new Date(
+        entry.grant_date
+      ).toLocaleDateString()}</p>
+      <p><strong>Exercise Price:</strong> ${app.helpers.formatCurrency(
+        entry.exercise_price
+      )}</p>
+      <p><strong>Current Value:</strong> ${app.helpers.formatCurrency(
+        entry.current_value || 0
+      )}</p>
+      <p><strong>Available Quantity:</strong> ${entry.quantity_remaining.toLocaleString()} options</p>
+      <p><strong>Performance:</strong> 
+        <span class="${
+          entry.current_return_percentage >= 0 ? "positive" : "negative"
+        }">
+          ${
+            entry.current_return_percentage
+              ? entry.current_return_percentage.toFixed(1) + "%"
+              : "N/A"
+          }
+        </span>
+      </p>
+    </div>
+  `;
+
+    document.getElementById("quantityToSell").max = entry.quantity_remaining;
+    document.getElementById("maxQuantityHelp").textContent =
+      `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
+    document.getElementById("salePrice").value = entry.current_value || "";
+
+    // Reset calculations
+    app.calculateSaleProceeds();
+
+    window.UIStateManager.Modals.showModal("sellOptionsModal");
+  },
+  showDeleteDatabaseModal(app) {
+    console.log("🗑️ Showing delete database modal");
+
+    // Show modal using existing modal system
+    if (app.deleteDatabaseModal) {
+      app.deleteDatabaseModal.classList.add("active");
+      console.log("✅ Modal shown");
+    }
+
+    // Reset and setup input field
+    const input = document.getElementById("deleteDatabaseConfirmText");
+    const button = document.getElementById("confirmDeleteDatabase");
+
+    if (input) {
+      input.value = "";
+      input.classList.remove("valid", "invalid");
+      console.log("✅ Input field reset");
+    }
+
+    if (button) {
+      button.disabled = true;
+      console.log("✅ Button disabled");
+    }
+
+    // Set up validation with direct event listener
+    setTimeout(() => {
+      if (input && button) {
+        console.log("🔧 Setting up validation listener...");
+
+        // Remove existing event listeners by cloning the node
+        const newInput = input.cloneNode(true);
+        input.parentNode.replaceChild(newInput, input);
+
+        // Add fresh event listener
+        newInput.addEventListener("input", function (e) {
+          console.log("📝 Input event fired, value:", this.value);
+
+          const requiredText = "delete database";
+          const userInput = this.value.toLowerCase().trim();
+          const isValid = userInput === requiredText;
+
+          console.log(
+            `🔍 Checking: "${userInput}" vs "${requiredText}" = ${isValid}`
+          );
+
+          // Update button
+          const currentButton = document.getElementById(
+            "confirmDeleteDatabase"
+          );
+          if (currentButton) {
+            currentButton.disabled = !isValid;
+            console.log(`Button is now: ${isValid ? "ENABLED" : "DISABLED"}`);
+          }
+
+          // Update input styling
+          this.classList.remove("valid", "invalid");
+          if (userInput.length > 0) {
+            this.classList.add(isValid ? "valid" : "invalid");
+          }
+        });
+
+        // Add other event types for completeness
+        ["keyup", "paste", "change"].forEach((eventType) => {
+          newInput.addEventListener(eventType, function (e) {
+            console.log(`📝 ${eventType} event fired`);
+            this.dispatchEvent(new Event("input"));
+          });
+        });
+
+        console.log("✅ Validation listeners attached");
+      } else {
+        console.error("❌ Input or button not found during setup");
+      }
+    }, 200);
+  },
 };
 
 /**

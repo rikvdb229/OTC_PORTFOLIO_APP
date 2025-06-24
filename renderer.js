@@ -203,78 +203,10 @@ class EnhancedPortfolioApp {
 
   // NEW method to handle grant selection
   selectGrant(grantId) {
-    console.log("📋 User selected grant ID:", grantId);
-
-    this.selectedGrantId = grantId;
-
-    // Update visual selection
-    document.querySelectorAll(".grant-selection-item").forEach((item) => {
-      item.classList.remove("selected");
-    });
-    document
-      .querySelector(`[data-grant-id="${grantId}"]`)
-      .classList.add("selected");
-
-    // Update radio button
-    document.querySelector(`input[value="${grantId}"]`).checked = true;
-
-    // Update merge details
-    const selectedGrant = this.existingGrants.find((g) => g.id === grantId);
-    if (selectedGrant) {
-      const mergeDetails = document.getElementById("mergeDetails");
-      const totalAfter = selectedGrant.quantity + this.newGrantQuantity;
-      mergeDetails.textContent = `- Add to selected grant (Total: ${totalAfter.toLocaleString()} options)`;
-    }
+    window.UIStateManager.Modals.selectGrant(this, grantId);
   }
   async showSellModal(entryId) {
-    const entry = this.portfolioData.find((e) => e.id === entryId);
-    if (!entry) {
-      alert("Portfolio entry not found");
-      return;
-    }
-
-    this.currentSellEntry = entry;
-
-    // Enhanced sell modal with fund information
-    document.getElementById("sellOptionDetails").innerHTML = `
-    <div class="option-details">
-      <h4>📊 ${this.helpers.formatFundName(entry.fund_name)} Option</h4>
-      <p><strong>Underlying Fund:</strong> <span class="fund-highlight">${
-        entry.fund_name || "Unknown Fund"
-      }</span></p>
-      <p><strong>Grant Date:</strong> ${new Date(
-        entry.grant_date
-      ).toLocaleDateString()}</p>
-      <p><strong>Exercise Price:</strong> ${this.helpers.formatCurrency(
-        entry.exercise_price
-      )}</p>
-      <p><strong>Current Value:</strong> ${this.helpers.formatCurrency(
-        entry.current_value || 0
-      )}</p>
-      <p><strong>Available Quantity:</strong> ${entry.quantity_remaining.toLocaleString()} options</p>
-      <p><strong>Performance:</strong> 
-        <span class="${
-          entry.current_return_percentage >= 0 ? "positive" : "negative"
-        }">
-          ${
-            entry.current_return_percentage
-              ? entry.current_return_percentage.toFixed(1) + "%"
-              : "N/A"
-          }
-        </span>
-      </p>
-    </div>
-  `;
-
-    document.getElementById("quantityToSell").max = entry.quantity_remaining;
-    document.getElementById("maxQuantityHelp").textContent =
-      `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
-    document.getElementById("salePrice").value = entry.current_value || "";
-
-    // Reset calculations
-    this.calculateSaleProceeds();
-
-    window.UIStateManager.Modals.showModal("sellOptionsModal");
+    await window.UIStateManager.Modals.showSellModal(this, entryId);
   }
 
   calculateSaleProceeds() {
@@ -313,23 +245,7 @@ class EnhancedPortfolioApp {
   }
 
   showDeleteDatabaseModal() {
-    console.log("🗑️ Showing delete database modal");
-
-    // Reset the confirmation input
-    if (this.deleteDatabaseConfirmText) {
-      this.deleteDatabaseConfirmText.value = "";
-      this.deleteDatabaseConfirmText.classList.remove("valid", "invalid");
-    }
-
-    // Disable the confirm button
-    if (this.confirmDeleteDatabase) {
-      this.confirmDeleteDatabase.disabled = true;
-    }
-
-    // Show the modal
-    if (this.deleteDatabaseModal) {
-      this.deleteDatabaseModal.classList.add("active");
-    }
+    window.UIStateManager.Modals.showDeleteDatabaseModal(this);
   }
 
   async confirmDelete() {
