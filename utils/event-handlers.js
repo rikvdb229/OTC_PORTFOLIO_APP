@@ -306,7 +306,7 @@ const ModalHandlers = {
       { id: "cancelDelete", handler: () => app.closeModals() },
       {
         id: "confirmDelete",
-        handler: () => windows.Modals.showDeleteConfirmModal,
+        handler: () => window.IPCCommunication.Portfolio.confirmDelete(app),
       },
 
       // Option Info Modal

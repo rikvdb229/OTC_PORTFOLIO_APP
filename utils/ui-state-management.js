@@ -1103,12 +1103,80 @@ const ModalManager = {
    * @param {Object} app - Portfolio app instance
    * @param {number} entryId - ID of entry to delete
    */
-  async showDeleteConfirmModal(app, entryId) {
+  /**
+   * Show delete confirmation modal for portfolio entry - FIXED VERSION
+   * ✅ EXTRACTED FROM: renderer.js showDeleteConfirmModal() method
+   * @param {Object} app - Portfolio app instance
+   * @param {number} entryId - ID of entry to delete
+   */
+  /**
+   * Show delete confirmation modal for portfolio entry - FIXED VERSION
+   * ✅ EXTRACTED FROM: renderer.js showDeleteConfirmModal() method
+   * @param {Object} app - Portfolio app instance
+   * @param {number} entryId - ID of entry to delete
+   */
+  /**
+   * Show delete confirmation modal for portfolio entry - FIXED VERSION
+   * ✅ EXTRACTED FROM: renderer.js showDeleteConfirmModal() method
+   * @param {Object} app - Portfolio app instance
+   * @param {number} entryId - ID of entry to delete
+   */
+  showDeleteConfirmModal(app, entryId) {
     try {
       console.log(`🗑️ Showing delete confirmation for entry ID: ${entryId}`);
 
+      // FIND THE ACTUAL ENTRY DATA
+      const entry = app.portfolioData.find((e) => e.id === entryId);
+      if (!entry) {
+        console.error(`❌ Portfolio entry not found for ID: ${entryId}`);
+        alert("Portfolio entry not found");
+        return;
+      }
+
+      console.log("📝 Found entry data:", entry);
+
       // Store the entry ID for deletion
       app.currentDeletingEntryId = entryId;
+
+      // POPULATE THE MODAL FIELDS WITH ACTUAL DATA
+      try {
+        // Grant Date
+        const deleteGrantDate = document.getElementById("deleteGrantDate");
+        if (deleteGrantDate && entry.grant_date) {
+          deleteGrantDate.textContent = window.FormatHelpers.formatDate(
+            entry.grant_date
+          );
+        }
+
+        // Quantity
+        const deleteQuantity = document.getElementById("deleteQuantity");
+        if (deleteQuantity && entry.quantity_remaining !== undefined) {
+          deleteQuantity.textContent =
+            entry.quantity_remaining.toLocaleString();
+        }
+
+        // Exercise Price
+        const deleteExercisePrice = document.getElementById(
+          "deleteExercisePrice"
+        );
+        if (deleteExercisePrice && entry.exercise_price !== undefined) {
+          deleteExercisePrice.textContent =
+            window.FormatHelpers.formatCurrencyValue(entry.exercise_price);
+        }
+
+        // Current Value
+        const deleteCurrentValue =
+          document.getElementById("deleteCurrentValue");
+        if (deleteCurrentValue && entry.current_value !== undefined) {
+          deleteCurrentValue.textContent =
+            window.FormatHelpers.formatCurrencyValue(entry.current_value);
+        }
+
+        console.log("✅ Modal fields populated successfully");
+      } catch (populationError) {
+        console.error("❌ Error populating modal fields:", populationError);
+        // Continue showing modal even if population fails
+      }
 
       // Enable/disable confirm button based on entry ID
       if (app.confirmDeleteEntry) {
@@ -1118,12 +1186,13 @@ const ModalManager = {
       // Show the delete confirmation modal (for portfolio entries, not database)
       if (app.deleteConfirmModal) {
         app.deleteConfirmModal.classList.add("active");
-        console.log("✅ Delete confirmation modal displayed");
+        console.log("✅ Delete confirmation modal displayed with entry data");
       } else {
         console.error("❌ Delete confirmation modal element not found");
       }
     } catch (error) {
       console.error("❌ Error showing delete confirmation modal:", error);
+      alert("Error showing delete confirmation: " + error.message);
     }
   },
   /**
