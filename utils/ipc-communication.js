@@ -764,10 +764,6 @@ const AppOperations = {
  * IPC Event listeners setup
  */
 const IPCEventListeners = {
-  /**
-   * Set up IPC event listeners
-   * @param {Object} app - Application instance for callbacks
-   */
   initialize(app) {
     console.log("📡 Setting up IPC event listeners...");
 
@@ -776,8 +772,25 @@ const IPCEventListeners = {
       return false;
     }
 
-    // Progress updates during scraping
+    // DETAILED progress updates during scraping
     window.ipcRenderer.on("scrape-progress", (event, progressText) => {
+      console.log(`📊 Received detailed progress: ${progressText}`);
+
+      if (app.updateProgress && typeof app.updateProgress === "function") {
+        app.updateProgress(progressText);
+      }
+
+      // Also update UI state manager
+      if (window.UIStateManager && window.UIStateManager.Modals) {
+        window.UIStateManager.Modals.updateProgress(app, progressText);
+      }
+    });
+
+    // SIMPLIFIED progress updates (fallback)
+    window.ipcRenderer.on("scrape-progress-simple", (event, progressText) => {
+      console.log(`📊 Received simple progress: ${progressText}`);
+
+      // Only use if detailed progress isn't working
       if (app.updateProgress && typeof app.updateProgress === "function") {
         app.updateProgress(progressText);
       }
@@ -787,12 +800,10 @@ const IPCEventListeners = {
     return true;
   },
 
-  /**
-   * Remove all IPC listeners (cleanup)
-   */
   cleanup() {
     if (window.ipcRenderer) {
       window.ipcRenderer.removeAllListeners("scrape-progress");
+      window.ipcRenderer.removeAllListeners("scrape-progress-simple");
       console.log("🧹 IPC listeners cleaned up");
     }
   },
@@ -1164,16 +1175,19 @@ const GrantOperations = {
 /**
  * Main IPC Communication coordinator
  */
+/**
+ * Main IPC Communication coordinator - SAFE VERSION
+ * REPLACE your existing IPCCommunication object with this
+ */
 const IPCCommunication = {
   /**
    * Initialize IPC communication layer
-   * NOTE: This method already exists and calls your IPCEventListeners.initialize(app)
    * @param {Object} app - Application instance
    */
   initialize(app) {
-    // YOUR EXISTING CODE ALREADY DOES THIS - NO CHANGES NEEDED
     console.log("🌐 Initializing IPC communication layer...");
 
+    // Load ipcRenderer if not available
     if (!window.ipcRenderer) {
       try {
         window.ipcRenderer = require("electron").ipcRenderer;
@@ -1184,21 +1198,39 @@ const IPCCommunication = {
       }
     }
 
-    // This calls YOUR IPCEventListeners.initialize(app) method
-    const listenersInitialized = IPCEventListeners.initialize(app);
+    // SAFE CHECK: Make sure IPCEventListeners exists before calling it
+    if (
+      typeof IPCEventListeners !== "undefined" &&
+      IPCEventListeners &&
+      IPCEventListeners.initialize
+    ) {
+      try {
+        const listenersInitialized = IPCEventListeners.initialize(app);
 
-    if (listenersInitialized) {
-      console.log("✅ IPC Communication layer initialized successfully");
-      return true;
+        if (listenersInitialized) {
+          console.log("✅ IPC Communication layer initialized successfully");
+          return true;
+        } else {
+          console.error("❌ Failed to initialize IPC listeners");
+          return false;
+        }
+      } catch (error) {
+        console.error("❌ Error initializing IPC listeners:", error);
+        return false;
+      }
     } else {
-      console.error("❌ Failed to initialize IPC listeners");
-      return false;
+      console.warn(
+        "⚠️ IPCEventListeners not available, continuing without event listeners"
+      );
+      console.log(
+        "📝 This is usually fine - event listeners will be added later"
+      );
+      return true; // Allow app to continue
     }
   },
 
   /**
-   * Setup IPC listeners (MIGRATED FROM renderer.js)
-   * SIMPLE WRAPPER: Just calls the existing initialize method
+   * Setup IPC listeners - SAFE VERSION
    * @param {Object} app - Application instance
    */
   setupIpcListeners(app) {
@@ -1206,7 +1238,7 @@ const IPCCommunication = {
     return this.initialize(app);
   },
 
-  // Expose all operation groups (keep existing)
+  // Expose all operation groups (keep your existing references)
   Window: WindowOperations,
   Portfolio: PortfolioOperations,
   Grants: GrantOperations,
@@ -1216,6 +1248,11 @@ const IPCCommunication = {
   Evolution: EvolutionOperations,
   Database: DatabaseOperations,
   App: AppOperations,
-  Events: IPCEventListeners,
+  Events: IPCEventListeners, // This will be undefined at first, but that's OK
 };
+
+// Export to global scope
+window.IPCCommunication = IPCCommunication;
+
+console.log("✅ IPC Communication module loaded successfully");
 window.IPCCommunication = IPCCommunication;

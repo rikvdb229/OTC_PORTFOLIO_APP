@@ -248,107 +248,170 @@ ipcMain.handle("scrape-data", async (event) => {
   return new Promise((resolve) => {
     scraper
       .scrapeData((progress) => {
-        // Send simplified progress updates to renderer
-        let simplifiedProgress = "Connecting...";
-        if (progress.includes("Loading") || progress.includes("page")) {
-          simplifiedProgress = "Loading data...";
-        } else if (progress.includes("Setting") || progress.includes("date")) {
-          simplifiedProgress = "Processing...";
-        } else if (
-          progress.includes("Download") ||
-          progress.includes("Export")
-        ) {
-          simplifiedProgress = "Downloading...";
-        } else if (
-          progress.includes("complete") ||
-          progress.includes("success")
-        ) {
-          simplifiedProgress = "Complete!";
-        }
+        console.log(`📊 Scraper progress: ${progress}`);
 
-        event.sender.send("scrape-progress", simplifiedProgress);
+        // FIXED: Only send detailed progress - no conflicts
+        mainWindow.webContents.send("scrape-progress", progress);
       })
       .then(async (result) => {
-        // If scraping was successful, update database with new prices
-        if (result.success && portfolioDb) {
+        console.log("✅ Scraping completed:", result);
+
+        // CRITICAL: Process CSV data if scraping was successful
+        if (result.success && result.filePath && portfolioDb) {
           try {
-            // Parse the CSV and update prices in database
+            console.log("🔄 Processing CSV file:", result.filePath);
+
+            // Check if file exists
+            if (!fs.existsSync(result.filePath)) {
+              console.error("❌ CSV file not found:", result.filePath);
+              resolve(result);
+              return;
+            }
+
+            // Parse the CSV file
             const Papa = require("papaparse");
+            const csvContent = fs.readFileSync(result.filePath, "utf-8");
+            console.log("📄 CSV content length:", csvContent.length);
 
-            if (fs.existsSync(result.filePath)) {
-              const csvContent = fs.readFileSync(result.filePath, "utf-8");
-              const parsedData = Papa.parse(csvContent, {
-                header: false,
-                dynamicTyping: true,
-                skipEmptyLines: true,
-                delimiter: ",",
-              });
+            const parsedData = Papa.parse(csvContent, {
+              header: false,
+              dynamicTyping: true,
+              skipEmptyLines: true,
+              delimiter: ",",
+            });
 
-              console.log("CSV parsed, total rows:", parsedData.data.length);
+            console.log("📊 CSV parsed, total rows:", parsedData.data.length);
+            console.log("📄 First few rows:", parsedData.data.slice(0, 3));
 
-              // Transform the data to match expected format
-              const transformedData = parsedData.data
-                .map((row, index) => {
-                  try {
-                    if (row.length >= 8) {
-                      // Ensure we have all columns including fund name
-                      const exercisePrice = parseFloat(row[3]);
-                      const currentValue = parseFloat(row[5]);
-                      const grantDate = row[2];
-                      const priceDate = row[6]; // FIXED: Column 6 is the price date
-                      const fundName = row[7]; // Fund name is in column 7
+            // Send processing update
+            mainWindow.webContents.send(
+              "scrape-progress",
+              "Processing CSV data..."
+            );
 
-                      if (
-                        !isNaN(exercisePrice) &&
-                        !isNaN(currentValue) &&
-                        exercisePrice > 0 &&
-                        currentValue > 0 &&
-                        fundName &&
-                        fundName.trim() !== ""
-                      ) {
-                        return {
-                          exercise_price: exercisePrice,
-                          current_value: currentValue,
-                          grant_date: grantDate,
-                          price_date: priceDate, // FIXED: Use actual price date from CSV
-                          fund_name: fundName.trim(),
-                        };
-                      }
+            // Transform the data to match expected database format
+            const transformedData = parsedData.data
+              .map((row, index) => {
+                try {
+                  if (row.length >= 8) {
+                    // Parse CSV columns (adjust based on actual CSV structure)
+                    const exercisePrice = parseFloat(row[3]);
+                    const currentValue = parseFloat(row[5]);
+                    const grantDate = row[2];
+                    const priceDate =
+                      row[6] || new Date().toISOString().split("T")[0];
+                    const fundName = row[7];
+
+                    // Validate data
+                    if (
+                      !isNaN(exercisePrice) &&
+                      !isNaN(currentValue) &&
+                      exercisePrice > 0 &&
+                      currentValue > 0 &&
+                      fundName &&
+                      fundName.trim() !== ""
+                    ) {
+                      return {
+                        exercise_price: exercisePrice,
+                        current_value: currentValue,
+                        grant_date: grantDate,
+                        price_date: priceDate,
+                        fund_name: fundName.trim(),
+                      };
                     }
-                    return null;
-                  } catch (error) {
-                    console.warn(`Error parsing row ${index}:`, error, row);
-                    return null;
                   }
-                })
-                .filter((row) => row !== null);
+                  return null;
+                } catch (error) {
+                  console.warn(`⚠️ Error parsing row ${index}:`, error);
+                  return null;
+                }
+              })
+              .filter((row) => row !== null);
+
+            console.log("🔄 Transformed data count:", transformedData.length);
+            console.log(
+              "📊 Sample transformed data:",
+              transformedData.slice(0, 3)
+            );
+
+            if (transformedData.length > 0) {
+              // Get the actual price date from the CSV data
+              const actualPriceDate =
+                transformedData[0].price_date ||
+                new Date().toISOString().split("T")[0];
 
               console.log(
-                "Transformed data for database:",
-                transformedData.slice(0, 3)
+                "💾 Updating database with price date:",
+                actualPriceDate
               );
 
-              if (transformedData.length > 0) {
-                // FIXED: Pass the actual price date from CSV, not today's date
-                const actualPriceDate =
-                  transformedData[0].price_date ||
-                  new Date().toISOString().split("T")[0];
-                await portfolioDb.updatePricesFromCSV(
-                  transformedData,
-                  actualPriceDate
-                );
-                console.log(
-                  `✅ Portfolio prices updated: ${transformedData.length} entries with price date: ${actualPriceDate}`
-                );
-              } else {
-                console.warn("❌ No valid price data found in CSV");
-              }
+              // Update the database with new price data
+              await portfolioDb.updatePricesFromCSV(
+                transformedData,
+                actualPriceDate
+              );
+
+              // Send completion update
+              mainWindow.webContents.send(
+                "scrape-progress",
+                `✅ Successfully updated ${transformedData.length} price entries`
+              );
+
+              console.log(
+                `✅ Portfolio prices updated: ${transformedData.length} entries with price date: ${actualPriceDate}`
+              );
+
+              // Update the result to include processing info
+              result.message = `Data scraped and processed successfully. Updated ${transformedData.length} price entries.`;
+              result.priceEntriesUpdated = transformedData.length;
+              result.priceDate = actualPriceDate;
+            } else {
+              console.warn("❌ No valid price data found in CSV");
+              mainWindow.webContents.send(
+                "scrape-progress",
+                "❌ No valid price data found in CSV"
+              );
+              result.message =
+                "Data scraped but no valid price data found in CSV.";
+              result.priceEntriesUpdated = 0;
             }
           } catch (dbError) {
-            console.error("❌ Error updating portfolio prices:", dbError);
+            console.error("❌ Error processing CSV data:", dbError);
+            mainWindow.webContents.send(
+              "scrape-progress",
+              `❌ CSV processing failed: ${dbError.message}`
+            );
+            // Don't fail the entire operation, just log the error
+            result.message = `Scraping successful but CSV processing failed: ${dbError.message}`;
+            result.csvProcessingError = dbError.message;
           }
+        } else if (result.success && !result.filePath) {
+          console.warn("⚠️ Scraping successful but no file path provided");
+          mainWindow.webContents.send(
+            "scrape-progress",
+            "⚠️ No file downloaded"
+          );
+        } else if (!result.success) {
+          console.error("❌ Scraping failed:", result.error);
+          mainWindow.webContents.send(
+            "scrape-progress",
+            `❌ Scraping failed: ${result.error}`
+          );
         }
+
         resolve(result);
+      })
+      .catch((error) => {
+        console.error("❌ Scraping failed with exception:", error);
+        mainWindow.webContents.send(
+          "scrape-progress",
+          `❌ Scraping failed: ${error.message}`
+        );
+        resolve({
+          success: false,
+          error: error.message,
+          message: "Scraping failed due to unexpected error",
+        });
       });
   });
 });

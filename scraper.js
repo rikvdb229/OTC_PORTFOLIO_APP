@@ -13,9 +13,26 @@ class KBCScraper {
 
     // Ensure DATA directory exists with proper permissions
     this.ensureDataDirectory();
+
+    // IMPROVED: Human-like timing configuration
+    this.humanTiming = {
+      typing: { min: 40, max: 100 }, // ms between keystrokes (balanced speed)
+      mouseMove: { min: 150, max: 400 }, // ms for mouse movements
+      pageLoad: { min: 2000, max: 4000 }, // ms to wait for page loads
+      thinking: { min: 500, max: 1200 }, // ms for "thinking" pauses
+      reading: { min: 1000, max: 2500 }, // ms for "reading" content
+      postAction: { min: 200, max: 600 }, // ms after actions
+    };
+
+    // IMPROVED: Retry configuration
+    this.retryConfig = {
+      maxAttempts: 3,
+      elementSearch: 2,
+      downloadWait: 12, // seconds
+    };
   }
 
-  // Get proper data directory that works with user permissions
+  // EXISTING: Keep your current directory methods
   getDataDirectory() {
     let dataDir;
 
@@ -39,7 +56,6 @@ class KBCScraper {
     return dataDir;
   }
 
-  // Ensure data directory exists with error handling
   ensureDataDirectory() {
     try {
       if (!fs.existsSync(this.downloadDir)) {
@@ -58,19 +74,205 @@ class KBCScraper {
     }
   }
 
-  // Helper method to replace waitForTimeout
-  async delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  // IMPROVED: Human-like delay with randomization
+  async humanDelay(baseMs, variation = 0.3) {
+    const minMs = Math.floor(baseMs * (1 - variation));
+    const maxMs = Math.floor(baseMs * (1 + variation));
+    const randomMs = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    return new Promise((resolve) => setTimeout(resolve, randomMs));
   }
 
-  // Find Chrome executable for distribution
+  // DEPRECATED: Keep for compatibility but redirect to humanDelay
+  async delay(ms) {
+    return this.humanDelay(ms, 0.1); // Small variation for old calls
+  }
+
+  // IMPROVED: Human-like typing with character delays
+  async humanType(page, selector, text, options = {}) {
+    const {
+      clearFirst = true,
+      typingSpeed = "normal", // 'slow', 'normal', 'fast'
+    } = options;
+
+    // Speed presets
+    const speeds = {
+      slow: { min: 80, max: 150 },
+      normal: { min: 40, max: 100 },
+      fast: { min: 20, max: 60 },
+    };
+
+    const speed = speeds[typingSpeed] || speeds.normal;
+
+    try {
+      await page.focus(selector);
+      await this.humanDelay(this.humanTiming.thinking.min, 0.4);
+
+      if (clearFirst) {
+        await page.keyboard.down("Control");
+        await page.keyboard.press("KeyA");
+        await page.keyboard.up("Control");
+        await this.humanDelay(100, 0.3);
+      }
+
+      // Type character by character with human-like delays
+      for (let i = 0; i < text.length; i++) {
+        await page.keyboard.type(text[i]);
+
+        // Random delay between characters
+        if (i < text.length - 1) {
+          const charDelay =
+            Math.floor(Math.random() * (speed.max - speed.min + 1)) + speed.min;
+          await new Promise((resolve) => setTimeout(resolve, charDelay));
+        }
+      }
+
+      console.log(`✅ Human typed: "${text}" in ${selector}`);
+    } catch (error) {
+      console.error(`❌ Human typing failed for ${selector}:`, error);
+      throw error;
+    }
+  }
+
+  // IMPROVED: Human-like clicking with mouse movement simulation
+  async humanClick(page, selector, options = {}) {
+    const {
+      moveToFirst = true,
+      doubleClick = false,
+      thinkingPause = true,
+    } = options;
+
+    try {
+      const element = await page.$(selector);
+      if (!element) {
+        throw new Error(`Element ${selector} not found`);
+      }
+
+      if (moveToFirst) {
+        // Simulate mouse movement to element
+        const box = await element.boundingBox();
+        if (box) {
+          // Add slight randomization to click position
+          const x = box.x + box.width / 2 + (Math.random() - 0.5) * 10;
+          const y = box.y + box.height / 2 + (Math.random() - 0.5) * 10;
+
+          await page.mouse.move(x, y);
+          await this.humanDelay(this.humanTiming.mouseMove.min, 0.4);
+        }
+      }
+
+      if (thinkingPause) {
+        // Brief "thinking" pause before clicking
+        await this.humanDelay(this.humanTiming.thinking.min, 0.5);
+      }
+
+      if (doubleClick) {
+        await page.click(selector, { clickCount: 2 });
+      } else {
+        await page.click(selector);
+      }
+
+      console.log(`✅ Human clicked: ${selector}`);
+
+      // Small post-click delay
+      await this.humanDelay(this.humanTiming.postAction.min, 0.3);
+    } catch (error) {
+      console.error(`❌ Human click failed for ${selector}:`, error);
+      throw error;
+    }
+  }
+
+  // IMPROVED: Human-like page reading simulation
+  async simulateReading(page, options = {}) {
+    const {
+      scrolls = Math.floor(Math.random() * 2) + 1, // 1-2 scrolls (reduced for speed)
+      readingTime = "normal", // 'quick', 'normal', 'thorough'
+    } = options;
+
+    const readingTimes = {
+      quick: { min: 600, max: 1200 },
+      normal: { min: 1000, max: 2000 },
+      thorough: { min: 1800, max: 3500 },
+    };
+
+    const timing = readingTimes[readingTime] || readingTimes.normal;
+
+    try {
+      // Random small scrolls to simulate reading
+      for (let i = 0; i < scrolls; i++) {
+        const scrollDistance = Math.floor(Math.random() * 150) + 50;
+        await page.evaluate((distance) => {
+          window.scrollBy(0, distance);
+        }, scrollDistance);
+
+        const readTime = Math.random() * (timing.max - timing.min) + timing.min;
+        await this.humanDelay(readTime, 0.3);
+      }
+
+      console.log(`✅ Simulated reading with ${scrolls} scrolls`);
+    } catch (error) {
+      console.warn("⚠️ Reading simulation failed:", error);
+    }
+  }
+
+  // IMPROVED: Smart element finder with human-like behavior
+  async findAndClickElement(page, strategies, options = {}) {
+    const {
+      simulateSearch = true,
+      maxAttempts = this.retryConfig.elementSearch,
+    } = options;
+
+    if (simulateSearch) {
+      // Simulate looking around the page first
+      await this.simulateReading(page, { scrolls: 1, readingTime: "quick" });
+    }
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`🔍 Search attempt ${attempt}/${maxAttempts}`);
+
+      for (const strategy of strategies) {
+        try {
+          const { selector, description, clickOptions = {} } = strategy;
+
+          // Wait a moment for elements to potentially appear
+          await this.humanDelay(300, 0.3);
+
+          const element = await page.$(selector);
+          if (element) {
+            console.log(`✅ Found element: ${description}`);
+
+            // Human-like pause before clicking
+            await this.humanDelay(400, 0.4);
+
+            await this.humanClick(page, selector, clickOptions);
+            return true;
+          }
+        } catch (error) {
+          console.warn(`⚠️ Strategy failed: ${strategy.description}`, error);
+        }
+      }
+
+      if (attempt < maxAttempts) {
+        console.log(`⏳ Attempt ${attempt} failed, waiting before retry...`);
+        await this.humanDelay(1500, 0.4); // Wait before retrying
+
+        // Refresh page content understanding
+        await page.evaluate(() => {
+          // Force a small DOM refresh
+          document.body.offsetHeight;
+        });
+      }
+    }
+
+    return false;
+  }
+
+  // EXISTING: Keep your Chrome detection (but improved)
   findChromeExecutable() {
     const possiblePaths = [];
 
     if (process.platform === "win32") {
       // Windows Chrome paths
       possiblePaths.push(
-        // Standard Chrome installations
         "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
         "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
       );
@@ -114,102 +316,63 @@ class KBCScraper {
     }
 
     // Check Puppeteer's bundled Chromium
-    const puppeteerChromiumPath = path.join(
-      __dirname,
-      "node_modules",
-      "puppeteer",
-      ".local-chromium"
-    );
-    if (fs.existsSync(puppeteerChromiumPath)) {
+    try {
+      const puppeteerChrome = puppeteer.executablePath();
+      if (puppeteerChrome) {
+        possiblePaths.unshift(puppeteerChrome); // Prefer bundled version
+      }
+    } catch (e) {
+      console.warn("Puppeteer bundled Chrome not available");
+    }
+
+    // Find first existing executable
+    for (const chromePath of possiblePaths) {
       try {
-        const versions = fs.readdirSync(puppeteerChromiumPath);
-        if (versions.length > 0) {
-          const latestVersion = versions.sort().pop();
-          let executablePath;
-
-          if (process.platform === "win32") {
-            executablePath = path.join(
-              puppeteerChromiumPath,
-              latestVersion,
-              "chrome-win",
-              "chrome.exe"
-            );
-          } else if (process.platform === "darwin") {
-            executablePath = path.join(
-              puppeteerChromiumPath,
-              latestVersion,
-              "chrome-mac",
-              "Chromium.app",
-              "Contents",
-              "MacOS",
-              "Chromium"
-            );
-          } else {
-            executablePath = path.join(
-              puppeteerChromiumPath,
-              latestVersion,
-              "chrome-linux",
-              "chrome"
-            );
-          }
-
-          if (fs.existsSync(executablePath)) {
-            possiblePaths.unshift(executablePath); // Add to beginning for priority
-            console.log(`🔍 Found Puppeteer Chromium: ${executablePath}`);
-          }
+        if (fs.existsSync(chromePath)) {
+          console.log(`✅ Found Chrome: ${chromePath}`);
+          return chromePath;
         }
       } catch (error) {
-        console.warn(
-          "Error scanning Puppeteer Chromium directory:",
-          error.message
-        );
+        continue;
       }
     }
 
-    // Check which Chrome executable exists
-    for (const chromePath of possiblePaths) {
-      if (fs.existsSync(chromePath)) {
-        console.log(`✅ Found Chrome at: ${chromePath}`);
-        return chromePath;
-      }
-    }
-
-    console.log("❌ No Chrome executable found in any location");
+    console.warn("❌ Chrome not found in standard locations");
     return null;
   }
 
-  // Get browser launch configuration with Chrome detection
+  // IMPROVED: Less aggressive browser configuration
   getBrowserLaunchConfig() {
     const chromeExecutable = this.findChromeExecutable();
 
     const config = {
-      headless: true,
+      headless: true, // Keep headless for reliability
       args: [
+        // Essential for Electron
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
+
+        // Performance (keep minimal)
         "--disable-gpu",
         "--disable-software-rasterizer",
-        "--disable-background-timer-throttling",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-renderer-backgrounding",
-        "--disable-features=TranslateUI",
-        "--disable-ipc-flooding-protection",
+
+        // Essential browser behavior
         "--no-first-run",
         "--no-default-browser-check",
         "--disable-default-apps",
         "--disable-popup-blocking",
-        "--disable-prompt-on-repost",
-        "--disable-hang-monitor",
-        "--disable-sync",
-        "--disable-web-security",
+
+        // Anti-detection improvements
+        "--disable-blink-features=AutomationControlled",
         "--disable-features=VizDisplayCompositor",
-        "--disable-extensions",
-        "--disable-plugins",
-        "--disable-images", // Faster loading
-        "--disable-javascript-harmony-shipping",
-        "--disable-background-networking",
       ],
+
+      // IMPROVED: More human-like default arguments
+      ignoreDefaultArgs: ["--enable-automation"],
+
+      // IMPROVED: Set realistic window size
+      defaultViewport: null,
     };
 
     // Add Chrome executable if found
@@ -217,22 +380,45 @@ class KBCScraper {
       config.executablePath = chromeExecutable;
     }
 
-    // Platform-specific optimizations
+    // Platform-specific optimizations (simplified)
     if (process.platform === "win32") {
-      config.args.push(
-        "--disable-gpu-sandbox",
-        "--disable-software-rasterizer"
-      );
+      config.args.push("--disable-gpu-sandbox");
     }
 
     return config;
   }
 
+  // IMPROVED: Setup stealth mode
+  async setupStealthMode(page) {
+    // Remove automation indicators
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, "webdriver", {
+        get: () => undefined,
+      });
+
+      // Mock plugins array to look more realistic
+      Object.defineProperty(navigator, "plugins", {
+        get: () => [1, 2, 3, 4, 5], // Fake some plugins
+      });
+
+      // Mock languages
+      Object.defineProperty(navigator, "languages", {
+        get: () => ["en-US", "en"],
+      });
+    });
+
+    // Set realistic timezone and locale
+    await page.setExtraHTTPHeaders({
+      "Accept-Language": "en-US,en;q=0.9",
+    });
+  }
+
+  // MAIN IMPROVED SCRAPING METHOD
   async scrapeData(onProgress = null) {
     let browser = null;
 
     try {
-      if (onProgress) onProgress("Starting scraper...");
+      if (onProgress) onProgress("Starting human-like scraper...");
 
       // Check for Chrome availability first
       const chromeExecutable = this.findChromeExecutable();
@@ -278,6 +464,21 @@ class KBCScraper {
 
       const page = await browser.newPage();
 
+      // IMPROVED: Set more human-like viewport
+      await page.setViewport({
+        width: 1366 + Math.floor(Math.random() * 100), // Slight randomization
+        height: 768 + Math.floor(Math.random() * 100),
+        deviceScaleFactor: 1,
+      });
+
+      // IMPROVED: Set realistic user agent
+      await page.setUserAgent(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      );
+
+      // Setup stealth mode
+      await this.setupStealthMode(page);
+
       // Suppress DevTools console errors and set up error handling
       page.on("console", (msg) => {
         const text = msg.text();
@@ -313,39 +514,61 @@ class KBCScraper {
 
       if (onProgress) onProgress("Loading KBC page...");
 
+      // IMPROVED: Navigate with human-like behavior
       await page.goto("https://option.esop.kbc.be/", {
         waitUntil: "domcontentloaded",
         timeout: 30000,
       });
 
-      // Handle cookies with timeout
+      // Simulate human reading the page
+      await this.simulateReading(page, { readingTime: "normal" });
+
+      if (onProgress) onProgress("Handling cookies...");
+
+      // IMPROVED: Human-like cookie handling
       try {
-        await Promise.race([
-          page.evaluate(() => {
-            const buttons = Array.from(document.querySelectorAll("button, a"));
-            for (let btn of buttons) {
-              if (btn.textContent.toLowerCase().includes("understand")) {
-                btn.click();
-                break;
-              }
-            }
-          }),
-          this.delay(3000), // Max 3 seconds for cookie handling
-        ]);
-        await this.delay(500);
-      } catch (e) {
-        console.log("Cookie handling skipped or failed");
+        const cookieStrategies = [
+          {
+            selector: 'button:contains("understand")',
+            description: "Cookie accept button (contains text)",
+          },
+          {
+            selector: '[id*="cookie"] button, [class*="cookie"] button',
+            description: "Cookie buttons by ID/class",
+          },
+          {
+            selector: "button[data-accept], button[data-consent]",
+            description: "Cookie consent buttons",
+          },
+        ];
+
+        const cookieHandled = await this.findAndClickElement(
+          page,
+          cookieStrategies,
+          {
+            simulateSearch: false, // Skip extra reading for speed
+            maxAttempts: 1,
+          }
+        );
+
+        if (cookieHandled) {
+          await this.humanDelay(800, 0.3); // Wait after cookie handling
+        }
+      } catch (error) {
+        console.log("⚠️ Cookie handling skipped:", error.message);
       }
 
       if (onProgress) onProgress("Setting date and submitting...");
 
-      // Set date with error handling
+      // IMPROVED: Human-like form filling
       try {
-        await page.focus('input[name="from"]');
-        await page.keyboard.down("Control");
-        await page.keyboard.press("KeyA");
-        await page.keyboard.up("Control");
-        await page.type('input[name="from"]', "2015-01-01");
+        await this.humanType(page, 'input[name="from"]', "2015-01-01", {
+          clearFirst: true,
+          typingSpeed: "fast", // Use fast typing for efficiency
+        });
+
+        // Brief pause to "review" the input
+        await this.humanDelay(500, 0.4);
       } catch (dateError) {
         console.warn("Could not set date field:", dateError.message);
         throw new Error(
@@ -353,143 +576,54 @@ class KBCScraper {
         );
       }
 
-      // Handle potential new tab/navigation
-      const newPagePromise = new Promise((resolve) => {
-        const timeout = setTimeout(() => resolve(null), 8000); // 8 second timeout
+      if (onProgress) onProgress("Submitting form...");
 
-        browser.on("targetcreated", async (target) => {
-          if (target.type() === "page") {
-            clearTimeout(timeout);
-            try {
-              const newPage = await target.page();
-              resolve(newPage);
-            } catch (error) {
-              resolve(null);
-            }
-          }
-        });
+      // IMPROVED: Human-like form submission
+      await this.humanClick(page, 'input[type="submit"]', {
+        moveToFirst: true,
+        thinkingPause: true,
       });
 
-      // Click submit button
-      try {
-        await page.click('input[type="submit"]');
-      } catch (submitError) {
-        throw new Error(
-          "Could not submit form. Website structure may have changed."
-        );
-      }
+      // Wait for navigation/new content with human-like patience
+      await this.humanDelay(2500, 0.4);
 
-      if (onProgress) onProgress("Waiting for data to load...");
+      if (onProgress) onProgress("Looking for export options...");
 
-      // Wait for the new page or content
-      let dataPage;
-      try {
-        dataPage = await Promise.race([
-          newPagePromise,
-          this.delay(8000).then(() => page),
-        ]);
+      // Simulate looking around for export options
+      await this.simulateReading(page, { readingTime: "quick" });
 
-        if (!dataPage) {
-          dataPage = page;
+      // IMPROVED: Smart CSV export detection
+      const exportStrategies = [
+        {
+          selector: ".exportText",
+          description: "Original export text element",
+        },
+        {
+          selector: 'a[href*="csv"], a[href*="CSV"]',
+          description: "CSV download links by href",
+        },
+        {
+          selector: 'button:contains("export"), button:contains("Export")',
+          description: "Export buttons",
+        },
+        {
+          selector: "[data-export], [data-download], [data-csv]",
+          description: "Data attribute export elements",
+        },
+      ];
+
+      const csvExported = await this.findAndClickElement(
+        page,
+        exportStrategies,
+        {
+          simulateSearch: true,
+          maxAttempts: 2,
         }
-
-        // Wait for page to be ready
-        await this.delay(3000);
-      } catch (e) {
-        console.log("Using original page as data page");
-        dataPage = page;
-      }
-
-      // Debug current page
-      const currentPageInfo = await dataPage.evaluate(() => ({
-        url: window.location.href,
-        title: document.title,
-        ready: document.readyState,
-      }));
-
-      console.log("Current page info:", currentPageInfo);
-
-      if (onProgress)
-        onProgress(`Processing page: ${currentPageInfo.title}...`);
-
-      // Wait for dynamic content
-      await this.delay(3000);
-
-      if (onProgress) onProgress("Looking for CSV export...");
-
-      // Enhanced CSV export detection
-      const csvExported = await dataPage.evaluate(() => {
-        // Strategy 1: Original .exportText class
-        let exportElement = document.querySelector(".exportText");
-        if (exportElement) {
-          console.log("Found .exportText element");
-          exportElement.click();
-          return true;
-        }
-
-        // Strategy 2: CSV links
-        const links = Array.from(document.querySelectorAll("a"));
-        const csvLink = links.find((link) =>
-          link.textContent.toLowerCase().includes("csv")
-        );
-        if (csvLink) {
-          console.log("Found CSV link:", csvLink.textContent);
-          csvLink.click();
-          return true;
-        }
-
-        // Strategy 3: Export buttons
-        const exportButtons = Array.from(
-          document.querySelectorAll(
-            "button, a, input[type='button'], input[type='submit']"
-          )
-        );
-        const exportButton = exportButtons.find((btn) => {
-          const text = btn.textContent || btn.value || "";
-          return (
-            text.toLowerCase().includes("export") ||
-            text.toLowerCase().includes("download") ||
-            text.toLowerCase().includes("csv")
-          );
-        });
-        if (exportButton) {
-          console.log(
-            "Found export button:",
-            exportButton.textContent || exportButton.value
-          );
-          exportButton.click();
-          return true;
-        }
-
-        // Strategy 4: Data attributes
-        const dataElements = Array.from(
-          document.querySelectorAll(
-            "[data-export], [data-download], [data-csv]"
-          )
-        );
-        if (dataElements.length > 0) {
-          console.log("Found data export element");
-          dataElements[0].click();
-          return true;
-        }
-
-        // Debug info
-        console.log(
-          "Available links:",
-          links.map((l) => l.textContent.trim()).filter((t) => t)
-        );
-        console.log(
-          "Available buttons:",
-          exportButtons
-            .map((b) => b.textContent || b.value || "no text")
-            .filter((t) => t !== "no text")
-        );
-
-        return false;
-      });
+      );
 
       if (!csvExported) {
-        const pageInfo = await dataPage.evaluate(() => {
+        // IMPROVED: Better error reporting with page info
+        const pageInfo = await page.evaluate(() => {
           return {
             url: window.location.href,
             title: document.title,
@@ -509,20 +643,21 @@ class KBCScraper {
 
       if (onProgress) onProgress("Download started...");
 
-      // Wait for download with longer timeout
-      await this.delay(5000);
+      // IMPROVED: Patient waiting for download
+      await this.humanDelay(2000, 0.3); // Initial wait
 
       if (onProgress) onProgress("Verifying download...");
 
-      // Check if file exists with extended wait
+      // Check for file with human-like patience
       let attempts = 0;
-      const maxAttempts = 15; // 15 seconds
+      const maxAttempts = this.retryConfig.downloadWait;
 
       while (!fs.existsSync(this.filePath) && attempts < maxAttempts) {
-        await this.delay(1000);
+        const waitTime = 700 + Math.random() * 400; // 700-1100ms random intervals
+        await new Promise((resolve) => setTimeout(resolve, waitTime));
         attempts++;
 
-        // Also check for any CSV files with today's date
+        // Check for alternative file names
         try {
           const files = fs.readdirSync(this.downloadDir);
           const todayFiles = files.filter(
@@ -550,7 +685,7 @@ class KBCScraper {
         success: true,
         fileName: this.fileName,
         filePath: this.filePath,
-        message: "Data scraped successfully",
+        message: "Data scraped successfully with human-like behavior",
         downloadDir: this.downloadDir,
       };
     } catch (error) {
@@ -563,6 +698,8 @@ class KBCScraper {
       };
     } finally {
       if (browser) {
+        // Human-like browser closing - not instant
+        await this.humanDelay(300, 0.2);
         try {
           await browser.close();
         } catch (closeError) {
@@ -572,7 +709,7 @@ class KBCScraper {
     }
   }
 
-  // Find the latest CSV file
+  // EXISTING: Keep your current methods for compatibility
   getLatestCSVFile() {
     try {
       if (!fs.existsSync(this.downloadDir)) {
@@ -598,7 +735,7 @@ class KBCScraper {
     }
   }
 
-  // Test connection
+  // EXISTING: Test connection method (keep unchanged)
   async testConnection() {
     let browser = null;
     try {

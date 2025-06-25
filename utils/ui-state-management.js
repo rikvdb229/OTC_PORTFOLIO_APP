@@ -1453,53 +1453,80 @@ const ModalManager = {
 
     if (!progressText) return;
 
+    // SAFE: Get elements fresh from DOM if not in app object
+    const progressTextEl =
+      app.updateProgressText || document.getElementById("updateProgressText");
+    const statusOutput =
+      app.updateStatusOutput || document.getElementById("updateStatusOutput");
+    const progressBar =
+      app.updateProgressBar || document.getElementById("updateProgressBar");
+
     // Update progress text
-    if (app.updateProgressText) {
-      app.updateProgressText.textContent = progressText;
+    if (progressTextEl) {
+      progressTextEl.textContent = progressText;
     }
 
     // Update status output
-    if (app.updateStatusOutput) {
-      app.updateStatusOutput.textContent = progressText;
+    if (statusOutput) {
+      statusOutput.textContent = progressText;
     }
 
-    // Calculate progress percentage based on text content
+    // IMPROVED: Calculate progress percentage based on actual scraper stages
     let percentage = 10; // Default progress
-    if (progressText.includes("Starting")) percentage = 10;
-    else if (progressText.includes("Connecting")) percentage = 20;
-    else if (progressText.includes("Found")) percentage = 40;
-    else if (progressText.includes("Processing")) percentage = 70;
-    else if (progressText.includes("Downloading")) percentage = 90;
-    else if (progressText.includes("Complete")) percentage = 100;
+
+    // Map actual scraper progress to percentages
+    if (
+      progressText.includes("Starting") ||
+      progressText.includes("Launching")
+    ) {
+      percentage = 15;
+    } else if (progressText.includes("Loading KBC page")) {
+      percentage = 25;
+    } else if (
+      progressText.includes("cookie") ||
+      progressText.includes("Handling")
+    ) {
+      percentage = 35;
+    } else if (
+      progressText.includes("Setting date") ||
+      progressText.includes("Submitting")
+    ) {
+      percentage = 45;
+    } else if (
+      progressText.includes("Looking for") ||
+      progressText.includes("export")
+    ) {
+      percentage = 65;
+    } else if (progressText.includes("Download started")) {
+      percentage = 75;
+    } else if (progressText.includes("Verifying")) {
+      percentage = 85;
+    } else if (
+      progressText.includes("complete") ||
+      progressText.includes("success")
+    ) {
+      percentage = 100;
+    } else if (
+      progressText.includes("Processing") ||
+      progressText.includes("Loading data")
+    ) {
+      percentage = 55;
+    } else if (
+      progressText.includes("Connecting") ||
+      progressText.includes("browser")
+    ) {
+      percentage = 20;
+    } else if (
+      progressText.includes("Found") ||
+      progressText.includes("Downloading")
+    ) {
+      percentage = 80;
+    }
 
     // Update progress bar
-    if (app.updateProgressBar) {
-      app.updateProgressBar.style.width = percentage + "%";
-    }
-  },
-  // Add to ModalManager section in ui-state-management.js
-  selectGrant(app, grantId) {
-    console.log("📋 User selected grant ID:", grantId);
-
-    app.selectedGrantId = grantId;
-
-    // Update visual selection
-    document.querySelectorAll(".grant-selection-item").forEach((item) => {
-      item.classList.remove("selected");
-    });
-    document
-      .querySelector(`[data-grant-id="${grantId}"]`)
-      .classList.add("selected");
-
-    // Update radio button
-    document.querySelector(`input[value="${grantId}"]`).checked = true;
-
-    // Update merge details
-    const selectedGrant = app.existingGrants.find((g) => g.id === grantId);
-    if (selectedGrant) {
-      const mergeDetails = document.getElementById("mergeDetails");
-      const totalAfter = selectedGrant.quantity + app.newGrantQuantity;
-      mergeDetails.textContent = `- Add to selected grant (Total: ${totalAfter.toLocaleString()} options)`;
+    if (progressBar) {
+      progressBar.style.width = percentage + "%";
+      console.log(`📊 Progress bar updated to ${percentage}%`);
     }
   },
   // Add to ModalManager section in ui-state-management.js

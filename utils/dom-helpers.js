@@ -114,6 +114,10 @@ function initializeApplicationElements(app) {
     evolutionDaysFilter: "#evolutionDaysFilter",
 
     // Progress and notifications
+    // ADD THESE MISSING ELEMENTS:
+    updateProgressBar: "#updateProgressBar",
+    updateProgressText: "#updateProgressText",
+    updateStatusOutput: "#updateStatusOutput",
     updateProgress: "#updateProgress",
     priceUpdateNotification: "#priceUpdateNotification",
     closeNotificationBtn: "#closeNotificationBtn",

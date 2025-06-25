@@ -354,40 +354,50 @@ class AppHelpers {
     if (app.isScrapingInProgress) return;
 
     app.isScrapingInProgress = true;
-    app.updatePricesBtn.disabled = true;
-    app.updatePricesBtn.textContent = "⏳ Updating...";
 
-    // Use UI State Manager to show modal
+    if (app.updatePricesBtn) {
+      app.updatePricesBtn.disabled = true;
+      app.updatePricesBtn.textContent = "⏳ Updating...";
+    }
+
+    // Use UI State Manager to show modal with safe element access
     window.UIStateManager.Modals.showModal("updatePricesModal", () => {
-      app.updateProgressBar.style.width = "0%";
-      app.updateProgressText.textContent = "Starting price update...";
-      app.updateStatusOutput.textContent = "Connecting to KBC servers...";
+      // SAFE: Get elements fresh from DOM if not in app object
+      const progressBar =
+        app.updateProgressBar || document.getElementById("updateProgressBar");
+      const progressText =
+        app.updateProgressText || document.getElementById("updateProgressText");
+      const statusOutput =
+        app.updateStatusOutput || document.getElementById("updateStatusOutput");
+
+      if (progressBar) progressBar.style.width = "0%";
+      if (progressText) progressText.textContent = "Starting price update...";
+      if (statusOutput)
+        statusOutput.textContent = "Connecting to KBC servers...";
     });
 
     try {
       const result = await window.IPCCommunication.Price.updatePrices();
 
+      // SAFE: Get elements fresh from DOM
+      const progressBar =
+        app.updateProgressBar || document.getElementById("updateProgressBar");
+      const progressText =
+        app.updateProgressText || document.getElementById("updateProgressText");
+      const statusOutput =
+        app.updateStatusOutput || document.getElementById("updateStatusOutput");
+
       if (result.success) {
-        app.updateProgressBar.style.width = "100%";
-        app.updateProgressText.textContent = "Update Complete!";
-        app.updateStatusOutput.textContent = `✅ Successfully updated prices\nFile: ${result.fileName}`;
+        if (progressBar) progressBar.style.width = "100%";
+        if (progressText) progressText.textContent = "Update Complete!";
+        if (statusOutput)
+          statusOutput.textContent = `✅ Successfully updated prices\nFile: ${result.fileName}`;
 
-        // CRITICAL: Complete data refresh cycle (this was missing!)
         console.log("🔄 Refreshing data after successful price update...");
-
-        // 1. Reload portfolio data with new prices
         await app.loadPortfolioData();
-        console.log("✅ Portfolio data refreshed");
-
-        // 2. CRITICAL: Check data availability (this determines if "No data available" shows)
         await app.checkDataAvailability();
-        console.log("✅ Data availability checked");
-
-        // 3. Update price status notifications
         await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
-        console.log("✅ Price status updated");
 
-        // Close modal after delay
         setTimeout(() => {
           window.UIStateManager.Modals.closeAllModals(app);
         }, 2000);
@@ -396,17 +406,28 @@ class AppHelpers {
       }
     } catch (error) {
       console.error("❌ Price update error:", error);
-      app.updateProgressBar.style.width = "0%";
-      app.updateProgressText.textContent = "Update Failed";
-      app.updateStatusOutput.textContent = `❌ Error: ${error.message}`;
+
+      // SAFE: Handle error case
+      const progressBar =
+        app.updateProgressBar || document.getElementById("updateProgressBar");
+      const progressText =
+        app.updateProgressText || document.getElementById("updateProgressText");
+      const statusOutput =
+        app.updateStatusOutput || document.getElementById("updateStatusOutput");
+
+      if (progressBar) progressBar.style.width = "0%";
+      if (progressText) progressText.textContent = "Update Failed";
+      if (statusOutput) statusOutput.textContent = `❌ Error: ${error.message}`;
 
       setTimeout(() => {
         window.UIStateManager.Modals.closeAllModals(app);
       }, 3000);
     } finally {
       app.isScrapingInProgress = false;
-      app.updatePricesBtn.disabled = false;
-      app.updatePricesBtn.textContent = "🔄 Update Prices";
+      if (app.updatePricesBtn) {
+        app.updatePricesBtn.disabled = false;
+        app.updatePricesBtn.textContent = "🔄 Update Prices";
+      }
     }
   }
   /**
