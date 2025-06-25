@@ -2,27 +2,36 @@ async function loadPortfolioData() {
   try {
     console.log("📊 Loading portfolio data...");
 
+    // FIRST: Get the overview
     const overview = await window.IPCCommunication.Portfolio.getOverview();
 
-    // Store data in app for sorting
-    this.app.portfolioData = overview;
-
+    // THEN: Use overview
+    const app = this.app || this;
+    app.portfolioData = overview;
     const targetPercentage =
       (await window.IPCCommunication.Settings.getSetting(
         "target_percentage"
       )) || 65;
 
-    // Update UI components
-    this.app.updatePortfolioStats(overview, parseFloat(targetPercentage));
-    this.app.updatePortfolioTable(overview, parseFloat(targetPercentage));
-    this.app.updateActionButtons(overview.length > 0);
-    this.app.updateHeaderStats(overview);
+    // Update UI components - use app instead of this.app
+    window.StatsManager.updatePortfolioStats(
+      app,
+      overview,
+      parseFloat(targetPercentage)
+    );
+
+    // ADD THIS LINE - update the actual table:
+    app.updatePortfolioTable(overview, parseFloat(targetPercentage));
+
+    window.ActionButtonManager.updateActionButtons(app, overview.length > 0);
+    window.StatsManager.updateHeaderStats(app, overview);
 
     console.log("✅ Portfolio data loaded successfully");
   } catch (error) {
     console.error("❌ Error loading portfolio data:", error);
     // Initialize empty data on error
-    this.app.portfolioData = [];
+    const app = this.app || this;
+    app.portfolioData = [];
   }
 }
 async function loadEvolutionData(days = "all") {

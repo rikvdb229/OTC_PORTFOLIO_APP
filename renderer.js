@@ -137,7 +137,7 @@ class EnhancedPortfolioApp {
   }
 
   updatePortfolioStats(overview, targetPercentage = 65) {
-    window.UIStateManager.updatePortfolioStats(overview, targetPercentage);
+    window.StatsManager.updatePortfolioStats(this, overview, targetPercentage);
   }
 
   // Enhanced updatePortfolioTable method in renderer.js
