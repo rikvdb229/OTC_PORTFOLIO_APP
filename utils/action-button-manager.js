@@ -5,7 +5,17 @@ const ActionButtonManager = {
    * @param {boolean} hasData - Whether portfolio has data
    */
   updateActionButtons(app, hasData) {
-    if (!app.addGrantsBtn) return;
+    if (!app.addGrantsBtn) {
+      console.warn("⚠️ addGrantsBtn not found, retrying...");
+      // Retry after a short delay
+      setTimeout(() => {
+        app.addGrantsBtn = document.getElementById("addGrantsBtn");
+        if (app.addGrantsBtn) {
+          this.updateActionButtons(app, hasData);
+        }
+      }, 100);
+      return;
+    }
 
     app.addGrantsBtn.disabled = !hasData;
 

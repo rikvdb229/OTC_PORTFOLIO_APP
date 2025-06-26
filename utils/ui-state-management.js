@@ -460,11 +460,20 @@ const DatabaseManager = {
         alert(successMessage);
         console.log("✅ Database import completed successfully");
 
-        // Reload data and switch to portfolio tab
-        if (app && app.loadPortfolioData) {
-          await app.loadPortfolioData();
-        }
+        // ADD THESE LINES - Complete reinitialization after import
         if (app) {
+          // Reload data
+          await app.loadPortfolioData();
+
+          // Reinitialize DOM elements and event listeners
+          window.DOMHelpers.initializeApplicationElements(app);
+          window.DOMHelpers.attachApplicationEventListeners(app);
+
+          // ✅ FIX 2: Update button states and price indicators
+          await app.checkDataAvailability();
+          await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
+
+          // Switch to portfolio tab
           window.UIStateManager.Tabs.switchTab(app, "portfolio");
         }
       } else {

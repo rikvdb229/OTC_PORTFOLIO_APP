@@ -44,7 +44,12 @@ class EnhancedPortfolioApp {
     // Initialize the app
     this.loadPortfolioData();
     window.AppConfig.SettingsManager.loadSettings(this);
-    this.checkDataAvailability();
+
+    // Move checkDataAvailability after a small delay to ensure DOM is ready
+    setTimeout(() => {
+      this.checkDataAvailability();
+    }, 50);
+
     window.IPCCommunication.Price.checkPriceUpdateStatus(this);
     this.checkAutoUpdate();
   }
@@ -522,4 +527,9 @@ document.addEventListener("DOMContentLoaded", () => {
 document.addEventListener("DOMContentLoaded", () => {
   window.portfolioApp = new EnhancedPortfolioApp();
   console.log("🚀 Enhanced Portfolio Management App initialized");
+
+  // Add this line to ensure button state is checked after DOM is ready
+  setTimeout(() => {
+    window.portfolioApp.checkDataAvailability();
+  }, 100);
 });

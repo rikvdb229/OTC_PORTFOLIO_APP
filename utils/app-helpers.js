@@ -221,10 +221,6 @@ class AppHelpers {
       }, 3000);
     } finally {
       app.isScrapingInProgress = false;
-      if (app.updatePricesBtn) {
-        app.updatePricesBtn.disabled = false;
-        app.updatePricesBtn.textContent = "🔄 Update Prices";
-      }
     }
   }
   /**
