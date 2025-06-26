@@ -106,50 +106,105 @@ class AppHelpers {
       console.warn("⚠️ Chart legend container not found");
     }
   }
-  calculateSaleProceeds() {
-    if (!this.currentSellEntry) return;
+  // FIX for calculateSaleProceeds in app-helpers.js
+  // Replace your current calculateSaleProceeds function with this:
+
+  calculateSaleProceeds(app) {
+    console.log("🐛 DEBUG: calculateSaleProceeds called");
+
+    if (!app.currentSellEntry) {
+      console.log("🐛 DEBUG: No currentSellEntry");
+      return;
+    }
 
     const quantityToSell =
       parseInt(document.getElementById("quantityToSell").value) || 0;
     const salePrice =
       parseFloat(document.getElementById("salePrice").value) || 0;
 
-    // Calculate values
-    const totalSaleValue = quantityToSell * salePrice;
+    console.log("🐛 DEBUG: Input values:", { quantityToSell, salePrice });
 
-    // Calculate profit/loss vs target (cost basis is €10 per option)
-    const costBasis = quantityToSell * 10;
-    const targetPercentage = this.targetPercentage?.value || 65;
-    const targetValue = costBasis * (1 + targetPercentage / 100);
-    const profitLossVsTarget = totalSaleValue - targetValue;
+    if (quantityToSell > 0 && salePrice > 0) {
+      // Calculate total sale value
+      const totalSaleValue = quantityToSell * salePrice;
 
-    // Update display with proper formatting
-    const totalSaleValueElement = document.getElementById("totalSaleValue");
-    const profitLossElement = document.getElementById("profitLossVsTarget");
+      // Calculate profit/loss vs target using the same formula as the overview
+      // Formula: (Current Total Value - Tax) - Target Value
+      const currentTotalValue = quantityToSell * salePrice; // For sold options, current value = sale price
 
-    if (totalSaleValueElement) {
-      totalSaleValueElement.textContent =
-        window.FormatHelpers.formatCurrencyValue(totalSaleValue);
+      // Calculate proportional tax for sold options
+      const totalTax =
+        app.currentSellEntry.tax_amount ||
+        app.currentSellEntry.tax_auto_calculated ||
+        0;
+      const remainingQuantity =
+        app.currentSellEntry.quantity_remaining ||
+        app.currentSellEntry.quantity;
+      const taxPerOption =
+        remainingQuantity > 0 ? totalTax / remainingQuantity : 0;
+      const taxForSoldOptions = taxPerOption * quantityToSell;
+
+      // Target value = quantity × €10 × target_percentage
+      const targetPercentage = app.targetPercentage?.value || 65;
+      const targetValue = quantityToSell * 10 * (targetPercentage / 100);
+
+      // Final calculation: (Sale Value - Tax) - Target Value
+      const profitLossVsTarget =
+        currentTotalValue - taxForSoldOptions - targetValue;
+
+      console.log("🐛 DEBUG: Calculated values:", {
+        totalSaleValue,
+        currentTotalValue,
+        totalTax,
+        remainingQuantity,
+        taxPerOption,
+        taxForSoldOptions,
+        targetPercentage,
+        targetValue,
+        profitLossVsTarget,
+      });
+
+      // Update Total Sale Value
+      const totalSaleValueElement = document.getElementById("totalSaleValue");
+      if (totalSaleValueElement) {
+        totalSaleValueElement.textContent =
+          window.FormatHelpers.formatCurrencyValue(totalSaleValue);
+        console.log("🐛 DEBUG: Updated totalSaleValue");
+      }
+
+      // Update Profit/Loss vs Target
+      const profitLossElement = document.getElementById("profitLossVsTarget");
+      if (profitLossElement) {
+        profitLossElement.textContent =
+          window.FormatHelpers.formatCurrencyValue(profitLossVsTarget);
+
+        // Apply color formatting
+        const plClass =
+          window.FormatHelpers.getProfitLossClass(profitLossVsTarget);
+        profitLossElement.className = `currency ${plClass}`;
+
+        console.log(
+          "🐛 DEBUG: Updated profitLossVsTarget with class:",
+          plClass
+        );
+      }
+    } else {
+      // Reset to zero when no valid input
+      const totalSaleValueElement = document.getElementById("totalSaleValue");
+      const profitLossElement = document.getElementById("profitLossVsTarget");
+
+      if (totalSaleValueElement) {
+        totalSaleValueElement.textContent = "€ 0.00";
+      }
+
+      if (profitLossElement) {
+        profitLossElement.textContent = "€ 0.00";
+        profitLossElement.className = "currency neutral";
+      }
+
+      console.log("🐛 DEBUG: Reset values to zero");
     }
-
-    if (profitLossElement) {
-      profitLossElement.textContent =
-        window.FormatHelpers.formatCurrencyValue(profitLossVsTarget);
-
-      // Apply formatting classes like the INFO modal
-      profitLossElement.className = `currency ${window.FormatHelpers.getProfitLossClass(profitLossVsTarget)}`;
-    }
-
-    console.log("✅ Sale calculations updated:", {
-      quantityToSell,
-      salePrice,
-      totalSaleValue,
-      costBasis,
-      targetValue,
-      profitLossVsTarget,
-    });
   }
-
   async updatePrices(app) {
     if (app.isScrapingInProgress) return;
 
@@ -231,8 +286,16 @@ class AppHelpers {
    * MIGRATED FROM: renderer.js confirmSale() method
    * @param {Object} app - Application instance
    */
-  async confirmSale() {
-    if (!this.currentSellEntry) return;
+  // FIX for confirmSale in app-helpers.js
+  // Replace the existing confirmSale function with this:
+
+  async confirmSale(app) {
+    console.log("🐛 DEBUG: confirmSale called with app:", app);
+
+    if (!app || !app.currentSellEntry) {
+      console.log("🐛 DEBUG: No app or currentSellEntry found");
+      return;
+    }
 
     try {
       const quantityToSell = parseInt(
@@ -247,6 +310,13 @@ class AppHelpers {
         ? saleDateInput.value
         : new Date().toISOString().split("T")[0];
 
+      console.log("🐛 DEBUG: Sale data:", {
+        quantityToSell,
+        salePrice,
+        saleDate,
+        notes,
+      });
+
       // Validation
       if (
         !quantityToSell ||
@@ -258,7 +328,7 @@ class AppHelpers {
         return;
       }
 
-      if (quantityToSell > this.currentSellEntry.quantity_remaining) {
+      if (quantityToSell > app.currentSellEntry.quantity_remaining) {
         alert("Cannot sell more options than available");
         return;
       }
@@ -268,15 +338,19 @@ class AppHelpers {
         return;
       }
 
+      console.log("🐛 DEBUG: About to call record-sale-transaction");
+
       // Record the sale transaction
       const result = await window.ipcRenderer.invoke(
         "record-sale-transaction",
-        this.currentSellEntry.id, // portfolioEntryId
+        app.currentSellEntry.id, // portfolioEntryId
         saleDate, // saleDate (now from user input)
         quantityToSell, // quantitySold
         salePrice, // salePrice
         notes // notes
       );
+
+      console.log("🐛 DEBUG: IPC result:", result);
 
       if (result.error) {
         alert("Error recording sale: " + result.error);
@@ -285,24 +359,31 @@ class AppHelpers {
 
       console.log("✅ Sale recorded successfully:", result);
 
-      // Show success message
-      const totalValue = quantityToSell * salePrice;
-      const successMessage =
-        `Sale recorded successfully!\n\n` +
-        `Quantity: ${quantityToSell.toLocaleString()} options\n` +
-        `Price: ${window.FormatHelpers.formatCurrencyValue(salePrice)} per option\n` +
-        `Total Value: ${window.FormatHelpers.formatCurrencyValue(totalValue)}\n` +
-        `Date: ${new Date(saleDate).toLocaleDateString()}`;
-
-      alert(successMessage);
+      // Show success notification instead of alert
+      window.UIStateManager.showSuccess(
+        `Sale recorded: ${quantityToSell.toLocaleString()} options at ${window.FormatHelpers.formatCurrencyValue(salePrice)} each`,
+        5000
+      );
 
       // Close modal and refresh data
-      this.closeModals();
-      await this.loadPortfolioData();
-      await this.refreshAllTabs();
+      app.closeModals();
+      await app.loadPortfolioData();
+
+      // Refresh the current tab data instead of refreshAllTabs
+      if (app.activeTab === "portfolio") {
+        // Already refreshed with loadPortfolioData
+      } else if (app.activeTab === "evolution") {
+        await app.loadEvolutionData();
+      } else if (app.activeTab === "chart") {
+        await app.loadChartData();
+      } else if (app.activeTab === "sales-history") {
+        await app.loadSalesHistory();
+      } else if (app.activeTab === "grant-history") {
+        await app.loadGrantHistory();
+      }
 
       // Clear current sell entry
-      this.currentSellEntry = null;
+      app.currentSellEntry = null;
     } catch (error) {
       console.error("❌ Error confirming sale:", error);
       alert("Error recording sale: " + error.message);

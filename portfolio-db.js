@@ -1239,7 +1239,7 @@ CREATE TABLE IF NOT EXISTS settings (
         quantitySold,
         remainingQuantityAfter: remainingQuantity - quantitySold,
         totalTaxBefore: totalTax,
-        currentTaxPerOption,
+        currentTaxPerOption, // Changed from currentTaxPerOption
         taxAllocatedToSold,
         newTaxAmount,
       });
@@ -1343,79 +1343,83 @@ CREATE TABLE IF NOT EXISTS settings (
   async getPortfolioOverview() {
     try {
       const stmt = this.db.prepare(`
-        SELECT 
-          pe.id,
-          pe.grant_date,
-          pe.fund_name,
-          pe.exercise_price,
-          pe.quantity,
-          pe.amount_granted,
-          pe.current_value,
-          pe.total_sold_quantity,
-          (pe.quantity - pe.total_sold_quantity) as quantity_remaining,
-          pe.tax_amount,
-          pe.tax_auto_calculated,
-          ph.current_value as latest_current_value,
-          ph.price_date as last_price_update,
-          ph.fund_name as latest_fund_name,
-          
-          -- Basic calculations - use latest price if available, otherwise stored value
-          ((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) as current_total_value,
-          
-          -- FIXED: P&L = (Current Value - Tax) - (Amount Granted × Target %)
-          CASE 
-            WHEN COALESCE(ph.current_value, pe.current_value, 0) > 0 THEN
-              -- (Current total value minus tax) minus (target value)
-              (((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) - 
-               (COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0) * (pe.quantity - pe.total_sold_quantity) / pe.quantity)) -
-              ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
-            ELSE 
-              (0 - (COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0) * (pe.quantity - pe.total_sold_quantity) / pe.quantity)) -
-              ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
-          END as profit_loss_vs_target,
-          
-          -- Target value for reference
-          ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100) as target_total_value,
-          
-          -- FIXED: Return % = (Current Value - Tax) / Amount Granted × 100
-          CASE 
-            WHEN COALESCE(ph.current_value, pe.current_value, 0) > 0 AND (pe.quantity - pe.total_sold_quantity) > 0 THEN
-              -- (Current total value minus tax) / amount granted × 100
-              ((((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) - 
-                (COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0) * (pe.quantity - pe.total_sold_quantity) / pe.quantity)) /
-               ((pe.quantity - pe.total_sold_quantity) * 10)) * 100
-            ELSE 
-              CASE 
-                WHEN (pe.quantity - pe.total_sold_quantity) > 0 THEN
-                  -- (0 minus tax) / amount granted × 100
-                  (((0 - (COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0) * (pe.quantity - pe.total_sold_quantity) / pe.quantity)) /
-                    ((pe.quantity - pe.total_sold_quantity) * 10)) * 100)
-                ELSE 0
-              END
-          END as current_return_percentage,
-          
-          -- Selling restrictions (unchanged)
-          CASE 
-            WHEN date(pe.grant_date, '+1 year') > date('now') THEN 'WAITING_PERIOD'
-            WHEN date(pe.grant_date, '+10 years') < date('now') THEN 'EXPIRED'
-            WHEN date(pe.grant_date, '+9 years') < date('now') THEN 'EXPIRING_SOON'
-            ELSE 'SELLABLE'
-          END as selling_status,
-          date(pe.grant_date, '+1 year') as can_sell_after,
-          date(pe.grant_date, '+10 years') as expires_on
-          
-        FROM portfolio_entries pe
-        LEFT JOIN (
-          SELECT 
-            exercise_price,
-            current_value,
-            price_date,
-            fund_name,
-            ROW_NUMBER() OVER (PARTITION BY exercise_price ORDER BY price_date DESC) as rn
-          FROM price_history
-        ) ph ON pe.exercise_price = ph.exercise_price AND ph.rn = 1
-        WHERE (pe.quantity - pe.total_sold_quantity) > 0
-        ORDER BY pe.grant_date DESC
+SELECT 
+  pe.id,
+  pe.grant_date,
+  pe.fund_name,
+  pe.exercise_price,
+  pe.quantity,
+  -- Amount granted = remaining options × €10
+  ((pe.quantity - pe.total_sold_quantity) * 10) as amount_granted,
+  pe.current_value,
+  pe.total_sold_quantity,
+  (pe.quantity - pe.total_sold_quantity) as quantity_remaining,
+  pe.tax_amount,
+  pe.tax_auto_calculated,
+  ph.current_value as latest_current_value,
+  ph.price_date as last_price_update,
+  ph.fund_name as latest_fund_name,
+  
+  -- Current total value = remaining quantity × current price
+  ((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) as current_total_value,
+  
+  -- FIXED: P&L = (Current Value - Tax) - (Target Value)
+  -- Tax is already proportionally reduced in database, don't apply proportional calculation again
+  CASE 
+    WHEN COALESCE(ph.current_value, pe.current_value, 0) > 0 THEN
+      -- (Current total value - stored tax) - (target value for remaining options)
+      (((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) - 
+       COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) -
+      ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
+    ELSE 
+      -- When no current value, P&L = (0 - stored tax) - target value
+      (0 - COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) -
+      ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
+  END as profit_loss_vs_target,
+  
+  -- Target value = remaining options × €10 × target percentage
+  ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100) as target_total_value,
+  
+  -- FIXED: Return % = (Current Value - Tax) / Amount Granted × 100
+  -- Tax is already proportionally reduced in database, don't apply proportional calculation again
+  CASE 
+    WHEN COALESCE(ph.current_value, pe.current_value, 0) > 0 AND (pe.quantity - pe.total_sold_quantity) > 0 THEN
+      -- (Current total value - stored tax) / amount granted × 100
+      ((((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) - 
+        COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) /
+       ((pe.quantity - pe.total_sold_quantity) * 10)) * 100
+    ELSE 
+      CASE 
+        WHEN (pe.quantity - pe.total_sold_quantity) > 0 THEN
+          -- (0 - stored tax) / amount granted × 100
+          (((0 - COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) /
+            ((pe.quantity - pe.total_sold_quantity) * 10)) * 100)
+        ELSE 0
+      END
+  END as current_return_percentage,
+  
+  -- Selling restrictions
+  CASE 
+    WHEN date(pe.grant_date, '+1 year') > date('now') THEN 'WAITING_PERIOD'
+    WHEN date(pe.grant_date, '+10 years') < date('now') THEN 'EXPIRED'
+    WHEN date(pe.grant_date, '+9 years') < date('now') THEN 'EXPIRING_SOON'
+    ELSE 'SELLABLE'
+  END as selling_status,
+  date(pe.grant_date, '+1 year') as can_sell_after,
+  date(pe.grant_date, '+10 years') as expires_on
+  
+FROM portfolio_entries pe
+LEFT JOIN (
+  SELECT 
+    exercise_price,
+    current_value,
+    price_date,
+    fund_name,
+    ROW_NUMBER() OVER (PARTITION BY exercise_price ORDER BY price_date DESC) as rn
+  FROM price_history
+) ph ON pe.exercise_price = ph.exercise_price AND ph.rn = 1
+WHERE (pe.quantity - pe.total_sold_quantity) > 0
+ORDER BY pe.grant_date DESC
       `);
 
       const rows = [];

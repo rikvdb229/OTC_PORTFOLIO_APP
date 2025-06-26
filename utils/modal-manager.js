@@ -1156,63 +1156,87 @@ const ModalManager = {
    * This replaces the existing showSellModal function in modal-manager.js
    */
   async showSellModal(app, entryId) {
+    console.log("🐛 DEBUG: showSellModal called with entryId:", entryId);
+
     const entry = app.portfolioData.find((e) => e.id === entryId);
     if (!entry) {
+      console.error("🐛 DEBUG: Portfolio entry not found");
       alert("Portfolio entry not found");
       return;
     }
 
-    app.currentSellEntry = entry;
+    console.log("🐛 DEBUG: Found entry:", entry);
 
-    // Enhanced sell modal with fund information
+    // SET currentSellEntry FIRST
+    app.currentSellEntry = entry;
+    console.log("🐛 DEBUG: Set currentSellEntry:", app.currentSellEntry);
+
+    // Update the option details HTML
     document.getElementById("sellOptionDetails").innerHTML = `
     <div class="option-details">
-      <h4>📊 ${app.helpers.formatFundName(entry.fund_name)} Option</h4>
-      <p><strong>Underlying Fund:</strong> <span class="fund-highlight">${
-        entry.fund_name || "Unknown Fund"
-      }</span></p>
-      <p><strong>Grant Date:</strong> ${new Date(
-        entry.grant_date
-      ).toLocaleDateString()}</p>
-      <p><strong>Exercise Price:</strong> ${app.helpers.formatCurrency(
-        entry.exercise_price
-      )}</p>
-      <p><strong>Current Value:</strong> ${app.helpers.formatCurrency(
-        entry.current_value || 0
-      )}</p>
-      <p><strong>Available Quantity:</strong> ${entry.quantity_remaining.toLocaleString()} options</p>
-      <p><strong>Performance:</strong> 
-        <span class="${
-          entry.current_return_percentage >= 0 ? "positive" : "negative"
-        }">
-          ${
-            entry.current_return_percentage
-              ? entry.current_return_percentage.toFixed(1) + "%"
-              : "N/A"
-          }
+      <h4>📊 ${window.FormatHelpers.formatFundName(entry.fund_name)} Option</h4>
+      <p><strong>Underlying Fund:</strong> ${entry.fund_name || "Unknown Fund"}</p>
+      <p><strong>Grant Date:</strong> ${new Date(entry.grant_date).toLocaleDateString()}</p>
+      <p><strong>Exercise Price:</strong> ${window.FormatHelpers.formatCurrencyValue(entry.exercise_price)}</p>
+      <p><strong>Quantity:</strong> ${entry.quantity_remaining.toLocaleString()} options</p>
+      <p><strong>Current Value:</strong> ${window.FormatHelpers.formatCurrencyValue(entry.current_value || 0)}</p>
+      <p><strong>Return %:</strong> 
+        <span class="${window.FormatHelpers.getReturnClass(entry.current_return_percentage, app.targetPercentage?.value || 65)}">
+          ${entry.current_return_percentage ? entry.current_return_percentage.toFixed(1) + "%" : "N/A"}
         </span>
       </p>
     </div>
   `;
 
-    // Set up sale date field (default to today, can be changed to past dates)
-    const saleDateInput = document.getElementById("saleDate");
-    if (saleDateInput) {
-      const today = new Date().toISOString().split("T")[0];
-      saleDateInput.value = today;
-      saleDateInput.max = today; // Cannot be in the future
-    }
-
-    // Set up quantity and price fields
-    document.getElementById("quantityToSell").max = entry.quantity_remaining;
-    document.getElementById("maxQuantityHelp").textContent =
-      `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
-    document.getElementById("salePrice").value = entry.current_value || "";
-
-    // Reset calculations
-    app.calculateSaleProceeds();
-
+    // Show the modal FIRST
     window.UIStateManager.Modals.showModal("sellOptionsModal");
+
+    // THEN set up the form fields (this prevents early event handler firing)
+    setTimeout(() => {
+      console.log("🐛 DEBUG: Setting up form fields...");
+
+      // Set up sale date field
+      const saleDateInput = document.getElementById("saleDate");
+      if (saleDateInput) {
+        const today = new Date().toISOString().split("T")[0];
+        saleDateInput.value = today;
+        saleDateInput.max = today;
+        console.log("🐛 DEBUG: Sale date field set up");
+      }
+
+      // Set up quantity and price fields
+      const quantityInput = document.getElementById("quantityToSell");
+      const priceInput = document.getElementById("salePrice");
+      const maxQuantityHelp = document.getElementById("maxQuantityHelp");
+
+      if (quantityInput) {
+        quantityInput.max = entry.quantity_remaining;
+        quantityInput.value = ""; // Start empty
+      }
+
+      if (maxQuantityHelp) {
+        maxQuantityHelp.textContent = `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
+      }
+
+      if (priceInput) {
+        priceInput.value = entry.current_value || "";
+        console.log("🐛 DEBUG: Price input value set to:", entry.current_value);
+      }
+
+      // NOW call the calculation function
+      console.log(
+        "🐛 DEBUG: About to call calculateSaleProceeds with currentSellEntry:",
+        app.currentSellEntry
+      );
+      if (typeof app.calculateSaleProceeds === "function") {
+        app.calculateSaleProceeds();
+        console.log("🐛 DEBUG: calculateSaleProceeds called successfully");
+      } else {
+        console.error(
+          "🐛 DEBUG: calculateSaleProceeds function not found on app object!"
+        );
+      }
+    }, 100); // Small delay to ensure modal DOM is ready
   },
 
   configureForDelete() {
