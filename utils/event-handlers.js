@@ -119,6 +119,10 @@ const SettingsHandlers = {
    * Set up database management button handlers
    * @param {Object} app - Application instance
    */
+  /**
+   * Set up database management button handlers - UPDATED
+   * @param {Object} app - Application instance
+   */
   setupDatabaseHandlers(app) {
     console.log("🗃️ Setting up database handlers in settings...");
 
@@ -158,7 +162,7 @@ const SettingsHandlers = {
       console.log("✅ Delete database handler set up");
     }
 
-    // ✅ ADD: Import modal internal handlers (set up once globally)
+    // ✅ CRITICAL: Set up import modal internal handlers (event delegation)
     this.setupImportModalHandlers(app);
 
     console.log("✅ All database handlers set up");
@@ -168,39 +172,90 @@ const SettingsHandlers = {
    * Set up import modal internal handlers (once, globally)
    * @param {Object} app - Application instance
    */
+  /**
+   * Set up import modal internal handlers (once, globally) - FIXED METHOD CALLS
+   * @param {Object} app - Application instance
+   */
   setupImportModalHandlers(app) {
-    console.log("📥 Setting up import modal handlers...");
+    console.log(
+      "📥 Setting up import modal handlers with correct method calls..."
+    );
 
     // Use event delegation to handle modal buttons that appear dynamically
     document.addEventListener("click", (e) => {
+      console.log(
+        "🔍 Click detected:",
+        e.target.id,
+        e.target.tagName,
+        e.target.className
+      );
+
       // File selection button
       if (e.target && e.target.id === "selectImportFile") {
-        window.UIStateManager.Modals.handleFileSelection(app);
+        console.log("📁 File selection button clicked via event delegation");
+        e.preventDefault();
+        e.stopPropagation();
+
+        // FIXED: Use window.ModalManager instead of window.UIStateManager.Modals
+        if (window.ModalManager && window.ModalManager.handleFileSelection) {
+          window.ModalManager.handleFileSelection(app);
+        } else {
+          console.error("❌ ModalManager.handleFileSelection not found");
+        }
+        return;
       }
 
       // Confirm database action button (for import)
       if (e.target && e.target.id === "confirmDatabaseAction") {
         const importSection = document.getElementById("importDatabaseSection");
         if (importSection && importSection.style.display !== "none") {
-          // This is an import operation
-          window.UIStateManager.Modals.executeImport(app);
+          console.log("📥 Confirm import button clicked via event delegation");
+          e.preventDefault();
+          e.stopPropagation();
+
+          // FIXED: Use window.ModalManager instead of window.UIStateManager.Modals
+          if (window.ModalManager && window.ModalManager.executeImport) {
+            window.ModalManager.executeImport(app);
+          } else {
+            console.error("❌ ModalManager.executeImport not found");
+          }
+          return;
         }
       }
 
       // Cancel database action button
       if (e.target && e.target.id === "cancelDatabaseAction") {
-        window.UIStateManager.Modals.hideModal("databaseManagementModal");
+        console.log("❌ Cancel button clicked via event delegation");
+        e.preventDefault();
+        e.stopPropagation();
+
+        // FIXED: Use window.ModalManager instead of window.UIStateManager.Modals
+        if (window.ModalManager && window.ModalManager.hideModal) {
+          window.ModalManager.hideModal("databaseManagementModal");
+        } else {
+          console.error("❌ ModalManager.hideModal not found");
+        }
+        return;
       }
     });
 
     // Radio button changes
     document.addEventListener("change", (e) => {
       if (e.target && e.target.name === "importMode") {
-        window.UIStateManager.Modals.updateImportSummary();
+        console.log("🔄 Import mode changed via event delegation");
+
+        // FIXED: Use window.ModalManager instead of window.UIStateManager.Modals
+        if (window.ModalManager && window.ModalManager.updateImportSummary) {
+          window.ModalManager.updateImportSummary();
+        } else {
+          console.error("❌ ModalManager.updateImportSummary not found");
+        }
       }
     });
 
-    console.log("✅ Import modal handlers set up with event delegation");
+    console.log(
+      "✅ Import modal handlers set up with event delegation and correct method calls"
+    );
   },
 };
 
@@ -507,7 +562,14 @@ const EventHandlerCoordinator = {
         console.error(`❌ Error initializing handler group ${index}:`, error);
       }
     });
-
+    // ✅ ADD THIS SECTION HERE - after the handler groups:
+    // Set up import modal event delegation (needs to be done once globally)
+    try {
+      SettingsHandlers.setupImportModalHandlers(app);
+      console.log("✅ Import modal event delegation initialized");
+    } catch (error) {
+      console.error("❌ Error setting up import modal delegation:", error);
+    }
     console.log(
       `✅ Event handler initialization complete: ${totalHandlers}/${handlerGroups.length} groups`
     );

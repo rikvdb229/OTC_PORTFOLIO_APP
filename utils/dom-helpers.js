@@ -108,6 +108,21 @@ function initializeApplicationElements(app) {
     existingGrantsList: "#existingGrantsList",
     mergeDetails: "#mergeDetails",
     mergeModalTitle: "#mergeModalTitle",
+    // Database Management Modal elements
+    // ✅ ADD THIS SECTION - Database Management Modal elements
+    databaseManagementModal: "#databaseManagementModal",
+    selectImportFile: "#selectImportFile",
+    confirmDatabaseAction: "#confirmDatabaseAction",
+    cancelDatabaseAction: "#cancelDatabaseAction",
+    selectedFileInfo: "#selectedFileInfo",
+    selectedFileName: "#selectedFileName",
+    selectedFileDetails: "#selectedFileDetails",
+    importOptionsStep: "#importOptionsStep",
+    importSummaryStep: "#importSummaryStep",
+    summaryFileName: "#summaryFileName",
+    summaryMode: "#summaryMode",
+    summaryWarning: "#summaryWarning",
+    databaseConfirmText: "#databaseConfirmText",
   };
 
   // Use your existing initializeElements function

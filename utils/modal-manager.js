@@ -1328,6 +1328,14 @@ const ModalManager = {
    * Handle cleanup after database deletion
    * @param {Object} app - Application instance
    */
+  /**
+   * Handle cleanup after database deletion
+   * @param {Object} app - Application instance
+   */
+  /**
+   * Handle cleanup after database deletion - SIMPLIFIED VERSION
+   * @param {Object} app - Application instance
+   */
   async handlePostDeleteCleanup(app) {
     console.log("🧹 Handling post-delete cleanup");
 
@@ -1337,6 +1345,7 @@ const ModalManager = {
         app.portfolioData = [];
         app.salesData = [];
         app.evolutionData = [];
+        app.grantData = [];
 
         // Clear UI
         if (app.portfolioTableBody) {
@@ -1352,6 +1361,9 @@ const ModalManager = {
           returnPercentage: 0,
           entriesCount: 0,
         });
+
+        // CRITICAL: This will update all button states including "Update Prices" button
+        await app.checkDataAvailability();
 
         // Switch to portfolio tab
         window.UIStateManager.Tabs.switchTab(app, "portfolio");
@@ -1468,48 +1480,80 @@ const ModalManager = {
    * Set up event listeners for import operation - UPDATED
    * @param {Object} app - Application instance
    */
+  /**
+   * Set up event listeners for import operation - DELEGATED TO EVENT HANDLERS
+   * @param {Object} app - Application instance
+   */
+  /**
+   * Set up event listeners for import operation - FIXED
+   * @param {Object} app - Application instance
+   */
   setupImportListeners(app) {
-    console.log("🔧 Setting up improved import listeners");
+    console.log("🔧 Setting up import listeners using app properties (FIXED)");
 
-    const selectFileBtn = document.getElementById("selectImportFile");
-    const confirmButton = document.getElementById("confirmDatabaseAction");
-    const cancelButton = document.getElementById("cancelDatabaseAction");
+    // File selection button
+    if (app.selectImportFile) {
+      app.selectImportFile.onclick = async (event) => {
+        console.log("📁 File selection button clicked!");
+        event.preventDefault();
+
+        try {
+          await this.handleFileSelection(app);
+        } catch (error) {
+          console.error("❌ Error in file selection:", error);
+          alert("Error selecting file: " + error.message);
+        }
+      };
+      console.log(
+        "✅ File selection listener attached to app.selectImportFile"
+      );
+    } else {
+      console.error("❌ app.selectImportFile not found!");
+    }
+
+    // Cancel button
+    if (app.cancelDatabaseAction) {
+      app.cancelDatabaseAction.onclick = (event) => {
+        console.log("❌ Cancel button clicked!");
+        event.preventDefault();
+        this.hideModal("databaseManagementModal");
+      };
+      console.log("✅ Cancel listener attached to app.cancelDatabaseAction");
+    } else {
+      console.error("❌ app.cancelDatabaseAction not found!");
+    }
+
+    // Confirm button
+    if (app.confirmDatabaseAction) {
+      app.confirmDatabaseAction.onclick = async (event) => {
+        console.log("📥 Confirm button clicked!");
+        event.preventDefault();
+
+        try {
+          await this.executeImport(app);
+        } catch (error) {
+          console.error("❌ Error in import execution:", error);
+        }
+      };
+      console.log("✅ Confirm listener attached to app.confirmDatabaseAction");
+    } else {
+      console.error("❌ app.confirmDatabaseAction not found!");
+    }
+
+    // Radio buttons for import mode
     const importModeRadios = document.querySelectorAll(
       'input[name="importMode"]'
     );
-
-    // File selection button
-    if (selectFileBtn) {
-      const fileHandler = async () => {
-        await this.handleFileSelection(app);
-      };
-      selectFileBtn.addEventListener("click", fileHandler);
-    }
-
-    // Import mode radio buttons
     importModeRadios.forEach((radio) => {
       radio.addEventListener("change", () => {
+        console.log("🔄 Import mode changed:", radio.value);
         this.updateImportSummary();
       });
     });
 
-    // Confirm import button
-    if (confirmButton) {
-      const importHandler = async () => {
-        await this.executeImport(app);
-        confirmButton.removeEventListener("click", importHandler);
-      };
-      confirmButton.addEventListener("click", importHandler);
-    }
-
-    // Cancel button
-    if (cancelButton) {
-      const cancelHandler = () => {
-        this.hideModal("databaseManagementModal");
-        cancelButton.removeEventListener("click", cancelHandler);
-      };
-      cancelButton.addEventListener("click", cancelHandler);
-    }
+    console.log(
+      `✅ All import listeners set up successfully (${importModeRadios.length} radio buttons)`
+    );
   },
 
   /**

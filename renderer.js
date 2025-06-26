@@ -165,11 +165,11 @@ class EnhancedPortfolioApp {
         await window.IPCCommunication.Portfolio.getAvailableExercisePrices();
       const hasData = prices && prices.length > 0 && !prices.error;
 
-      // Use UI state manager to update button states
-      window.UIStateManager.ActionButtons.updateActionButtons(this, hasData);
+      // FIXED: Use the correct reference to ActionButtonManager
+      window.ActionButtonManager.updateActionButtons(this, hasData);
     } catch (error) {
       console.error("Error checking data availability:", error);
-      window.UIStateManager.ActionButtons.updateActionButtons(this, false);
+      window.ActionButtonManager.updateActionButtons(this, false);
     }
   }
   showPriceUpdateNotification() {
