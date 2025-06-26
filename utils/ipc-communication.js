@@ -744,6 +744,39 @@ const DatabaseOperations = {
       throw error;
     }
   },
+  /**
+   * Select import file without importing
+   * @returns {Promise} Result with file path and info
+   */
+  async selectImportFile() {
+    try {
+      console.log("📁 Opening file selection dialog");
+      return await window.ipcRenderer.invoke("select-import-file");
+    } catch (error) {
+      console.error("❌ Error selecting import file:", error);
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Import database from specific file path
+   * @param {string} filePath - Path to the backup file
+   * @param {boolean} mergeMode - Whether to merge or replace
+   * @returns {Promise} Import result
+   */
+  async importDatabaseFromFile(filePath, mergeMode = false) {
+    try {
+      console.log("📥 Importing database from file:", filePath);
+      return await window.ipcRenderer.invoke(
+        "import-database-from-file",
+        filePath,
+        mergeMode
+      );
+    } catch (error) {
+      console.error("❌ Error importing database from file:", error);
+      return { success: false, error: error.message };
+    }
+  },
 };
 
 /**

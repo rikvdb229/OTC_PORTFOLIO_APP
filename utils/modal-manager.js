@@ -1197,80 +1197,501 @@ const ModalManager = {
 
     window.UIStateManager.Modals.showModal("sellOptionsModal");
   },
+
+  configureForDelete() {
+    console.log("⚙️ Configuring modal for delete");
+
+    const title = document.getElementById("databaseModalTitle");
+    const deleteSection = document.getElementById("deleteDatabaseSection");
+    const confirmButton = document.getElementById("confirmDatabaseAction");
+    const actionText = document.getElementById("databaseActionText");
+
+    if (title) title.textContent = "🗑️ Delete Database";
+    if (deleteSection) deleteSection.style.display = "block";
+    if (confirmButton) {
+      confirmButton.disabled = true; // Start disabled for delete
+      confirmButton.className = "btn btn-danger";
+    }
+    if (actionText) actionText.textContent = "🗑️ Delete Database";
+  },
+  /**
+   * Set up event listeners for delete operation
+   * @param {Object} app - Application instance
+   */
+  setupDeleteListeners(app) {
+    console.log("🔧 Setting up delete listeners");
+
+    const confirmText = document.getElementById("databaseConfirmText");
+    const confirmButton = document.getElementById("confirmDatabaseAction");
+    const cancelButton = document.getElementById("cancelDatabaseAction");
+
+    // Set up text validation
+    if (confirmText) {
+      const validationHandler = (e) => {
+        const requiredText = "delete database";
+        const userInput = e.target.value.toLowerCase().trim();
+        const isValid = userInput === requiredText;
+
+        // Update input styling
+        confirmText.classList.remove("valid", "invalid");
+        if (userInput.length > 0) {
+          confirmText.classList.add(isValid ? "valid" : "invalid");
+        }
+
+        // Update button state
+        if (confirmButton) {
+          confirmButton.disabled = !isValid;
+        }
+
+        console.log(`🔍 Validation: "${userInput}" = ${isValid}`);
+      };
+
+      confirmText.addEventListener("input", validationHandler);
+    }
+
+    // Set up confirm button
+    if (confirmButton) {
+      const deleteHandler = async () => {
+        await this.executeDelete(app);
+        confirmButton.removeEventListener("click", deleteHandler);
+      };
+      confirmButton.addEventListener("click", deleteHandler);
+    }
+
+    // Set up cancel button
+    if (cancelButton) {
+      const cancelHandler = () => {
+        this.hideModal("databaseManagementModal");
+        cancelButton.removeEventListener("click", cancelHandler);
+      };
+      cancelButton.addEventListener("click", cancelHandler);
+    }
+  },
+  /**
+   * Execute delete operation
+   * @param {Object} app - Application instance
+   */
+  async executeDelete(app) {
+    console.log("🗑️ Executing delete operation");
+
+    try {
+      // Update button state
+      const confirmButton = document.getElementById("confirmDatabaseAction");
+      if (confirmButton) {
+        confirmButton.textContent = "Deleting...";
+        confirmButton.disabled = true;
+      }
+
+      // Execute delete
+      const result = await window.IPCCommunication.Database.deleteDatabase();
+
+      if (result && result.success) {
+        console.log("✅ Database deleted successfully");
+
+        // Hide modal
+        this.hideModal("databaseManagementModal");
+
+        // Close settings modal
+        if (app) {
+          this.closeSettings(app);
+        }
+
+        // Show success notification
+        window.UIStateManager.showSuccess(
+          "Database deleted successfully",
+          3000
+        );
+
+        // Handle post-delete cleanup
+        await this.handlePostDeleteCleanup(app);
+      } else {
+        const errorMsg =
+          result?.error || result?.message || "Unknown error occurred";
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      console.error("❌ Error deleting database:", error);
+      window.UIStateManager.showError(
+        "Error deleting database: " + error.message
+      );
+
+      // Reset button state
+      const confirmButton = document.getElementById("confirmDatabaseAction");
+      if (confirmButton) {
+        confirmButton.textContent = "🗑️ Delete Database";
+        confirmButton.disabled = false;
+      }
+    }
+  },
+
+  /**
+   * Handle cleanup after database deletion
+   * @param {Object} app - Application instance
+   */
+  async handlePostDeleteCleanup(app) {
+    console.log("🧹 Handling post-delete cleanup");
+
+    try {
+      // Clear portfolio data
+      if (app) {
+        app.portfolioData = [];
+        app.salesData = [];
+        app.evolutionData = [];
+
+        // Clear UI
+        if (app.portfolioTableBody) {
+          app.portfolioTableBody.innerHTML =
+            '<tr><td colspan="100%" class="text-center">No portfolio data available</td></tr>';
+        }
+
+        // Reset stats
+        window.UIStateManager.Stats.updateHeaderStats(app, {
+          totalValue: 0,
+          totalCost: 0,
+          totalReturn: 0,
+          returnPercentage: 0,
+          entriesCount: 0,
+        });
+
+        // Switch to portfolio tab
+        window.UIStateManager.Tabs.switchTab(app, "portfolio");
+
+        console.log("✅ UI cleanup completed");
+      }
+    } catch (cleanupError) {
+      console.error("❌ Error during cleanup:", cleanupError);
+    }
+  },
+  hideModal(modalId) {
+    console.log(`📱 Hiding modal: ${modalId}`);
+
+    const modal = window.DOMHelpers.safeGetElementById(modalId);
+    if (modal) {
+      modal.classList.remove("active");
+      return true;
+    }
+    return false;
+  },
+
   showDeleteDatabaseModal(app) {
     console.log("🗑️ Showing delete database modal");
 
-    // Show modal using existing modal system
-    if (app.deleteDatabaseModal) {
-      app.deleteDatabaseModal.classList.add("active");
-      console.log("✅ Modal shown");
+    this.resetDatabaseModal();
+    this.configureForDelete();
+    this.showModal("databaseManagementModal");
+    this.setupDeleteListeners(app);
+  },
+  /**
+   * Show import database modal with improved flow
+   * @param {Object} app - Application instance
+   */
+  showImportDatabaseModal(app) {
+    console.log("📥 Showing import database modal with improved flow");
+
+    this.resetDatabaseModal();
+    this.configureForImport();
+    this.showModal("databaseManagementModal");
+    this.setupImportListeners(app);
+  },
+
+  /**
+   * Configure modal for import operation - UPDATED
+   */
+  configureForImport() {
+    console.log("⚙️ Configuring modal for import with file-first flow");
+
+    const title = document.getElementById("databaseModalTitle");
+    const importSection = document.getElementById("importDatabaseSection");
+    const confirmButton = document.getElementById("confirmDatabaseAction");
+    const actionText = document.getElementById("databaseActionText");
+
+    if (title) title.textContent = "📥 Import Database";
+    if (importSection) importSection.style.display = "block";
+    if (confirmButton) {
+      confirmButton.disabled = true; // Start disabled until file is selected
+      confirmButton.className = "btn btn-primary";
+    }
+    if (actionText) actionText.textContent = "📥 Import Database";
+  },
+
+  /**
+   * Reset database modal to initial state - UPDATED
+   */
+  resetDatabaseModal() {
+    console.log("🔄 Resetting unified database modal");
+
+    const importSection = document.getElementById("importDatabaseSection");
+    const deleteSection = document.getElementById("deleteDatabaseSection");
+    const confirmText = document.getElementById("databaseConfirmText");
+    const confirmButton = document.getElementById("confirmDatabaseAction");
+
+    // Reset sections
+    if (importSection) importSection.style.display = "none";
+    if (deleteSection) deleteSection.style.display = "none";
+
+    // Reset import flow steps
+    const selectedFileInfo = document.getElementById("selectedFileInfo");
+    const importOptionsStep = document.getElementById("importOptionsStep");
+    const importSummaryStep = document.getElementById("importSummaryStep");
+
+    if (selectedFileInfo) selectedFileInfo.style.display = "none";
+    if (importOptionsStep) importOptionsStep.style.display = "none";
+    if (importSummaryStep) importSummaryStep.style.display = "none";
+
+    // Reset confirmation input
+    if (confirmText) {
+      confirmText.value = "";
+      confirmText.classList.remove("valid", "invalid");
     }
 
-    // Reset and setup input field
-    const input = document.getElementById("deleteDatabaseConfirmText");
-    const button = document.getElementById("confirmDeleteDatabase");
-
-    if (input) {
-      input.value = "";
-      input.classList.remove("valid", "invalid");
-      console.log("✅ Input field reset");
+    // Reset button
+    if (confirmButton) {
+      confirmButton.disabled = true;
+      confirmButton.className = "btn btn-primary";
+      confirmButton.innerHTML =
+        '<span id="databaseActionText">📥 Import Database</span>';
     }
 
-    if (button) {
-      button.disabled = true;
-      console.log("✅ Button disabled");
+    // Reset radio buttons to default (merge)
+    const mergeRadio = document.querySelector(
+      'input[name="importMode"][value="merge"]'
+    );
+    if (mergeRadio) {
+      mergeRadio.checked = true;
     }
 
-    // Set up validation with direct event listener
-    setTimeout(() => {
-      if (input && button) {
-        console.log("🔧 Setting up validation listener...");
+    // Reset stored file path
+    this.selectedImportFile = null;
+  },
 
-        // Remove existing event listeners by cloning the node
-        const newInput = input.cloneNode(true);
-        input.parentNode.replaceChild(newInput, input);
+  /**
+   * Set up event listeners for import operation - UPDATED
+   * @param {Object} app - Application instance
+   */
+  setupImportListeners(app) {
+    console.log("🔧 Setting up improved import listeners");
 
-        // Add fresh event listener
-        newInput.addEventListener("input", function (e) {
-          console.log("📝 Input event fired, value:", this.value);
+    const selectFileBtn = document.getElementById("selectImportFile");
+    const confirmButton = document.getElementById("confirmDatabaseAction");
+    const cancelButton = document.getElementById("cancelDatabaseAction");
+    const importModeRadios = document.querySelectorAll(
+      'input[name="importMode"]'
+    );
 
-          const requiredText = "delete database";
-          const userInput = this.value.toLowerCase().trim();
-          const isValid = userInput === requiredText;
+    // File selection button
+    if (selectFileBtn) {
+      const fileHandler = async () => {
+        await this.handleFileSelection(app);
+      };
+      selectFileBtn.addEventListener("click", fileHandler);
+    }
 
-          console.log(
-            `🔍 Checking: "${userInput}" vs "${requiredText}" = ${isValid}`
-          );
+    // Import mode radio buttons
+    importModeRadios.forEach((radio) => {
+      radio.addEventListener("change", () => {
+        this.updateImportSummary();
+      });
+    });
 
-          // Update button
-          const currentButton = document.getElementById(
-            "confirmDeleteDatabase"
-          );
-          if (currentButton) {
-            currentButton.disabled = !isValid;
-            console.log(`Button is now: ${isValid ? "ENABLED" : "DISABLED"}`);
-          }
+    // Confirm import button
+    if (confirmButton) {
+      const importHandler = async () => {
+        await this.executeImport(app);
+        confirmButton.removeEventListener("click", importHandler);
+      };
+      confirmButton.addEventListener("click", importHandler);
+    }
 
-          // Update input styling
-          this.classList.remove("valid", "invalid");
-          if (userInput.length > 0) {
-            this.classList.add(isValid ? "valid" : "invalid");
-          }
-        });
+    // Cancel button
+    if (cancelButton) {
+      const cancelHandler = () => {
+        this.hideModal("databaseManagementModal");
+        cancelButton.removeEventListener("click", cancelHandler);
+      };
+      cancelButton.addEventListener("click", cancelHandler);
+    }
+  },
 
-        // Add other event types for completeness
-        ["keyup", "paste", "change"].forEach((eventType) => {
-          newInput.addEventListener(eventType, function (e) {
-            console.log(`📝 ${eventType} event fired`);
-            this.dispatchEvent(new Event("input"));
-          });
-        });
+  /**
+   * Handle file selection for import
+   * @param {Object} app - Application instance
+   */
+  async handleFileSelection(app) {
+    console.log("📁 Opening file selection dialog");
 
-        console.log("✅ Validation listeners attached");
+    try {
+      // Call IPC to open file dialog
+      const result = await window.IPCCommunication.Database.selectImportFile();
+
+      if (result.success && result.filePath) {
+        this.selectedImportFile = result.filePath;
+        this.showSelectedFile(result.filePath, result.fileInfo);
+        this.showImportOptions();
+        this.updateImportSummary();
+
+        console.log("✅ File selected:", result.filePath);
       } else {
-        console.error("❌ Input or button not found during setup");
+        console.log("📁 File selection cancelled");
       }
-    }, 200);
+    } catch (error) {
+      console.error("❌ Error selecting file:", error);
+      window.UIStateManager.showError("Error selecting file: " + error.message);
+    }
+  },
+
+  /**
+   * Show selected file information
+   * @param {string} filePath - Selected file path
+   * @param {Object} fileInfo - File information
+   */
+  showSelectedFile(filePath, fileInfo) {
+    const selectedFileInfo = document.getElementById("selectedFileInfo");
+    const selectedFileName = document.getElementById("selectedFileName");
+    const selectedFileDetails = document.getElementById("selectedFileDetails");
+
+    if (selectedFileInfo && selectedFileName && selectedFileDetails) {
+      const fileName = filePath.split(/[\\/]/).pop(); // Get filename from path
+      const fileSize = fileInfo?.size
+        ? this.formatFileSize(fileInfo.size)
+        : "Unknown size";
+      const fileDate = fileInfo?.modified
+        ? new Date(fileInfo.modified).toLocaleDateString()
+        : "Unknown date";
+
+      selectedFileName.textContent = fileName;
+      selectedFileDetails.textContent = `${fileSize} • Modified: ${fileDate}`;
+      selectedFileInfo.style.display = "block";
+
+      console.log("✅ File info displayed");
+    }
+  },
+
+  /**
+   * Show import options step
+   */
+  showImportOptions() {
+    const importOptionsStep = document.getElementById("importOptionsStep");
+    if (importOptionsStep) {
+      importOptionsStep.style.display = "block";
+      console.log("✅ Import options step shown");
+    }
+  },
+
+  /**
+   * Update import summary
+   */
+  updateImportSummary() {
+    if (!this.selectedImportFile) return;
+
+    const importSummaryStep = document.getElementById("importSummaryStep");
+    const summaryFileName = document.getElementById("summaryFileName");
+    const summaryMode = document.getElementById("summaryMode");
+    const summaryWarning = document.getElementById("summaryWarning");
+    const confirmButton = document.getElementById("confirmDatabaseAction");
+
+    if (importSummaryStep && summaryFileName && summaryMode) {
+      const selectedMode = document.querySelector(
+        'input[name="importMode"]:checked'
+      )?.value;
+      const fileName = this.selectedImportFile.split(/[\\/]/).pop();
+
+      summaryFileName.textContent = fileName;
+      summaryMode.textContent =
+        selectedMode === "merge"
+          ? "Merge with existing data"
+          : "Replace all existing data";
+
+      // Show warning for replace mode
+      if (summaryWarning) {
+        summaryWarning.style.display =
+          selectedMode === "replace" ? "block" : "none";
+      }
+
+      // Enable confirm button
+      if (confirmButton) {
+        confirmButton.disabled = false;
+      }
+
+      importSummaryStep.style.display = "block";
+      console.log("✅ Import summary updated");
+    }
+  },
+
+  /**
+   * Execute import operation - UPDATED to use selected file
+   * @param {Object} app - Application instance
+   */
+  async executeImport(app) {
+    console.log("📥 Executing import operation with selected file");
+
+    try {
+      if (!this.selectedImportFile) {
+        throw new Error("No file selected for import");
+      }
+
+      // Get selected import mode
+      const mergeMode =
+        document.querySelector('input[name="importMode"]:checked')?.value ===
+        "merge";
+
+      console.log(`Import mode: ${mergeMode ? "merge" : "replace"}`);
+      console.log(`Import file: ${this.selectedImportFile}`);
+
+      // Hide modal first
+      this.hideModal("databaseManagementModal");
+
+      // Close settings modal
+      if (app) {
+        this.closeSettings(app);
+      }
+
+      // Execute import with selected file
+      const result =
+        await window.IPCCommunication.Database.importDatabaseFromFile(
+          this.selectedImportFile,
+          mergeMode
+        );
+
+      if (result.success) {
+        const successMessage = `Database ${mergeMode ? "merged" : "imported"} successfully! Imported ${result.importedEntries} entries.`;
+
+        // Use notification manager
+        window.UIStateManager.showSuccess(successMessage, 5000);
+
+        console.log("✅ Database import completed successfully");
+
+        // Reload data and switch to portfolio tab
+        if (app && app.loadPortfolioData) {
+          await app.loadPortfolioData();
+        }
+        if (app) {
+          window.UIStateManager.Tabs.switchTab(app, "portfolio");
+        }
+      } else {
+        window.UIStateManager.showError("Import cancelled or failed");
+        console.log("❌ Database import cancelled or failed");
+      }
+    } catch (error) {
+      console.error("❌ Error importing database:", error);
+      window.UIStateManager.showError(
+        "Error importing database: " + error.message
+      );
+    }
+  },
+
+  /**
+   * Format file size for display
+   * @param {number} bytes - File size in bytes
+   * @returns {string} Formatted file size
+   */
+  formatFileSize(bytes) {
+    if (bytes === 0) return "0 Bytes";
+
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   },
 };
 window.ModalManager = ModalManager;

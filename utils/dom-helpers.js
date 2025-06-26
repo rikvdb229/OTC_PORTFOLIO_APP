@@ -22,13 +22,11 @@ function initializeApplicationElements(app) {
     settingsSidebar: "#settingsSidebar",
     settingsOverlay: "#settingsOverlay",
     closeSettings: "#closeSettings",
-    // ===== ADD THESE MISSING SETTINGS FORM ELEMENTS =====
-    saveSettingsBtn: "#saveSettingsBtn", // ← ADD THIS
-    targetPercentage: "#targetPercentage", // ← ADD THIS
-    taxRate: "#taxRate", // ← ADD THIS
-    currencySymbol: "#currencySymbol", // ← ADD THIS
-    autoUpdatePrices: "#autoUpdatePrices", // ← ADD THIS
-    // ===== END MISSING ELEMENTS =====
+    saveSettingsBtn: "#saveSettingsBtn",
+    targetPercentage: "#targetPercentage",
+    taxRate: "#taxRate",
+    currencySymbol: "#currencySymbol",
+    autoUpdatePrices: "#autoUpdatePrices",
 
     // Portfolio stats elements
     totalPortfolioValue: "#totalPortfolioValue",
@@ -51,12 +49,13 @@ function initializeApplicationElements(app) {
     grantsTab: "#grantsTab",
     chartTab: "#chartTab",
 
-    // Action buttons
+    // Action buttons - UPDATED FOR UNIFIED SYSTEM
     addGrantsBtn: "#addGrantsBtn",
     exportDatabaseBtn: "#exportDatabaseBtn",
     importDatabaseBtn: "#importDatabaseBtn",
-    importMergeBtn: "#importMergeBtn",
     deleteDatabaseBtn: "#deleteDatabaseBtn",
+    // REMOVE these lines:
+    // importMergeBtn: "#importMergeBtn", // ❌ DELETE - merged into import modal
 
     // Modals - Add Grants
     addGrantsModal: "#addGrantsModal",
@@ -65,74 +64,41 @@ function initializeApplicationElements(app) {
     grantDate: "#grantDate",
     exercisePrice: "#exercisePrice",
     quantity: "#quantity",
-    actualTaxAmount: "#actualTaxAmount",
-    estimatedTax: "#estimatedTax",
-    exercisePriceHelp: "#exercisePriceHelp",
+    currentValue: "#currentValue",
+    taxAmount: "#taxAmount",
+    fundName: "#fundName",
+    taxCode: "#taxCode",
 
-    // Modals - Delete confirmation
+    // Modal - Sell Options
+    sellOptionsModal: "#sellOptionsModal",
+    cancelSell: "#cancelSell",
+    confirmSell: "#confirmSell",
+    quantityToSell: "#quantityToSell",
+    salePrice: "#salePrice",
+
+    // Modal - Delete Confirmation (for portfolio entries)
     deleteConfirmModal: "#deleteConfirmModal",
     cancelDelete: "#cancelDelete",
     confirmDelete: "#confirmDelete",
-    deleteEntryDetails: "#deleteEntryDetails",
 
-    // Modals - Sell
-    sellModal: "#sellModal",
-    cancelSell: "#cancelSell",
-    confirmSell: "#confirmSell",
-    sellQuantity: "#sellQuantity",
-    sellPrice: "#sellPrice",
-    sellOptionDetails: "#sellOptionDetails",
+    // REMOVE these old database modal references:
+    // deleteDatabaseModal: "#deleteDatabaseModal", // ❌ DELETE - replaced by unified modal
+    // cancelDeleteDatabase: "#cancelDeleteDatabase", // ❌ DELETE - replaced by unified modal
+    // confirmDeleteDatabase: "#confirmDeleteDatabase", // ❌ DELETE - replaced by unified modal
+    // deleteDatabaseConfirmText: "#deleteDatabaseConfirmText", // ❌ DELETE - replaced by unified modal
 
-    // Modals - Edit Sale
+    // Modal - Edit Sale
     editSaleModal: "#editSaleModal",
     cancelEditSale: "#cancelEditSale",
     confirmEditSale: "#confirmEditSale",
-    editSaleQuantity: "#editSaleQuantity",
     editSalePrice: "#editSalePrice",
-    editSaleDate: "#editSaleDate",
-    editSaleDetails: "#editSaleDetails",
+    editSaleQuantity: "#editSaleQuantity",
 
-    // Modals - Edit Tax
-    editTaxModal: "#editTaxModal",
-    cancelEditTax: "#cancelEditTax",
-    confirmEditTax: "#confirmEditTax",
-    editTaxAmount: "#editTaxAmount",
-    editTaxDetails: "#editTaxDetails",
-
-    // Modals - Settings
-    autoUpdateToggle: "#autoUpdateToggle",
-    autoUpdateStatus: "#autoUpdateStatus",
-    autoUpdateInterval: "#autoUpdateInterval",
-
-    // Modals - Delete Database
-    deleteDatabaseModal: "#deleteDatabaseModal",
-    cancelDeleteDatabase: "#cancelDeleteDatabase",
-    confirmDeleteDatabase: "#confirmDeleteDatabase",
-    deleteDatabaseConfirmText: "#deleteDatabaseConfirmText",
-
-    // Evolution filters
-    evolutionDaysFilter: "#evolutionDaysFilter",
-
-    // Progress and notifications
-    // ADD THESE MISSING ELEMENTS:
-    updateProgressBar: "#updateProgressBar",
-    updateProgressText: "#updateProgressText",
-    updateStatusOutput: "#updateStatusOutput",
-    updateProgress: "#updateProgress",
-    priceUpdateNotification: "#priceUpdateNotification",
-    closeNotificationBtn: "#closeNotificationBtn",
-
-    // Charts
-    chartContainer: "#chartContainer",
-
-    // Grant filters
-    fundFilter: "#fundFilter",
-    statusFilter: "#statusFilter",
-    filterSummary: "#filterSummary",
-
-    // Merge grants modal
+    // Modal - Merge Grants
     mergeGrantsModal: "#mergeGrantsModal",
     cancelMergeGrants: "#cancelMergeGrants",
+    mergeGrants: "#mergeGrants",
+    separateGrants: "#separateGrants",
     proceedSeparateGrant: "#proceedSeparateGrant",
     proceedMergeGrant: "#proceedMergeGrant",
     singleGrantMerge: "#singleGrantMerge",
@@ -464,9 +430,6 @@ function attachApplicationEventListeners(app) {
 
   // Use the event handler coordinator to set up all listeners
   window.EventHandlers.EventHandlerCoordinator.initializeAll(app);
-
-  // Initialize delete database functionality using migrated method
-  window.UIStateManager.Database.initializeDeleteDatabase(app);
 
   console.log("✅ All event listeners attached successfully");
 }

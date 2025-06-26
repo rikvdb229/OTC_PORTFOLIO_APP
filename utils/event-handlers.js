@@ -72,16 +72,16 @@ const NavigationHandlers = {
  */
 const SettingsHandlers = {
   /**
-   * Set up settings panel listeners
+   * Set up settings panel listeners including database management
    * @param {Object} app - Application instance (this)
    */
   initialize(app) {
-    console.log("⚙️ Setting up settings handlers...");
+    console.log("⚙️ Setting up settings handlers with database management...");
 
     // Settings close button
     if (app.closeSettings) {
       window.DOMHelpers.safeAddEventListener(app.closeSettings, "click", () => {
-        window.UIStateManager.Modals.closeSettings(app); // ← ADD (app) and ()
+        window.UIStateManager.Modals.closeSettings(app);
       });
     }
 
@@ -90,32 +90,117 @@ const SettingsHandlers = {
       window.DOMHelpers.safeAddEventListener(
         app.settingsOverlay,
         "click",
-        () => {
-          app.closeSettingsPanel();
+        (e) => {
+          if (e.target === app.settingsOverlay) {
+            window.UIStateManager.Modals.closeSettings(app);
+          }
         }
       );
     }
 
-    // Additional close button (if exists)
-    const closeSettingsBtn =
-      window.DOMHelpers.safeGetElementById("closeSettingsBtn");
-    if (closeSettingsBtn) {
-      window.DOMHelpers.safeAddEventListener(closeSettingsBtn, "click", () => {
-        app.closeSettingsPanel();
-      });
-    }
-
+    // Save settings button
     if (app.saveSettingsBtn) {
       window.DOMHelpers.safeAddEventListener(
         app.saveSettingsBtn,
         "click",
         () => {
-          window.AppConfig.SettingsManager.saveSettings(app); // ← NEW
+          window.AppConfig.SettingsManager.saveSettings(app);
         }
       );
     }
 
-    console.log("✅ Settings handlers initialized");
+    // ✅ ADD: Database management buttons
+    this.setupDatabaseHandlers(app);
+
+    console.log("✅ Settings handlers initialized with database management");
+  },
+
+  /**
+   * Set up database management button handlers
+   * @param {Object} app - Application instance
+   */
+  setupDatabaseHandlers(app) {
+    console.log("🗃️ Setting up database handlers in settings...");
+
+    // Export database button
+    if (app.exportDatabaseBtn) {
+      window.DOMHelpers.safeAddEventListener(
+        app.exportDatabaseBtn,
+        "click",
+        () => {
+          window.UIStateManager.Database.exportDatabase(app);
+        }
+      );
+      console.log("✅ Export database handler set up");
+    }
+
+    // Import database button
+    if (app.importDatabaseBtn) {
+      window.DOMHelpers.safeAddEventListener(
+        app.importDatabaseBtn,
+        "click",
+        () => {
+          window.UIStateManager.Modals.showImportDatabaseModal(app);
+        }
+      );
+      console.log("✅ Import database handler set up");
+    }
+
+    // Delete database button
+    if (app.deleteDatabaseBtn) {
+      window.DOMHelpers.safeAddEventListener(
+        app.deleteDatabaseBtn,
+        "click",
+        () => {
+          window.UIStateManager.Modals.showDeleteDatabaseModal(app);
+        }
+      );
+      console.log("✅ Delete database handler set up");
+    }
+
+    // ✅ ADD: Import modal internal handlers (set up once globally)
+    this.setupImportModalHandlers(app);
+
+    console.log("✅ All database handlers set up");
+  },
+
+  /**
+   * Set up import modal internal handlers (once, globally)
+   * @param {Object} app - Application instance
+   */
+  setupImportModalHandlers(app) {
+    console.log("📥 Setting up import modal handlers...");
+
+    // Use event delegation to handle modal buttons that appear dynamically
+    document.addEventListener("click", (e) => {
+      // File selection button
+      if (e.target && e.target.id === "selectImportFile") {
+        window.UIStateManager.Modals.handleFileSelection(app);
+      }
+
+      // Confirm database action button (for import)
+      if (e.target && e.target.id === "confirmDatabaseAction") {
+        const importSection = document.getElementById("importDatabaseSection");
+        if (importSection && importSection.style.display !== "none") {
+          // This is an import operation
+          window.UIStateManager.Modals.executeImport(app);
+        }
+      }
+
+      // Cancel database action button
+      if (e.target && e.target.id === "cancelDatabaseAction") {
+        window.UIStateManager.Modals.hideModal("databaseManagementModal");
+      }
+    });
+
+    // Radio button changes
+    document.addEventListener("change", (e) => {
+      if (e.target && e.target.name === "importMode") {
+        window.UIStateManager.Modals.updateImportSummary();
+      }
+    });
+
+    console.log("✅ Import modal handlers set up with event delegation");
   },
 };
 
@@ -389,61 +474,6 @@ const FormHandlers = {
 };
 
 /**
- * Database management event handlers
- */
-const DatabaseHandlers = {
-  /**
-   * Set up database operation listeners
-   * @param {Object} app - Application instance (this)
-   */
-  initialize(app) {
-    console.log("💾 Setting up database handlers...");
-
-    // Database management buttons
-    if (app.exportDatabaseBtn) {
-      window.DOMHelpers.safeAddEventListener(
-        app.exportDatabaseBtn,
-        "click",
-        () => {
-          app.exportDatabase();
-        }
-      );
-    }
-
-    if (app.importDatabaseBtn) {
-      window.DOMHelpers.safeAddEventListener(
-        app.importDatabaseBtn,
-        "click",
-        () => {
-          app.importDatabase(false);
-        }
-      );
-    }
-
-    if (app.importMergeBtn) {
-      window.DOMHelpers.safeAddEventListener(
-        app.importMergeBtn,
-        "click",
-        () => {
-          app.importDatabase(true);
-        }
-      );
-    }
-    if (app.deleteDatabaseBtn) {
-      window.DOMHelpers.safeAddEventListener(
-        app.deleteDatabaseBtn,
-        "click",
-        () => {
-          app.showDeleteDatabaseModal();
-        }
-      );
-    }
-
-    console.log("✅ Database handlers initialized");
-  },
-};
-
-/**
  * Main event handler coordinator
  */
 const EventHandlerCoordinator = {
@@ -466,7 +496,6 @@ const EventHandlerCoordinator = {
       DynamicControlHandlers,
       ModalHandlers,
       FormHandlers,
-      DatabaseHandlers,
     ];
 
     let totalHandlers = 0;
@@ -494,7 +523,6 @@ window.EventHandlers = {
   DynamicControlHandlers,
   ModalHandlers,
   FormHandlers,
-  DatabaseHandlers,
   EventHandlerCoordinator,
 };
 

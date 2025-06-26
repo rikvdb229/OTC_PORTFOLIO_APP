@@ -439,26 +439,22 @@
             >Automatically scrape latest prices when app starts</small
           >
         </div>
-
         <div class="setting-item">
           <label>Database Management</label>
           <div class="database-actions">
-            <button id="exportDatabaseBtn" class="btn btn-secondary btn-full">
-              📤 Export Database
-            </button>
             <button id="importDatabaseBtn" class="btn btn-secondary btn-full">
               📥 Import Database
             </button>
-            <button id="importMergeBtn" class="btn btn-secondary btn-full">
-              🔄 Merge Database
+            <button id="exportDatabaseBtn" class="btn btn-secondary btn-full">
+              📤 Export Database
             </button>
             <button id="deleteDatabaseBtn" class="btn btn-danger btn-full">
               🗑️ Delete Database
             </button>
           </div>
-          <small class="form-help"
-            >Backup your data or transfer between computers</small
-          >
+          <small class="form-help">
+            Backup your data or transfer between computers
+          </small>
         </div>
 
         <button id="saveSettingsBtn" class="btn btn-primary btn-full">
@@ -864,78 +860,173 @@
         </div>
       </div>
     </div>
-    <!-- Delete Database Confirmation Modal -->
-    <div id="deleteDatabaseModal" class="modal">
+    <!-- Unified Database Management Modal - Improved Import Flow -->
+    <div id="databaseManagementModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>⚠️ DELETE ENTIRE DATABASE</h3>
+          <h3 id="databaseModalTitle">⚠️ DATABASE MANAGEMENT</h3>
         </div>
         <div class="modal-body">
-          <div class="delete-database-warning">
-            <div class="warning-header">
-              <p><strong>🚨 DANGER ZONE - IRREVERSIBLE ACTION 🚨</strong></p>
-            </div>
+          <!-- Import Database Section -->
+          <div id="importDatabaseSection" class="database-section">
+            <div class="database-warning">
+              <div class="warning-content">
+                <!-- Step 1: File Selection -->
+                <div class="import-step">
+                  <h5>Step 1: Select Backup File</h5>
+                  <div class="file-selection-area">
+                    <button
+                      id="selectImportFile"
+                      class="btn btn-secondary btn-full"
+                    >
+                      📁 Choose Backup File
+                    </button>
+                    <div
+                      id="selectedFileInfo"
+                      class="selected-file-info"
+                      style="display: none"
+                    >
+                      <div class="file-info-header">
+                        <span class="file-icon">📄</span>
+                        <span id="selectedFileName" class="file-name"></span>
+                      </div>
+                      <div class="file-details">
+                        <small
+                          id="selectedFileDetails"
+                          class="file-details-text"
+                        ></small>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <div class="warning-content">
-              <p>
-                <strong
-                  >You are about to permanently delete your ENTIRE portfolio
-                  database.</strong
+                <!-- Step 2: Import Options (only shown after file is selected) -->
+                <div
+                  id="importOptionsStep"
+                  class="import-step"
+                  style="display: none"
                 >
-              </p>
+                  <h5>Step 2: Import Options</h5>
+                  <div class="import-mode-selection">
+                    <label class="radio-label">
+                      <input
+                        type="radio"
+                        name="importMode"
+                        value="merge"
+                        checked
+                      />
+                      <span class="radio-checkmark"></span>
+                      <div class="option-content">
+                        <strong>Merge with existing data</strong>
+                        <small class="form-help"
+                          >Adds new entries, keeps existing ones
+                          (Recommended)</small
+                        >
+                      </div>
+                    </label>
+                    <label class="radio-label">
+                      <input type="radio" name="importMode" value="replace" />
+                      <span class="radio-checkmark"></span>
+                      <div class="option-content">
+                        <strong>Replace all existing data</strong>
+                        <small class="form-help danger-text"
+                          >⚠️ This will permanently delete all current
+                          data</small
+                        >
+                      </div>
+                    </label>
+                  </div>
+                </div>
 
-              <div class="warning-details">
-                <p>This will permanently remove:</p>
-                <ul>
-                  <li>All portfolio entries and options data</li>
-                  <li>All price history records</li>
-                  <li>All sales transaction records</li>
-                  <li>All portfolio evolution data</li>
-                  <li>All application settings</li>
-                </ul>
+                <!-- Step 3: Import Summary (only shown after options are selected) -->
+                <div
+                  id="importSummaryStep"
+                  class="import-step"
+                  style="display: none"
+                >
+                  <h5>Step 3: Import Summary</h5>
+                  <div class="import-summary">
+                    <div class="summary-item">
+                      <strong>File:</strong> <span id="summaryFileName"></span>
+                    </div>
+                    <div class="summary-item">
+                      <strong>Mode:</strong> <span id="summaryMode"></span>
+                    </div>
+                    <div
+                      class="summary-warning"
+                      id="summaryWarning"
+                      style="display: none"
+                    >
+                      <p class="warning-text">
+                        🚨 This will replace all your existing portfolio data!
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
 
-              <div class="warning-consequences">
-                <p><strong>⚠️ Important consequences:</strong></p>
-                <ul>
-                  <li>This action cannot be undone</li>
-                  <li>No backup will be created automatically</li>
-                  <li>You will lose all historical data</li>
-                  <li>The application will restart with an empty database</li>
-                </ul>
+          <!-- Delete Database Section -->
+          <div
+            id="deleteDatabaseSection"
+            class="database-section"
+            style="display: none"
+          >
+            <div class="delete-database-warning">
+              <div class="warning-header">
+                <p><strong>🚨 IRREVERSIBLE ACTION 🚨</strong></p>
               </div>
-
-              <div class="confirmation-requirement">
-                <p><strong>To confirm this action, type exactly:</strong></p>
-                <code class="confirmation-text">delete database</code>
-
-                <div class="confirmation-input-group">
-                  <label for="deleteDatabaseConfirmText"
-                    >Confirmation Text:</label
+              <div class="warning-content">
+                <p>
+                  <strong
+                    >You are about to permanently delete your ENTIRE portfolio
+                    database.</strong
                   >
-                  <input
-                    type="text"
-                    id="deleteDatabaseConfirmText"
-                    placeholder="Type 'delete database' to confirm"
-                    autocomplete="off"
-                    autocorrect="off"
-                    spellcheck="false"
-                  />
+                </p>
+                <div class="warning-details">
+                  <p>This will permanently remove:</p>
+                  <ul>
+                    <li>All portfolio entries and options data</li>
+                    <li>All price history records</li>
+                    <li>All sales transaction records</li>
+                    <li>All portfolio evolution data</li>
+                    <li>All application settings</li>
+                  </ul>
+                </div>
+                <div class="warning-consequences">
+                  <p><strong>⚠️ Important consequences:</strong></p>
+                  <ul>
+                    <li>This action cannot be undone</li>
+                    <li>No backup will be created automatically</li>
+                    <li>You will lose all historical data</li>
+                    <li>The application will restart with an empty database</li>
+                  </ul>
+                </div>
+                <div class="confirmation-section">
+                  <p><strong>To confirm deletion, type:</strong></p>
+                  <div class="confirmation-text">delete database</div>
+                  <div class="confirmation-input-group">
+                    <label for="databaseConfirmText">Confirmation text:</label>
+                    <input
+                      type="text"
+                      id="databaseConfirmText"
+                      placeholder="Type: delete database"
+                      autocomplete="off"
+                      spellcheck="false"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            id="cancelDeleteDatabase"
-            class="btn btn-secondary"
-            onclick="portfolioApp.closeModals()"
-          >
+          <button id="cancelDatabaseAction" class="btn btn-secondary">
             Cancel
           </button>
-          <button id="confirmDeleteDatabase" class="btn btn-danger" disabled>
-            🗑️ DELETE DATABASE
+          <button id="confirmDatabaseAction" class="btn btn-primary" disabled>
+            <span id="databaseActionText">📥 Import Database</span>
           </button>
         </div>
       </div>

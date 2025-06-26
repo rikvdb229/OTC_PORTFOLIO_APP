@@ -405,85 +405,49 @@ const FormValidation = {
  */
 const DatabaseManager = {
   /**
-   * Export database to file
-   * @param {Object} app - Application instance (optional, for future use)
+   * Export database to file with notification support only
+   * @param {Object} app - Application instance
    */
   async exportDatabase(app = null) {
     try {
       console.log("📤 Starting database export...");
-      const result = await window.IPCCommunication.Database.exportDatabase();
+
+      // Close settings modal first
       if (app) {
         window.UIStateManager.Modals.closeSettings(app);
         console.log("✅ Settings modal closed before export");
       }
+
+      const result = await window.IPCCommunication.Database.exportDatabase();
+
       if (result.success) {
-        alert(`Database exported successfully to:\n${result.filePath}`);
+        // Show success notification with file path
+        const successMessage = `Database exported successfully to: ${result.filePath}`;
+        window.UIStateManager.showSuccess(successMessage, 8000);
+
         console.log("✅ Database export completed successfully");
       } else {
-        alert("Export cancelled or failed");
+        window.UIStateManager.showError("Export cancelled or failed");
         console.log("❌ Database export cancelled or failed");
       }
     } catch (error) {
       console.error("❌ Error exporting database:", error);
-      alert("Error exporting database: " + error.message);
+      window.UIStateManager.showError(
+        "Error exporting database: " + error.message
+      );
     }
   },
 
   /**
-   * Import database from file
+   * Import database from file - now handled by ModalManager
    * @param {Object} app - Application instance
    * @param {boolean} mergeMode - Whether to merge with existing data
    */
   async importDatabase(app, mergeMode = false) {
-    try {
-      console.log(`📥 Starting database import (merge: ${mergeMode})...`);
-
-      const confirmMessage = mergeMode
-        ? "Are you sure you want to merge the imported data with existing data?"
-        : "Are you sure you want to replace all existing data with imported data?\n\nThis action cannot be undone!";
-
-      if (!confirm(confirmMessage)) {
-        console.log("📥 Database import cancelled by user");
-        return;
-      }
-      // ✅ FIX: Close settings modal after user confirms but before starting import
-      if (app) {
-        window.UIStateManager.Modals.closeSettings(app);
-        console.log("✅ Settings modal closed before import");
-      }
-
-      const result =
-        await window.IPCCommunication.Database.importDatabase(mergeMode);
-
-      if (result.success) {
-        const successMessage = `Database ${mergeMode ? "merged" : "imported"} successfully!\nImported ${result.importedEntries} entries.`;
-        alert(successMessage);
-        console.log("✅ Database import completed successfully");
-
-        // ADD THESE LINES - Complete reinitialization after import
-        if (app) {
-          // Reload data
-          await app.loadPortfolioData();
-
-          // Reinitialize DOM elements and event listeners
-          window.DOMHelpers.initializeApplicationElements(app);
-          window.DOMHelpers.attachApplicationEventListeners(app);
-
-          // ✅ FIX 2: Update button states and price indicators
-          await app.checkDataAvailability();
-          await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
-
-          // Switch to portfolio tab
-          window.UIStateManager.Tabs.switchTab(app, "portfolio");
-        }
-      } else {
-        alert("Import cancelled or failed");
-        console.log("❌ Database import cancelled or failed");
-      }
-    } catch (error) {
-      console.error("❌ Error importing database:", error);
-      alert("Error importing database: " + error.message);
-    }
+    // This method is now deprecated in favor of the ModalManager
+    // Redirect to ModalManager
+    console.log("📥 Redirecting to ModalManager import modal");
+    window.UIStateManager.Modals.showImportDatabaseModal(app);
   },
 
   /**
@@ -512,164 +476,7 @@ const DatabaseManager = {
       return null;
     }
   },
-  /**
-   * Initialize delete database functionality
-   * MIGRATED FROM: renderer.js initializeDeleteDatabase()
-   * @param {Object} app - Application instance
-   */
-  initializeDeleteDatabase(app) {
-    console.log("🗑️ Initializing delete database functionality...");
-
-    // Delete database button click handler
-    if (app.deleteDatabaseBtn) {
-      app.deleteDatabaseBtn.addEventListener("click", () => {
-        window.UIStateManager.Modals.showDeleteDatabaseModal(app);
-      });
-    }
-
-    // Cancel delete database
-    if (app.cancelDeleteDatabase) {
-      app.cancelDeleteDatabase.addEventListener("click", () => {
-        window.UIStateManager.Modals.closeAllModals(app);
-      });
-    }
-
-    // Confirm delete database
-    if (app.confirmDeleteDatabase) {
-      app.confirmDeleteDatabase.addEventListener("click", () => {
-        this.executeDeleteDatabase(app);
-      });
-    }
-
-    // Text input validation - use direct DOM query as fallback
-    const textInput =
-      app.deleteDatabaseConfirmText ||
-      document.getElementById("deleteDatabaseConfirmText");
-    if (textInput) {
-      console.log("✅ Found text input element, attaching validation listener");
-
-      // Add multiple event listeners for better responsiveness
-      ["input", "keyup", "paste", "change"].forEach((eventType) => {
-        textInput.addEventListener(eventType, (e) => {
-          console.log(
-            `🔍 Text input event triggered: ${eventType}, value: "${e.target.value}"`
-          );
-          // Small delay to ensure paste events are processed
-          setTimeout(
-            () =>
-              window.UIStateManager.Validation.validateDeleteConfirmation(app),
-            10
-          );
-        });
-      });
-
-      // Test the validation immediately
-      console.log("🧪 Testing validation function...");
-      setTimeout(
-        () => window.UIStateManager.Validation.validateDeleteConfirmation(app),
-        10
-      );
-    } else {
-      console.error("❌ Delete confirmation text input not found!");
-      console.log(
-        "Available element:",
-        document.getElementById("deleteDatabaseConfirmText")
-      );
-    }
-
-    console.log("✅ Delete database functionality initialized");
-  },
-  /**
-   * Execute database deletion with full cleanup
-   * @param {Object} app - Application instance
-   */
-  async executeDeleteDatabase(app) {
-    console.log("🗑️ Executing database deletion...");
-
-    try {
-      // Show loading state
-      if (app.confirmDeleteDatabase) {
-        app.confirmDeleteDatabase.textContent = "Deleting...";
-        app.confirmDeleteDatabase.disabled = true;
-      }
-
-      // Call the backend to delete the database
-      console.log("📡 Calling backend delete database method...");
-      const result = await window.IPCCommunication.Database.deleteDatabase();
-
-      console.log("📡 Backend response:", result);
-
-      if (result && result.success) {
-        console.log("✅ Database deleted successfully");
-
-        // ✅ FIX: Close ALL modals including settings modal
-        window.UIStateManager.Modals.closeAllModals(app);
-
-        // ✅ FIX: Explicitly close settings modal in case it's still open
-        if (app) {
-          window.UIStateManager.Modals.closeSettings(app);
-          console.log("✅ Settings modal explicitly closed after delete");
-        }
-
-        // Reload the application
-        await this.handlePostDeleteCleanup(app);
-      } else {
-        const errorMsg =
-          result?.error || result?.message || "Unknown error occurred";
-        throw new Error(errorMsg);
-      }
-    } catch (error) {
-      console.error("❌ Error deleting database:", error);
-      console.error("❌ Full error object:", error);
-
-      alert("Error deleting database: " + (error.message || error.toString()));
-
-      // Reset button state
-      if (app.confirmDeleteDatabase) {
-        app.confirmDeleteDatabase.textContent = "🗑️ DELETE DATABASE";
-        app.confirmDeleteDatabase.disabled = false;
-      }
-    }
-  },
-
-  /**
-   * Handle cleanup after database deletion
-   * @param {Object} app - Application instance
-   */
-  async handlePostDeleteCleanup(app) {
-    try {
-      console.log("🧹 Performing post-delete cleanup...");
-
-      // Clear current portfolio data
-      app.portfolioData = [];
-      app.salesData = [];
-      app.evolutionData = [];
-
-      // Reset UI elements
-      if (app.portfolioTableBody) {
-        app.portfolioTableBody.innerHTML =
-          '<tr><td colspan="100%">No data available</td></tr>';
-      }
-
-      // Clear header stats
-      if (app.totalPortfolioValue)
-        app.totalPortfolioValue.textContent = "€0.00";
-      if (app.totalOptions) app.totalOptions.textContent = "0";
-      if (app.lastPriceUpdate) app.lastPriceUpdate.textContent = "Never";
-
-      // Switch to portfolio tab
-      window.UIStateManager.switchTab("portfolio");
-
-      console.log("✅ Post-delete cleanup completed");
-
-      // Show success message
-      window.UIStateManager.showSuccess("Database deleted successfully", 5000);
-    } catch (error) {
-      console.error("❌ Error during post-delete cleanup:", error);
-    }
-  },
 };
-
 /**
  * Main UI State coordinator
  */

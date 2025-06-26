@@ -162,6 +162,59 @@ app.on("activate", () => {
     createWindow();
   }
 });
+// File selection handler
+ipcMain.handle("select-import-file", async () => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Select Portfolio Database Backup",
+      filters: [{ name: "KBC ESOP Portfolio Backup", extensions: ["json"] }],
+      properties: ["openFile"],
+    });
+
+    if (!result.canceled && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+
+      // Get file info
+      const stats = fs.statSync(filePath);
+
+      return {
+        success: true,
+        filePath: filePath,
+        fileInfo: {
+          size: stats.size,
+          modified: stats.mtime,
+        },
+      };
+    }
+
+    return { success: false, message: "File selection cancelled" };
+  } catch (error) {
+    console.error("Error selecting import file:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Import from specific file handler
+ipcMain.handle(
+  "import-database-from-file",
+  async (event, filePath, mergeMode = false) => {
+    try {
+      // Read and parse the selected file
+      const fileContent = fs.readFileSync(filePath, "utf-8");
+      const importData = JSON.parse(fileContent);
+
+      // Use existing import logic
+      const importResult = await portfolioDb.importDatabase(
+        importData,
+        mergeMode
+      );
+      return { success: true, importedEntries: importResult.importedEntries };
+    } catch (error) {
+      console.error("Error importing database from file:", error);
+      return { success: false, error: error.message };
+    }
+  }
+);
 ipcMain.handle("get-app-version", () => {
   return {
     version: APP_CONFIG.VERSION,
