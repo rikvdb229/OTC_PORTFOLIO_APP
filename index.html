@@ -658,11 +658,11 @@
       </div>
     </div>
 
-    <!-- Sell Options Modal -->
+    <!-- Updated Sell Options Modal with Sale Date -->
     <div id="sellOptionsModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Sell Options</h3>
+          <h3>Sell Grants</h3>
         </div>
         <div class="modal-body">
           <div id="sellOptionDetails" class="option-details">
@@ -689,6 +689,16 @@
                 required
               />
             </div>
+            <small class="form-help">Price per option when sold</small>
+          </div>
+
+          <!-- NEW: Sale Date Field -->
+          <div class="form-group">
+            <label for="saleDate">Sale Date</label>
+            <input type="date" id="saleDate" required />
+            <small class="form-help">
+              Date when the sale occurred (cannot be in the future)
+            </small>
           </div>
 
           <div class="form-group">
@@ -700,46 +710,24 @@
             ></textarea>
           </div>
 
-          <div class="tax-calculation-sell">
-            <h4>💰 Tax Allocation</h4>
-            <div class="tax-breakdown">
-              <div class="tax-line">
-                <span>Tax allocated to sold options:</span>
-                <span id="proportionalTax">€ 0.00</span>
-              </div>
-              <div class="tax-line">
-                <span>Total sale value:</span>
-                <span id="totalSaleValue">€ 0.00</span>
-              </div>
-              <div class="tax-line highlight">
-                <span>Net sale proceeds:</span>
-                <span id="netProceeds">€ 0.00</span>
-              </div>
+          <div class="sale-calculations">
+            <h4>💰 Sale Summary</h4>
+            <div class="calculation-line">
+              <span>Total Sale Value:</span>
+              <span id="totalSaleValue">€ 0.00</span>
             </div>
-            <div class="tax-explanation">
-              <small>
-                <strong>ℹ️ Tax Explanation:</strong><br />
-                • Tax was already paid when options were granted<br />
-                • Selling reduces the tax amount on your remaining options<br />
-                • You receive the full sale value (no additional tax deduction)
-              </small>
+            <div class="calculation-line">
+              <span>Profit/Loss:</span>
+              <span id="realizedPL" class="currency">€ 0.00</span>
             </div>
-          </div>
-
-          <div class="sell-warning">
-            ⚠️ <strong>IMPORTANT:</strong> This only records the sale in your
-            portfolio. Actual selling must be done at
-            <a href="https://esop.kbc.be" target="_blank"
-              >https://esop.kbc.be</a
-            >
           </div>
         </div>
         <div class="modal-footer">
           <button id="cancelSellOptions" class="btn btn-secondary">
             Cancel
           </button>
-          <button id="confirmSellOptions" class="btn btn-danger">
-            💰 Record Sale
+          <button id="confirmSellOptions" class="btn btn-primary">
+            Confirm Sale
           </button>
         </div>
       </div>

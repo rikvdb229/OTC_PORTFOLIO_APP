@@ -115,6 +115,14 @@ window.ChartUtils = {
    * @param {string} period - Time period filter
    * @returns {Object} Events grouped by date
    */
+  /**
+   * FIXED: Process portfolio events and group by date for annotations
+   * This version properly detects deletions using the updated format
+   * @param {Array} evolutionData - Evolution data
+   * @param {Array} portfolioEvents - Portfolio events
+   * @param {string} period - Time period filter
+   * @returns {Object} Events grouped by date
+   */
   processPortfolioEvents(evolutionData, portfolioEvents = [], period = "all") {
     const eventsByDate = {};
 
@@ -128,7 +136,7 @@ window.ChartUtils = {
       );
     }
 
-    // Process evolution entries for grants
+    // Process evolution entries for grants, sales, and deletions
     evolutionData.forEach((evolutionEntry) => {
       const notes = evolutionEntry.notes || "";
       const eventDate = new Date(
@@ -157,12 +165,27 @@ window.ChartUtils = {
         });
       }
 
-      // Count deletions
+      // FIXED: Count deletions using the new format
+      // The deletion note format is now: "Grant deleted: {quantity} options (Fund Name)"
+      const deletionMatches = notes.match(/Grant deleted: (\d+) options/g);
+      if (deletionMatches) {
+        deletionMatches.forEach((match) => {
+          const quantity = parseInt(match.match(/(\d+)/)[1]);
+          eventsByDate[eventDate].deletions += quantity;
+          console.log(
+            `🗑️ Detected deletion: ${quantity} options on ${eventDate}`
+          );
+        });
+      }
+
+      // LEGACY: Also check for old deletion format for backwards compatibility
       if (notes.includes("Entry deleted")) {
         eventsByDate[eventDate].deletions += 1;
+        console.log(`🗑️ Detected legacy deletion on ${eventDate}`);
       }
     });
 
+    console.log("📊 Final events by date:", eventsByDate);
     return eventsByDate;
   },
 
@@ -186,24 +209,84 @@ window.ChartUtils = {
    * Copy this entire function and replace the existing one in utils/chart-visualization.js
    */
 
+  /**
+   * FIXED: Create chart annotations from processed events
+   * Now properly handles grants, sales, AND deletions
+   * @param {Object} eventsByDate - Events grouped by date
+   * @returns {Object} Chart.js annotations configuration
+   */
   createChartAnnotations(eventsByDate) {
+    // Always start with a completely fresh annotations object
     const annotations = {};
     let annotationIndex = 0;
+
+    console.log("🔄 Creating fresh chart annotations...");
+    console.log("📊 Events to process:", eventsByDate);
 
     Object.entries(eventsByDate).forEach(([date, events]) => {
       const { grants, sales, deletions } = events;
 
       // Only create annotations for significant events
       if (grants > 0 || sales > 0 || deletions > 0) {
-        // Single bold black line to indicate "something happened here"
+        console.log(`📍 Creating annotation for ${date}:`, {
+          grants,
+          sales,
+          deletions,
+        });
+
+        // Create different colored lines based on event types
+        let borderColor = "#000000"; // Default black
+        let label = "";
+
+        // Determine color and label based on the primary event type
+        if (deletions > 0) {
+          borderColor = "#dc3545"; // Red for deletions
+          label = `🗑️ ${deletions} deleted`;
+        } else if (sales > 0) {
+          borderColor = "#ffc107"; // Amber for sales
+          label = `📉 ${sales} sold`;
+        } else if (grants > 0) {
+          borderColor = "#28a745"; // Green for grants
+          label = `📈 ${grants} added`;
+        }
+
+        // If multiple event types on same date, use black and show all
+        const eventCount =
+          (grants > 0 ? 1 : 0) + (sales > 0 ? 1 : 0) + (deletions > 0 ? 1 : 0);
+        if (eventCount > 1) {
+          borderColor = "#000000"; // Black for mixed events
+          const eventParts = [];
+          if (grants > 0) eventParts.push(`📈 ${grants} added`);
+          if (sales > 0) eventParts.push(`📉 ${sales} sold`);
+          if (deletions > 0) eventParts.push(`🗑️ ${deletions} deleted`);
+          label = eventParts.join(", ");
+        }
+
+        // Create the annotation
         annotations[`event_${annotationIndex}`] = {
           type: "line",
           mode: "vertical",
           scaleID: "x",
           value: date,
-          borderColor: "#000000", // Black line
-          borderWidth: 4, // Bold line
-          borderDash: [], // Solid line
+          borderColor: borderColor,
+          borderWidth: 3,
+          borderDash: [],
+          label: {
+            enabled: true,
+            content: label,
+            position: "top",
+            backgroundColor: "rgba(255, 255, 255, 0.9)",
+            color: borderColor,
+            borderColor: borderColor,
+            borderWidth: 1,
+            borderRadius: 4,
+            padding: 4,
+            font: {
+              size: 10,
+              weight: "bold",
+            },
+            yAdjust: -10,
+          },
         };
 
         annotationIndex++;
@@ -211,9 +294,10 @@ window.ChartUtils = {
     });
 
     console.log(
-      "📍 Simple black event line annotations prepared:",
-      Object.keys(annotations).length
+      `📍 Chart annotations created: ${Object.keys(annotations).length} annotations`
     );
+    console.log("📍 Annotations detail:", annotations);
+
     return annotations;
   },
 
