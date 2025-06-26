@@ -1147,6 +1147,14 @@ const ModalManager = {
     }
   },
   // Add to ModalManager section in ui-state-management.js
+  /**
+   * Updated showSellModal function with date field and simplified calculations
+   * This replaces the existing showSellModal function in modal-manager.js
+   */
+  /**
+   * Updated showSellModal function with date field and simplified calculations
+   * This replaces the existing showSellModal function in modal-manager.js
+   */
   async showSellModal(app, entryId) {
     const entry = app.portfolioData.find((e) => e.id === entryId);
     if (!entry) {
@@ -1187,6 +1195,15 @@ const ModalManager = {
     </div>
   `;
 
+    // Set up sale date field (default to today, can be changed to past dates)
+    const saleDateInput = document.getElementById("saleDate");
+    if (saleDateInput) {
+      const today = new Date().toISOString().split("T")[0];
+      saleDateInput.value = today;
+      saleDateInput.max = today; // Cannot be in the future
+    }
+
+    // Set up quantity and price fields
     document.getElementById("quantityToSell").max = entry.quantity_remaining;
     document.getElementById("maxQuantityHelp").textContent =
       `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;

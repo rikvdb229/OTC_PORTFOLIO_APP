@@ -3151,3 +3151,96 @@ body {
     padding: 0.75rem;
   }
 }
+/* Updated CSS for simplified sell modal */
+
+/* Replace the existing .tax-calculation-sell styles with this simplified version */
+.sale-summary {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-lg);
+  margin: var(--spacing-lg) 0;
+}
+
+.sale-summary h4 {
+  margin: 0 0 var(--spacing-md) 0;
+  color: var(--color-dark);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.summary-line:last-child {
+  border-bottom: none;
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-md);
+}
+
+.summary-line span:first-child {
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-medium);
+}
+
+.summary-line span:last-child {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-dark);
+}
+
+/* Profit/Loss formatting using existing classes from formatters.js */
+.summary-line .currency.positive {
+  color: var(--color-success) !important;
+}
+
+.summary-line .currency.negative {
+  color: var(--color-danger) !important;
+}
+
+.summary-line .currency.neutral {
+  color: var(--text-secondary) !important;
+}
+
+/* Remove the old tax-calculation-sell and related styles */
+.tax-calculation-sell {
+  display: none; /* Hide the old section if it still exists */
+}
+
+/* Enhanced form group spacing for the new date field */
+#sellOptionsModal .form-group:first-of-type {
+  margin-top: var(--spacing-md);
+}
+
+/* Date input specific styling */
+#saleDate {
+  cursor: pointer;
+}
+
+#saleDate::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  border-radius: var(--border-radius-sm);
+}
+
+#saleDate::-webkit-calendar-picker-indicator:hover {
+  background-color: rgba(0, 122, 204, 0.1);
+}
+
+/* Mobile responsiveness for sale summary */
+@media (max-width: 480px) {
+  .summary-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-xs);
+  }
+
+  .summary-line span:last-child {
+    font-size: var(--font-size-lg);
+    align-self: flex-end;
+  }
+}

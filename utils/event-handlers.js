@@ -479,7 +479,7 @@ const FormHandlers = {
 
     // Define form input mappings
     const formInputs = [
-      // Add Grants form
+      // Add Grants form (existing handlers)
       {
         id: "grantDate",
         event: "change",
@@ -501,7 +501,12 @@ const FormHandlers = {
         handler: () => app.updateTaxDisplay(),
       },
 
-      // Sell Options form
+      // UPDATED: Sell Options form with new date field and simplified calculation
+      {
+        id: "saleDate",
+        event: "change",
+        handler: () => app.calculateSaleProceeds(),
+      },
       {
         id: "quantityToSell",
         event: "input",

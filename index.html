@@ -658,15 +658,24 @@
       </div>
     </div>
 
-    <!-- Sell Options Modal -->
+    <!-- Updated Sell Grants Modal -->
     <div id="sellOptionsModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h3>Sell Options</h3>
+          <h3>Sell Grants</h3>
         </div>
         <div class="modal-body">
           <div id="sellOptionDetails" class="option-details">
             <!-- Populated dynamically -->
+          </div>
+
+          <!-- NEW: Sale Date Field (above quantity) -->
+          <div class="form-group">
+            <label for="saleDate">Sale Date</label>
+            <input type="date" id="saleDate" required />
+            <small class="form-help"
+              >Date when the sale occurred (can be in the past)</small
+            >
           </div>
 
           <div class="form-group">
@@ -700,29 +709,16 @@
             ></textarea>
           </div>
 
-          <div class="tax-calculation-sell">
-            <h4>💰 Tax Allocation</h4>
-            <div class="tax-breakdown">
-              <div class="tax-line">
-                <span>Tax allocated to sold options:</span>
-                <span id="proportionalTax">€ 0.00</span>
-              </div>
-              <div class="tax-line">
-                <span>Total sale value:</span>
-                <span id="totalSaleValue">€ 0.00</span>
-              </div>
-              <div class="tax-line highlight">
-                <span>Net sale proceeds:</span>
-                <span id="netProceeds">€ 0.00</span>
-              </div>
+          <!-- SIMPLIFIED: Only show Total Sale Value and Profit/Loss -->
+          <div class="sale-summary">
+            <h4>💰 Sale Summary</h4>
+            <div class="summary-line">
+              <span>Total Sale Value:</span>
+              <span id="totalSaleValue">€ 0.00</span>
             </div>
-            <div class="tax-explanation">
-              <small>
-                <strong>ℹ️ Tax Explanation:</strong><br />
-                • Tax was already paid when options were granted<br />
-                • Selling reduces the tax amount on your remaining options<br />
-                • You receive the full sale value (no additional tax deduction)
-              </small>
+            <div class="summary-line">
+              <span>Profit/Loss vs Target:</span>
+              <span id="profitLossVsTarget" class="currency">€ 0.00</span>
             </div>
           </div>
 

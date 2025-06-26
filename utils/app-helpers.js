@@ -106,45 +106,48 @@ class AppHelpers {
       console.warn("⚠️ Chart legend container not found");
     }
   }
-  calculateSaleProceeds(app) {
-    if (!app.currentSellEntry) return;
+  calculateSaleProceeds() {
+    if (!this.currentSellEntry) return;
 
     const quantityToSell =
       parseInt(document.getElementById("quantityToSell").value) || 0;
     const salePrice =
       parseFloat(document.getElementById("salePrice").value) || 0;
 
-    if (
-      quantityToSell > 0 &&
-      salePrice > 0 &&
-      app.currentSellEntry.quantity > 0
-    ) {
-      const totalSaleValue = quantityToSell * salePrice;
+    // Calculate values
+    const totalSaleValue = quantityToSell * salePrice;
 
-      // Calculate proportional tax that will be reduced from remaining portfolio
-      const totalTax =
-        app.currentSellEntry.tax_amount ||
-        app.currentSellEntry.tax_auto_calculated ||
-        0;
-      const taxAllocatedToSold =
-        totalTax > 0
-          ? (totalTax * quantityToSell) / app.currentSellEntry.quantity
-          : 0;
+    // Calculate profit/loss vs target (cost basis is €10 per option)
+    const costBasis = quantityToSell * 10;
+    const targetPercentage = this.targetPercentage?.value || 65;
+    const targetValue = costBasis * (1 + targetPercentage / 100);
+    const profitLossVsTarget = totalSaleValue - targetValue;
 
-      // Net proceeds = full sale value (tax was already paid when granted)
-      const netProceeds = totalSaleValue;
+    // Update display with proper formatting
+    const totalSaleValueElement = document.getElementById("totalSaleValue");
+    const profitLossElement = document.getElementById("profitLossVsTarget");
 
-      document.getElementById("totalSaleValue").textContent =
-        app.helpers.formatCurrency(totalSaleValue);
-      document.getElementById("proportionalTax").textContent =
-        app.helpers.formatCurrency(taxAllocatedToSold);
-      document.getElementById("netProceeds").textContent =
-        app.helpers.formatCurrency(netProceeds);
-    } else {
-      document.getElementById("totalSaleValue").textContent = "€ 0.00";
-      document.getElementById("proportionalTax").textContent = "€ 0.00";
-      document.getElementById("netProceeds").textContent = "€ 0.00";
+    if (totalSaleValueElement) {
+      totalSaleValueElement.textContent =
+        window.FormatHelpers.formatCurrencyValue(totalSaleValue);
     }
+
+    if (profitLossElement) {
+      profitLossElement.textContent =
+        window.FormatHelpers.formatCurrencyValue(profitLossVsTarget);
+
+      // Apply formatting classes like the INFO modal
+      profitLossElement.className = `currency ${window.FormatHelpers.getProfitLossClass(profitLossVsTarget)}`;
+    }
+
+    console.log("✅ Sale calculations updated:", {
+      quantityToSell,
+      salePrice,
+      totalSaleValue,
+      costBasis,
+      targetValue,
+      profitLossVsTarget,
+    });
   }
 
   async updatePrices(app) {
@@ -228,8 +231,8 @@ class AppHelpers {
    * MIGRATED FROM: renderer.js confirmSale() method
    * @param {Object} app - Application instance
    */
-  async confirmSale(app) {
-    if (!app.currentSellEntry) return;
+  async confirmSale() {
+    if (!this.currentSellEntry) return;
 
     try {
       const quantityToSell = parseInt(
@@ -237,7 +240,12 @@ class AppHelpers {
       );
       const salePrice = parseFloat(document.getElementById("salePrice").value);
       const notes = document.getElementById("saleNotes").value || null;
-      const saleDate = new Date().toISOString().split("T")[0];
+
+      // Get the sale date from the new date field
+      const saleDateInput = document.getElementById("saleDate");
+      const saleDate = saleDateInput
+        ? saleDateInput.value
+        : new Date().toISOString().split("T")[0];
 
       // Validation
       if (
@@ -250,16 +258,21 @@ class AppHelpers {
         return;
       }
 
-      if (quantityToSell > app.currentSellEntry.quantity_remaining) {
+      if (quantityToSell > this.currentSellEntry.quantity_remaining) {
         alert("Cannot sell more options than available");
         return;
       }
 
-      // FIXED: Use the correct IPC handler name
+      if (!saleDate) {
+        alert("Please enter a valid sale date");
+        return;
+      }
+
+      // Record the sale transaction
       const result = await window.ipcRenderer.invoke(
-        "record-sale-transaction", // ✅ CORRECT: matches main.js handler
-        app.currentSellEntry.id, // portfolioEntryId
-        saleDate, // saleDate
+        "record-sale-transaction",
+        this.currentSellEntry.id, // portfolioEntryId
+        saleDate, // saleDate (now from user input)
         quantityToSell, // quantitySold
         salePrice, // salePrice
         notes // notes
@@ -272,21 +285,27 @@ class AppHelpers {
 
       console.log("✅ Sale recorded successfully:", result);
 
+      // Show success message
+      const totalValue = quantityToSell * salePrice;
+      const successMessage =
+        `Sale recorded successfully!\n\n` +
+        `Quantity: ${quantityToSell.toLocaleString()} options\n` +
+        `Price: ${window.FormatHelpers.formatCurrencyValue(salePrice)} per option\n` +
+        `Total Value: ${window.FormatHelpers.formatCurrencyValue(totalValue)}\n` +
+        `Date: ${new Date(saleDate).toLocaleDateString()}`;
+
+      alert(successMessage);
+
       // Close modal and refresh data
-      app.closeModals();
-      await app.loadPortfolioData();
-      await app.loadSalesHistory();
+      this.closeModals();
+      await this.loadPortfolioData();
+      await this.refreshAllTabs();
 
-      // FIXED: Also refresh evolution data like the original function
-      await app.loadEvolutionData("all");
-
-      // Show success notification
-      window.UIStateManager.showSuccess(
-        `✅ Sold ${quantityToSell.toLocaleString()} options at €${salePrice}`
-      );
+      // Clear current sell entry
+      this.currentSellEntry = null;
     } catch (error) {
-      console.error("Error confirming sale:", error);
-      alert("Error confirming sale: " + error.message);
+      console.error("❌ Error confirming sale:", error);
+      alert("Error recording sale: " + error.message);
     }
   }
   async loadPortfolioData() {
