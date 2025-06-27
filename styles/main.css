@@ -3244,3 +3244,34 @@ body {
     align-self: flex-end;
   }
 }
+/* Disabled button state for sell modal */
+#confirmSellOptions.btn-disabled {
+  background: #f8f9fa !important;
+  color: #6c757d !important;
+  border-color: #dee2e6 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+}
+
+#confirmSellOptions.btn-disabled:hover {
+  background: #f8f9fa !important;
+  color: #6c757d !important;
+  border-color: #dee2e6 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+#confirmEditSale.btn-disabled {
+  background: #f8f9fa !important;
+  color: #6c757d !important;
+  border-color: #dee2e6 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65 !important;
+}
+
+#confirmEditSale.btn-disabled:hover {
+  background: #f8f9fa !important;
+  color: #6c757d !important;
+  border-color: #dee2e6 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}

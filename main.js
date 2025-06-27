@@ -595,9 +595,12 @@ ipcMain.handle("get-sale-details", async (event, saleId) => {
 // Update sale details
 ipcMain.handle("update-sale", async (event, updatedSale) => {
   try {
-    return await portfolioDb.updateSale(updatedSale);
+    console.log("📝 IPC: update-sale called with:", updatedSale);
+    const result = await portfolioDb.updateSale(updatedSale);
+    console.log("📝 IPC: update-sale result:", result);
+    return result;
   } catch (error) {
-    console.error("Error updating sale:", error);
+    console.error("❌ IPC: update-sale error:", error);
     return { error: error.message };
   }
 });

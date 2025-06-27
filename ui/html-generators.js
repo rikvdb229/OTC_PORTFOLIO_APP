@@ -338,32 +338,34 @@ class HTMLGenerators {
   // Add this new method to generate individual sales rows
   generateSalesRow(sale) {
     return `
-    <tr>
-      <td>${new Date(sale.sale_date).toLocaleDateString()}</td>
-      <td>${new Date(sale.grant_date).toLocaleDateString()}</td>
-      <td class="fund-name" title="${sale.fund_name || "Unknown Fund"}">
-        ${this.app.helpers.formatFundName(sale.fund_name)}
-      </td>
-      <td>${sale.quantity_sold.toLocaleString()}</td>
-      <td class="currency">${this.app.helpers.formatCurrency(
-        sale.sale_price
-      )}</td>
-      <td class="currency">${this.app.helpers.formatCurrency(
-        sale.total_sale_value
-      )}</td>
-      <td class="currency ${
-        sale.realized_gain_loss >= 0 ? "positive" : "negative"
-      }">
-        ${this.app.helpers.formatCurrency(sale.realized_gain_loss)}
-      </td>
-      <td class="notes-cell">
-        ${sale.notes || "—"}
-      </td>
-      <td class="actions-cell">
-        ${this.generateSalesActions(sale)}
-      </td>
-    </tr>
-  `;
+  <tr>
+    <td>${new Date(sale.sale_date).toLocaleDateString()}</td>
+    <td>${new Date(sale.grant_date).toLocaleDateString()}</td>
+    <td class="fund-name" title="${sale.fund_name || "Unknown Fund"}">
+      ${this.app.helpers.formatFundName(sale.fund_name)}
+    </td>
+    <td>${sale.quantity_sold.toLocaleString()}</td>
+    <td class="currency">${this.app.helpers.formatCurrency(
+      sale.sale_price
+    )}</td>
+    <td class="currency">${this.app.helpers.formatCurrency(
+      sale.total_sale_value
+    )}</td>
+    <td class="currency ${
+      sale.profit_loss_vs_target >= 0 ? "positive" : "negative"
+    }">
+      ${this.app.helpers.formatCurrency(sale.profit_loss_vs_target || 0)}
+    </td>
+    <td>${sale.notes || "—"}</td>
+    <td class="table-actions">
+      <button class="btn action-btn edit-btn" 
+              onclick="portfolioApp.editSale(${sale.id})"
+              title="Edit this sale record">
+        ✏️ Edit
+      </button>
+    </td>
+  </tr>
+`;
   }
 
   // Add this new method to generate action buttons for sales

@@ -339,7 +339,7 @@
                     data-sort="realized_gain_loss"
                     width="7%"
                   >
-                    Realized P&L
+                    P&L vs target
                   </th>
                   <th width="30%">Notes</th>
                   <th width="5%">Actions</th>
@@ -1028,30 +1028,28 @@
       </div>
     </div>
 
-    <!-- Edit Sale Modal -->
+    <!-- CORRECTED Edit Sale Modal HTML -->
     <div id="editSaleModal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
           <h3>✏️ Edit Sale Details</h3>
         </div>
         <div class="modal-body">
-          <!-- Sale Overview -->
+          <!-- Read-only Sale Information -->
           <div class="sale-overview">
-            <h4>Sale Information</h4>
-            <div class="sale-summary">
-              <p>
-                <strong>Original Grant:</strong>
-                <span id="editSaleGrantDate">-</span>
-              </p>
-              <p>
-                <strong>Fund:</strong>
-                <span id="editSaleFundName">-</span>
-              </p>
-              <p>
-                <strong>Quantity Sold:</strong>
-                <span id="editSaleQuantity">-</span> options
-              </p>
-            </div>
+            <h4>📊 Sale Information</h4>
+            <p>
+              <strong>Grant Date:</strong> <span id="editSaleGrantDate">-</span>
+            </p>
+            <p><strong>Fund:</strong> <span id="editSaleFundName">-</span></p>
+            <p>
+              <strong>Exercise Price:</strong>
+              <span id="editSaleExercisePrice">€ 0.00</span>
+            </p>
+            <p>
+              <strong>Quantity Sold:</strong>
+              <span id="editSaleQuantity">0</span> options
+            </p>
           </div>
 
           <!-- Editable Fields -->
@@ -1089,16 +1087,16 @@
             <small class="form-help">Optional notes about the sale</small>
           </div>
 
-          <!-- Updated Calculations -->
-          <div class="sale-calculations">
-            <h4>💰 Updated Sale Summary</h4>
-            <div class="calculation-line">
+          <!-- Sale Summary (matches sell modal format) -->
+          <div class="sale-summary">
+            <h4>💰 Sale Summary</h4>
+            <div class="summary-line">
               <span>Total Sale Value:</span>
               <span id="editTotalSaleValue">€ 0.00</span>
             </div>
-            <div class="calculation-line">
-              <span>Realized P&L:</span>
-              <span id="editRealizedPL" class="currency">€ 0.00</span>
+            <div class="summary-line">
+              <span>Profit/Loss vs Target:</span>
+              <span id="editProfitLossVsTarget" class="currency">€ 0.00</span>
             </div>
           </div>
 

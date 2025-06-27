@@ -582,24 +582,27 @@ CREATE TABLE IF NOT EXISTS settings (
       console.log("🔍 Getting sale details for ID:", saleId);
 
       const stmt = this.db.prepare(`
-      SELECT 
-        st.id,
-        st.sale_date,
-        st.quantity_sold,
-        st.sale_price,
-        st.total_sale_value,
-        st.tax_deducted,
-        st.realized_gain_loss,
-        st.notes,
-        pe.grant_date,
-        pe.exercise_price,
-        pe.fund_name
-      FROM sales_transactions st
-      JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
-      WHERE st.id = ?
+    SELECT 
+      st.id,
+      st.sale_date,
+      st.quantity_sold,
+      st.sale_price,
+      st.total_sale_value,
+      st.tax_deducted,
+      st.realized_gain_loss,
+      st.notes,
+      pe.grant_date,
+      pe.exercise_price,
+      pe.fund_name,
+      
+      -- ADDED: Calculate current profit_loss_vs_target
+      ((st.total_sale_value - st.tax_deducted) - (st.quantity_sold * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)) as profit_loss_vs_target
+      
+    FROM sales_transactions st
+    JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
+    WHERE st.id = ?
     `);
 
-      // FIXED: Use sql.js binding pattern instead of .get()
       stmt.bind([saleId]);
 
       let result = null;
@@ -608,23 +611,14 @@ CREATE TABLE IF NOT EXISTS settings (
       }
       stmt.free();
 
-      console.log("📦 Raw query result:", result);
-
       if (!result) {
-        console.error("❌ No sale found with ID:", saleId);
         throw new Error(`Sale with ID ${saleId} not found`);
       }
 
-      console.log("✅ Sale details retrieved successfully:", {
-        id: result.id,
-        sale_date: result.sale_date,
-        quantity_sold: result.quantity_sold,
-        sale_price: result.sale_price,
-        grant_date: result.grant_date,
-        exercise_price: result.exercise_price,
-        fund_name: result.fund_name,
-      });
-
+      console.log(
+        "✅ Sale details retrieved with profit_loss_vs_target:",
+        result
+      );
       return result;
     } catch (error) {
       console.error("❌ Error getting sale details:", error);
@@ -646,7 +640,7 @@ CREATE TABLE IF NOT EXISTS settings (
     try {
       console.log("🔄 Updating sale with data:", updatedSale);
 
-      // First get the current sale data to recalculate values
+      // First get the current sale data
       const currentSale = await this.getSaleDetails(updatedSale.id);
       console.log("📦 Current sale data:", currentSale);
 
@@ -654,40 +648,42 @@ CREATE TABLE IF NOT EXISTS settings (
       const newTotalSaleValue =
         updatedSale.sale_price * currentSale.quantity_sold;
 
-      // FIXED: Use correct cost basis formula (€10 per option, NOT exercise price)
-      const costBasis = currentSale.quantity_sold * 10; // €10 per option cost basis
-      const newRealizedPL = newTotalSaleValue - costBasis;
+      // Calculate new profit/loss vs target (using stored tax_deducted)
+      const taxDeducted = currentSale.tax_deducted || 0;
+      const targetPercentageQuery = await this.getSetting("target_percentage");
+      const targetPercentage = parseFloat(targetPercentageQuery || "65");
+      const targetValue =
+        currentSale.quantity_sold * 10 * (targetPercentage / 100);
+      const newProfitLossVsTarget =
+        newTotalSaleValue - taxDeducted - targetValue;
 
       console.log("🧮 Recalculated values:", {
         oldSalePrice: currentSale.sale_price,
         newSalePrice: updatedSale.sale_price,
         quantity: currentSale.quantity_sold,
         newTotalSaleValue,
-        costBasis,
-        newRealizedPL,
-        exercisePrice: currentSale.exercise_price, // For reference (NOT used in calculation)
-        oldRealizedPL: currentSale.realized_gain_loss, // For comparison
+        taxDeducted,
+        targetValue,
+        newProfitLossVsTarget,
+        oldProfitLoss: currentSale.profit_loss_vs_target,
       });
 
-      // FIXED: Update the sale record with sql.js pattern
+      // Update the sale record
       const stmt = this.db.prepare(`
-      UPDATE sales_transactions 
-      SET 
-        sale_date = ?,
-        sale_price = ?,
-        total_sale_value = ?,
-        realized_gain_loss = ?,
-        notes = ?,
-        updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
+    UPDATE sales_transactions 
+    SET 
+      sale_date = ?,
+      sale_price = ?,
+      total_sale_value = ?,
+      notes = ?,
+      updated_at = CURRENT_TIMESTAMP
+    WHERE id = ?
     `);
 
-      // FIXED: Use sql.js binding pattern
       stmt.bind([
         updatedSale.sale_date,
         updatedSale.sale_price,
         newTotalSaleValue,
-        newRealizedPL,
         updatedSale.notes || null,
         updatedSale.id,
       ]);
@@ -695,26 +691,20 @@ CREATE TABLE IF NOT EXISTS settings (
       const result = stmt.step();
       stmt.free();
 
-      console.log("📝 Update result:", result);
-
       // Save database changes
       this.saveDatabase();
 
       console.log(`✅ Updated sale ID ${updatedSale.id} successfully`);
       console.log(
-        `📊 P&L changed from €${currentSale.realized_gain_loss?.toFixed(
-          2
-        )} to €${newRealizedPL.toFixed(2)}`
+        `📊 P&L vs Target changed from €${currentSale.profit_loss_vs_target?.toFixed(2)} to €${newProfitLossVsTarget.toFixed(2)}`
       );
 
       return {
         success: true,
         id: updatedSale.id,
-        changes: 1, // sql.js doesn't return changes count like this
         newTotalSaleValue,
-        newRealizedPL,
-        costBasis,
-        oldRealizedPL: currentSale.realized_gain_loss,
+        newProfitLossVsTarget,
+        oldProfitLoss: currentSale.profit_loss_vs_target,
       };
     } catch (error) {
       console.error("❌ Error updating sale:", error);
@@ -1442,15 +1432,26 @@ ORDER BY pe.grant_date DESC
   async getSalesHistory() {
     try {
       const stmt = this.db.prepare(`
-        SELECT 
-          st.*,
-          pe.grant_date,
-          pe.exercise_price,
-          pe.quantity as original_quantity,
-          pe.fund_name
-        FROM sales_transactions st
-        JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
-        ORDER BY st.sale_date DESC
+SELECT 
+  st.id,
+  st.sale_date,
+  st.quantity_sold,
+  st.sale_price,
+  st.total_sale_value,
+  st.tax_deducted,
+  st.notes,
+  pe.grant_date,
+  pe.exercise_price,
+  pe.quantity as original_quantity,
+  pe.fund_name,
+  
+  -- FIXED: Calculate Profit/Loss vs Target (same formula as portfolio overview)
+  -- Profit/Loss vs Target = (Total Sale Value - Tax Deducted) - (Quantity × €10 × Target %)
+  ((st.total_sale_value - st.tax_deducted) - (st.quantity_sold * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)) as profit_loss_vs_target
+  
+FROM sales_transactions st
+JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
+ORDER BY st.sale_date DESC
       `);
 
       const rows = [];

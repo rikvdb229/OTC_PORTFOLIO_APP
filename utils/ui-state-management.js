@@ -225,6 +225,83 @@ const FormManager = {
 
     // Could add visual feedback here if needed
   },
+  /**
+   * Clear and set up sell form defaults
+   * @param {Object} app - Application instance
+   */
+  clearSellForm(app) {
+    if (!app.currentSellEntry) return;
+
+    // Set up sale date field
+    const saleDateInput = document.getElementById("saleDate");
+    if (saleDateInput) {
+      const today = new Date().toISOString().split("T")[0];
+      saleDateInput.value = today;
+      saleDateInput.max = today;
+    }
+
+    // Set up quantity field
+    const quantityInput = document.getElementById("quantityToSell");
+    if (quantityInput) {
+      quantityInput.max = app.currentSellEntry.quantity_remaining;
+      quantityInput.value = ""; // Start empty
+    }
+
+    // Set up price field with current value
+    const priceInput = document.getElementById("salePrice");
+    if (priceInput) {
+      priceInput.value = app.currentSellEntry.current_value || "";
+    }
+
+    // Update help text
+    const maxQuantityHelp = document.getElementById("maxQuantityHelp");
+    if (maxQuantityHelp) {
+      maxQuantityHelp.textContent = `Maximum available: ${app.currentSellEntry.quantity_remaining.toLocaleString()} options`;
+    }
+
+    // Clear notes
+    const notesInput = document.getElementById("saleNotes");
+    if (notesInput) {
+      notesInput.value = "";
+    }
+
+    console.log("✅ Sell form cleared and set up");
+  },
+  /**
+   * Clear and set up edit sale form defaults
+   * @param {Object} app - Application instance
+   * @param {Object} saleData - Sale data from database
+   */
+  clearEditSaleForm(app, saleData) {
+    if (!saleData) return;
+
+    // Set up sale date field
+    const saleDateInput = document.getElementById("editSaleDate");
+    if (saleDateInput && saleData.sale_date) {
+      try {
+        const saleDate = new Date(saleData.sale_date);
+        saleDateInput.value = saleDate.toISOString().split("T")[0];
+        const today = new Date().toISOString().split("T")[0];
+        saleDateInput.max = today;
+      } catch (dateError) {
+        console.warn("⚠️ Error setting sale date:", dateError);
+      }
+    }
+
+    // Set up price field
+    const salePriceInput = document.getElementById("editSalePrice");
+    if (salePriceInput && saleData.sale_price !== undefined) {
+      salePriceInput.value = Number(saleData.sale_price).toFixed(2);
+    }
+
+    // Set up notes field
+    const notesInput = document.getElementById("editSaleNotes");
+    if (notesInput) {
+      notesInput.value = saleData.notes || "";
+    }
+
+    console.log("✅ Edit sale form cleared and set up");
+  },
 };
 // ADD this enhanced validation system to your FormManager in ui-state-management.js
 
@@ -396,6 +473,231 @@ const FormValidation = {
       confirmBtn.disabled = true;
       console.log("📝 Empty input - button disabled");
     }
+  },
+  /**
+   * Validate sell grants form and update button state
+   * @param {Object} app - Application instance
+   */
+  validateSellGrantsForm(app) {
+    if (!app.currentSellEntry) {
+      console.log("No sell entry, skipping validation");
+      return { isValid: false, errors: ["No option selected for sale"] };
+    }
+
+    const saleDate = document.getElementById("saleDate")?.value;
+    const quantityToSell = document.getElementById("quantityToSell")?.value;
+    const salePrice = document.getElementById("salePrice")?.value;
+    const confirmButton = document.getElementById("confirmSellOptions");
+
+    const validation = {
+      isValid: true,
+      errors: [],
+    };
+
+    // Validate sale date
+    if (!saleDate) {
+      validation.isValid = false;
+      validation.errors.push("Sale date is required");
+    } else if (!this.isValidDate(saleDate)) {
+      validation.isValid = false;
+      validation.errors.push("Sale date must be a valid date");
+    } else if (this.isFutureDate(saleDate)) {
+      validation.isValid = false;
+      validation.errors.push("Sale date cannot be in the future");
+    }
+
+    // Validate quantity to sell
+    if (!quantityToSell) {
+      validation.isValid = false;
+      validation.errors.push("Quantity to sell is required");
+    } else {
+      const qty = parseInt(quantityToSell);
+      if (!Number.isInteger(qty) || qty <= 0) {
+        validation.isValid = false;
+        validation.errors.push("Quantity must be a positive whole number");
+      } else if (qty > app.currentSellEntry.quantity_remaining) {
+        validation.isValid = false;
+        validation.errors.push(
+          `Cannot sell more than ${app.currentSellEntry.quantity_remaining.toLocaleString()} available options`
+        );
+      }
+    }
+
+    // Validate sale price
+    if (!salePrice) {
+      validation.isValid = false;
+      validation.errors.push("Sale price is required");
+    } else {
+      const price = parseFloat(salePrice);
+      if (isNaN(price) || price <= 0) {
+        validation.isValid = false;
+        validation.errors.push("Sale price must be a positive number");
+      } else if (price > 999999) {
+        validation.isValid = false;
+        validation.errors.push("Sale price seems unreasonably high");
+      }
+    }
+
+    // Update button state
+    if (confirmButton) {
+      this.updateSellButtonState(confirmButton, validation);
+      console.log(
+        "✅ Sell button state updated:",
+        validation.isValid ? "enabled" : "disabled"
+      );
+    }
+
+    return validation;
+  },
+
+  /**
+   * Update sell button state and tooltip
+   * @param {Element} button - The button element
+   * @param {Object} validation - Validation result
+   */
+  updateSellButtonState(button, validation) {
+    if (validation.isValid) {
+      button.disabled = false;
+      button.classList.remove("btn-disabled");
+      button.classList.add("btn-danger");
+      button.title = "Record the sale of these options";
+    } else {
+      button.disabled = true;
+      button.classList.add("btn-disabled");
+      button.classList.remove("btn-danger");
+      const tooltip = validation.errors.map((error) => `• ${error}`).join("\n");
+      button.title = tooltip;
+    }
+  },
+
+  /**
+   * Set up real-time validation listeners for sell modal
+   * @param {Object} app - Application instance
+   */
+  setupSellValidationListeners(app) {
+    const fieldsToWatch = ["saleDate", "quantityToSell", "salePrice"];
+
+    fieldsToWatch.forEach((fieldId) => {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        field.addEventListener("input", () => {
+          this.validateSellGrantsForm(app);
+          if (typeof app.calculateSaleProceeds === "function") {
+            app.calculateSaleProceeds();
+          }
+        });
+
+        field.addEventListener("blur", () => {
+          this.validateSellGrantsForm(app);
+        });
+
+        console.log(`✅ Validation listener added to ${fieldId}`);
+      }
+    });
+  },
+  /**
+   * Validate edit sale form and update button state
+   * @param {Object} app - Application instance
+   */
+  validateEditSaleForm(app) {
+    if (!app.currentEditingSaleId) {
+      console.log("No edit sale ID, skipping validation");
+      return { isValid: false, errors: ["No sale selected for editing"] };
+    }
+
+    const saleDate = document.getElementById("editSaleDate")?.value;
+    const salePrice = document.getElementById("editSalePrice")?.value;
+    const confirmButton = document.getElementById("confirmEditSale");
+
+    const validation = {
+      isValid: true,
+      errors: [],
+    };
+
+    // Validate sale date
+    if (!saleDate) {
+      validation.isValid = false;
+      validation.errors.push("Sale date is required");
+    } else if (!this.isValidDate(saleDate)) {
+      validation.isValid = false;
+      validation.errors.push("Sale date must be a valid date");
+    } else if (this.isFutureDate(saleDate)) {
+      validation.isValid = false;
+      validation.errors.push("Sale date cannot be in the future");
+    }
+
+    // Validate sale price
+    if (!salePrice) {
+      validation.isValid = false;
+      validation.errors.push("Sale price is required");
+    } else {
+      const price = parseFloat(salePrice);
+      if (isNaN(price) || price <= 0) {
+        validation.isValid = false;
+        validation.errors.push("Sale price must be a positive number");
+      } else if (price > 999999) {
+        validation.isValid = false;
+        validation.errors.push("Sale price seems unreasonably high");
+      }
+    }
+
+    // Update button state
+    if (confirmButton) {
+      this.updateEditSaleButtonState(confirmButton, validation);
+      console.log(
+        "✅ Edit sale button state updated:",
+        validation.isValid ? "enabled" : "disabled"
+      );
+    }
+
+    return validation;
+  },
+
+  /**
+   * Update edit sale button state and tooltip
+   * @param {Element} button - The button element
+   * @param {Object} validation - Validation result
+   */
+  updateEditSaleButtonState(button, validation) {
+    if (validation.isValid) {
+      button.disabled = false;
+      button.classList.remove("btn-disabled");
+      button.classList.add("btn-primary");
+      button.title = "Update the sale record";
+    } else {
+      button.disabled = true;
+      button.classList.add("btn-disabled");
+      button.classList.remove("btn-primary");
+      const tooltip = validation.errors.map((error) => `• ${error}`).join("\n");
+      button.title = tooltip;
+    }
+  },
+
+  /**
+   * Set up real-time validation listeners for edit sale modal
+   * @param {Object} app - Application instance
+   */
+  setupEditSaleValidationListeners(app) {
+    const fieldsToWatch = ["editSaleDate", "editSalePrice"];
+
+    fieldsToWatch.forEach((fieldId) => {
+      const field = document.getElementById(fieldId);
+      if (field) {
+        field.addEventListener("input", () => {
+          this.validateEditSaleForm(app);
+          // Update calculations when price changes
+          if (fieldId === "editSalePrice" && app.editSaleInputHandler) {
+            app.editSaleInputHandler();
+          }
+        });
+
+        field.addEventListener("blur", () => {
+          this.validateEditSaleForm(app);
+        });
+
+        console.log(`✅ Edit sale validation listener added to ${fieldId}`);
+      }
+    });
   },
 };
 /**

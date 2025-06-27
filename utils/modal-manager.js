@@ -444,7 +444,6 @@ const ModalManager = {
   async showEditSaleModal(app, saleId) {
     try {
       console.log(`✏️ Showing edit sale modal for ID: ${saleId}`);
-      console.log(`📊 SaleId type: ${typeof saleId}, value: ${saleId}`);
 
       // Validate saleId
       if (!saleId || isNaN(saleId)) {
@@ -454,12 +453,12 @@ const ModalManager = {
       }
 
       // Get sale details from database
-      console.log("📡 Requesting sale details from database...");
-      const saleData = await ipcRenderer.invoke("get-sale-details", saleId);
+      const saleData = await window.ipcRenderer.invoke(
+        "get-sale-details",
+        saleId
+      );
 
-      console.log("📦 Raw sale data received:", saleData);
-
-      // Check for errors in response
+      // Check for errors
       if (saleData && saleData.error) {
         console.error(
           "❌ Database error loading sale details:",
@@ -469,70 +468,34 @@ const ModalManager = {
         return false;
       }
 
-      // Check if saleData is null or undefined
       if (!saleData) {
         console.error("❌ No sale data returned from database");
         alert("Error: Sale not found in database");
         return false;
       }
 
-      // Validate required fields
-      const requiredFields = [
-        "id",
-        "sale_date",
-        "quantity_sold",
-        "sale_price",
-        "grant_date",
-        "exercise_price",
-      ];
-      const missingFields = requiredFields.filter(
-        (field) => saleData[field] === undefined || saleData[field] === null
-      );
-
-      if (missingFields.length > 0) {
-        console.error(
-          "❌ Missing required fields in sale data:",
-          missingFields
-        );
-        console.error("❌ Available fields:", Object.keys(saleData));
-        alert(
-          `Error: Sale data is incomplete. Missing fields: ${missingFields.join(
-            ", "
-          )}`
-        );
-        return false;
-      }
-
-      console.log("✅ Sale data validation passed");
-
-      // Store current editing sale ID in app
+      // Store current editing sale ID
       app.currentEditingSaleId = saleId;
 
-      // FIXED: Store reference to ModalManager for proper context binding
-      const modalManager = this;
+      // Show modal with setup callback
+      this.showModal("editSaleModal", () => {
+        // Use existing populate function
+        this.populateEditSaleModal(app, saleData);
 
-      // Show modal with setup callback - FIXED context binding
-      console.log("📱 Showing modal with validated data...");
-      const modalExists = this.showModal("editSaleModal", () => {
-        // FIXED: Use bound reference instead of 'this'
-        modalManager.populateEditSaleModal(app, saleData);
+        // Add validation setup
+        window.UIStateManager.Validation.setupEditSaleValidationListeners(app);
+        window.UIStateManager.Validation.validateEditSaleForm(app);
+
+        console.log("✅ Edit sale modal opened with validation");
       });
 
-      if (!modalExists) {
-        console.error("❌ Edit sale modal not found in DOM");
-        return false;
-      }
-
-      console.log("✅ Edit sale modal displayed successfully");
       return true;
     } catch (error) {
-      console.error("❌ Critical error in showEditSaleModal:", error);
-      console.error("❌ Error stack:", error.stack);
+      console.error("❌ Error in showEditSaleModal:", error);
       alert("Error opening edit sale modal: " + error.message);
       return false;
     }
   },
-
   // SIMPLEST SOLUTION: Replace populateEditSaleModal with inline functions
   // This avoids all context binding issues completely
 
@@ -631,48 +594,54 @@ const ModalManager = {
           const salePriceInput =
             window.DOMHelpers.safeGetElementById("editSalePrice");
           const newSalePrice = parseFloat(salePriceInput?.value) || 0;
+          const originalSalePrice = saleData.sale_price || 0;
 
-          // Calculate new totals
-          const totalSaleValue = newSalePrice * saleData.quantity_sold;
+          // Calculate new values based on the new sale price
+          const quantitySold = saleData.quantity_sold;
+          const newTotalSaleValue = newSalePrice * quantitySold;
 
-          // FIXED: Cost basis is €10 per option (not exercise price)
-          const costBasis = saleData.quantity_sold * 10; // €10 per option cost basis
-          const realizedPL = totalSaleValue - costBasis;
+          // Calculate new profit/loss vs target
+          // Formula: (New Sale Value - Tax Deducted) - Target Value
+          const taxDeducted = saleData.tax_deducted || 0;
+          const targetPercentage = app.targetPercentage?.value || 65;
+          const targetValue = quantitySold * 10 * (targetPercentage / 100);
+          const newProfitLossVsTarget =
+            newTotalSaleValue - taxDeducted - targetValue;
 
-          console.log("📊 Calculation details:", {
-            salePrice: newSalePrice,
-            quantity: saleData.quantity_sold,
-            totalSaleValue: totalSaleValue,
-            costBasis: costBasis,
-            realizedPL: realizedPL,
-            exercisePrice: saleData.exercise_price, // For reference, but not used in calculation
+          console.log("📊 Edit sale calculation details:", {
+            originalSalePrice: originalSalePrice,
+            newSalePrice: newSalePrice,
+            quantitySold: quantitySold,
+            newTotalSaleValue: newTotalSaleValue,
+            taxDeducted: taxDeducted,
+            targetValue: targetValue,
+            newProfitLossVsTarget: newProfitLossVsTarget,
+            storedProfitLoss: saleData.profit_loss_vs_target, // For comparison
           });
 
-          // Update display
-          const totalElement =
-            window.DOMHelpers.safeGetElementById("editTotalSaleValue");
+          // Update display elements
+          const totalElement = document.getElementById("editTotalSaleValue");
           if (totalElement) {
-            window.DOMHelpers.safeSetContent(
-              totalElement,
-              app.helpers.formatCurrency(totalSaleValue)
-            );
+            totalElement.textContent =
+              window.FormatHelpers.formatCurrencyValue(newTotalSaleValue);
           }
 
-          const plElement =
-            window.DOMHelpers.safeGetElementById("editRealizedPL");
+          const plElement = document.getElementById("editProfitLossVsTarget");
           if (plElement) {
-            window.DOMHelpers.safeSetContent(
-              plElement,
-              app.helpers.formatCurrency(realizedPL)
+            plElement.textContent = window.FormatHelpers.formatCurrencyValue(
+              newProfitLossVsTarget
             );
-            plElement.className = `currency ${
-              realizedPL >= 0 ? "positive" : "negative"
-            }`;
+            const plClass = window.FormatHelpers.getProfitLossClass(
+              newProfitLossVsTarget
+            );
+            plElement.className = `currency ${plClass}`;
           }
 
-          console.log("✅ Calculations updated with correct formula");
+          console.log(
+            "✅ Edit sale calculations updated with stored tax values"
+          );
         } catch (error) {
-          console.error("❌ Error updating calculations:", error);
+          console.error("❌ Error updating edit sale calculations:", error);
         }
       }
 
@@ -1156,20 +1125,13 @@ const ModalManager = {
    * This replaces the existing showSellModal function in modal-manager.js
    */
   async showSellModal(app, entryId) {
-    console.log("🐛 DEBUG: showSellModal called with entryId:", entryId);
-
     const entry = app.portfolioData.find((e) => e.id === entryId);
     if (!entry) {
-      console.error("🐛 DEBUG: Portfolio entry not found");
       alert("Portfolio entry not found");
       return;
     }
 
-    console.log("🐛 DEBUG: Found entry:", entry);
-
-    // SET currentSellEntry FIRST
     app.currentSellEntry = entry;
-    console.log("🐛 DEBUG: Set currentSellEntry:", app.currentSellEntry);
 
     // Update the option details HTML
     document.getElementById("sellOptionDetails").innerHTML = `
@@ -1188,55 +1150,19 @@ const ModalManager = {
     </div>
   `;
 
-    // Show the modal FIRST
-    window.UIStateManager.Modals.showModal("sellOptionsModal");
+    // Show modal with validation setup
+    this.showModal("sellOptionsModal", () => {
+      // Clear and set up form defaults
+      window.UIStateManager.Forms.clearSellForm(app);
 
-    // THEN set up the form fields (this prevents early event handler firing)
-    setTimeout(() => {
-      console.log("🐛 DEBUG: Setting up form fields...");
+      // Set up validation listeners
+      window.UIStateManager.Validation.setupSellValidationListeners(app);
 
-      // Set up sale date field
-      const saleDateInput = document.getElementById("saleDate");
-      if (saleDateInput) {
-        const today = new Date().toISOString().split("T")[0];
-        saleDateInput.value = today;
-        saleDateInput.max = today;
-        console.log("🐛 DEBUG: Sale date field set up");
-      }
+      // Initial validation (should disable button)
+      window.UIStateManager.Validation.validateSellGrantsForm(app);
 
-      // Set up quantity and price fields
-      const quantityInput = document.getElementById("quantityToSell");
-      const priceInput = document.getElementById("salePrice");
-      const maxQuantityHelp = document.getElementById("maxQuantityHelp");
-
-      if (quantityInput) {
-        quantityInput.max = entry.quantity_remaining;
-        quantityInput.value = ""; // Start empty
-      }
-
-      if (maxQuantityHelp) {
-        maxQuantityHelp.textContent = `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
-      }
-
-      if (priceInput) {
-        priceInput.value = entry.current_value || "";
-        console.log("🐛 DEBUG: Price input value set to:", entry.current_value);
-      }
-
-      // NOW call the calculation function
-      console.log(
-        "🐛 DEBUG: About to call calculateSaleProceeds with currentSellEntry:",
-        app.currentSellEntry
-      );
-      if (typeof app.calculateSaleProceeds === "function") {
-        app.calculateSaleProceeds();
-        console.log("🐛 DEBUG: calculateSaleProceeds called successfully");
-      } else {
-        console.error(
-          "🐛 DEBUG: calculateSaleProceeds function not found on app object!"
-        );
-      }
-    }, 100); // Small delay to ensure modal DOM is ready
+      console.log("✅ Sell modal opened with validation");
+    });
   },
 
   configureForDelete() {
