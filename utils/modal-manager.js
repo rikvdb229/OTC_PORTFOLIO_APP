@@ -77,6 +77,7 @@ const ModalManager = {
           input.value = "";
         }
       });
+      app.currentEditingSaleData = null;
 
       // 🆕 Clear ONLY user-editable calculated displays (be very selective)
       const userEditableDisplays = modal.querySelectorAll(
@@ -441,52 +442,62 @@ const ModalManager = {
    * @param {Object} app - Application instance
    * @param {number} saleId - ID of the sale to edit
    */
+  // ===== FIX: Update showEditSaleModal in modal-manager.js =====
+  // Replace your existing showEditSaleModal method with this corrected version:
+
+  /**
+   * Enhanced showEditSaleModal with dynamic price lookup - FIXED SCOPE ISSUE
+   */
   async showEditSaleModal(app, saleId) {
     try {
-      console.log(`✏️ Showing edit sale modal for ID: ${saleId}`);
+      console.log(`✏️ Opening edit sale modal for sale ID: ${saleId}`);
 
-      // Validate saleId
-      if (!saleId || isNaN(saleId)) {
-        console.error("❌ Invalid saleId:", saleId);
-        alert("Error: Invalid sale ID");
-        return false;
-      }
-
-      // Get sale details from database
+      // Get sale data with portfolio validation info
       const saleData = await window.ipcRenderer.invoke(
-        "get-sale-details",
+        "get-sale-with-portfolio-data",
         saleId
       );
 
-      // Check for errors
       if (saleData && saleData.error) {
-        console.error(
-          "❌ Database error loading sale details:",
-          saleData.error
-        );
-        alert("Error loading sale details: " + saleData.error);
+        console.error("❌ Error loading sale data:", saleData.error);
+        alert("Error loading sale data: " + saleData.error);
         return false;
       }
 
       if (!saleData) {
-        console.error("❌ No sale data returned from database");
-        alert("Error: Sale not found in database");
+        console.error("❌ No sale data returned");
+        alert("Error: Sale not found");
         return false;
       }
 
       // Store current editing sale ID
       app.currentEditingSaleId = saleId;
 
+      // *** FIX: Create a reference to saleData that will be available in the callback ***
+      const saleDataForCallback = saleData;
+
       // Show modal with setup callback
       this.showModal("editSaleModal", () => {
-        // Use existing populate function
-        this.populateEditSaleModal(app, saleData);
+        // *** FIX: Use the correctly scoped variable ***
 
-        // Add validation setup
+        // Populate modal with existing data
+        this.populateEditSaleModal(app, saleDataForCallback);
+
+        // Set up date restrictions
+        window.UIStateManager.Validation.setupEditSaleDateRestrictions(
+          saleDataForCallback
+        );
+
+        // Set up dynamic price lookup for edit modal
+        this.setupEditSaleDynamicPriceUpdate(app, saleDataForCallback);
+
+        // Set up validation listeners
         window.UIStateManager.Validation.setupEditSaleValidationListeners(app);
+
+        // Run initial validation
         window.UIStateManager.Validation.validateEditSaleForm(app);
 
-        console.log("✅ Edit sale modal opened with validation");
+        console.log("✅ Edit sale modal opened with dynamic price lookup");
       });
 
       return true;
@@ -495,6 +506,160 @@ const ModalManager = {
       alert("Error opening edit sale modal: " + error.message);
       return false;
     }
+  },
+  /**
+   * Set up dynamic price lookup for edit sale modal
+   * @param {Object} app - Application instance
+   * @param {Object} saleData - Original sale data with portfolio info
+   */
+  setupEditSaleDynamicPriceUpdate(app, saleData) {
+    const saleDateInput = document.getElementById("editSaleDate");
+    const salePriceInput = document.getElementById("editSalePrice");
+
+    if (!saleDateInput || !salePriceInput || !saleData) {
+      console.warn("⚠️ Missing elements for edit sale dynamic price update");
+      return;
+    }
+
+    console.log("🔗 Setting up dynamic price lookup for edit sale");
+
+    // Function to update price based on date
+    const updatePriceForDate = async (selectedDate) => {
+      try {
+        console.log(`🔍 EDIT SALE: Looking up price for ${selectedDate}`);
+
+        // Show loading state (visual feedback only)
+        const originalValue = salePriceInput.value;
+        const originalPlaceholder = salePriceInput.placeholder;
+
+        salePriceInput.style.opacity = "0.6";
+        salePriceInput.placeholder = "Loading historical price...";
+
+        // Call backend to get closest price
+        const priceData = await window.ipcRenderer.invoke(
+          "get-price-for-date",
+          selectedDate,
+          saleData.exercise_price,
+          saleData.grant_date
+        );
+
+        // Restore visual state
+        salePriceInput.style.opacity = "1";
+        salePriceInput.placeholder = originalPlaceholder;
+
+        if (priceData && !priceData.error && priceData.current_value) {
+          // Update price (but only if user hasn't manually changed it significantly)
+          const currentValue = parseFloat(salePriceInput.value) || 0;
+          const originalSalePrice = parseFloat(saleData.sale_price) || 0;
+          const suggestedPrice = priceData.current_value;
+
+          // Update if current value is close to original (user hasn't manually edited)
+          // OR if the field is empty
+          if (
+            !salePriceInput.value ||
+            Math.abs(currentValue - originalSalePrice) < 0.02
+          ) {
+            salePriceInput.value = suggestedPrice.toFixed(2);
+            console.log(
+              `✅ EDIT SALE: Updated price to €${suggestedPrice} (${priceData.match_type})`
+            );
+          } else {
+            console.log(
+              `⚠️ EDIT SALE: Preserving user's manual price €${currentValue}`
+            );
+          }
+
+          // Update help text to show price source
+          const salePriceHelp = document.querySelector(
+            "#editSalePrice + .form-help"
+          );
+          if (salePriceHelp) {
+            let sourceText;
+            if (priceData.match_type === "exact") {
+              sourceText = `✅ Historical price for ${selectedDate}: €${suggestedPrice.toFixed(2)}`;
+            } else {
+              const daysDiff = Math.round(priceData.day_difference || 0);
+              sourceText = `📅 Closest price from ${priceData.price_date} (${daysDiff} days ${priceData.match_type}): €${suggestedPrice.toFixed(2)}`;
+            }
+
+            // Show if we updated the price or preserved user's input
+            if (
+              !salePriceInput.value ||
+              Math.abs(currentValue - originalSalePrice) < 0.02
+            ) {
+              salePriceHelp.innerHTML = `${sourceText} - <strong>adjust if needed</strong>`;
+            } else {
+              salePriceHelp.innerHTML = `${sourceText}<br><small>💡 Keeping your manual price of €${currentValue.toFixed(2)}</small>`;
+            }
+          }
+        } else {
+          // No historical data available
+          const salePriceHelp = document.querySelector(
+            "#editSalePrice + .form-help"
+          );
+          if (salePriceHelp) {
+            // Check date type for better messaging
+            const selectedDateObj = new Date(selectedDate);
+            const isWeekend =
+              selectedDateObj.getDay() === 0 || selectedDateObj.getDay() === 6;
+
+            let helpText;
+            if (isWeekend) {
+              helpText = `📅 Weekend date - no market data available`;
+            } else {
+              helpText = `⚠️ No historical price data for ${selectedDate}`;
+            }
+
+            salePriceHelp.innerHTML = helpText;
+          }
+
+          console.log("⚠️ EDIT SALE: No historical price found");
+        }
+
+        // Trigger validation and calculation updates
+        window.UIStateManager.Validation.validateEditSaleForm(app);
+        if (app.editSaleInputHandler) {
+          app.editSaleInputHandler();
+        }
+      } catch (error) {
+        console.error("❌ EDIT SALE: Error fetching price for date:", error);
+
+        // Restore visual state
+        salePriceInput.style.opacity = "1";
+        salePriceInput.placeholder = originalPlaceholder || "Enter sale price";
+
+        const salePriceHelp = document.querySelector(
+          "#editSalePrice + .form-help"
+        );
+        if (salePriceHelp) {
+          salePriceHelp.innerHTML = `❌ Error loading historical price data`;
+        }
+      }
+    };
+
+    // Set up date change listener with debouncing
+    let priceUpdateTimeout;
+    saleDateInput.addEventListener("change", (e) => {
+      if (e.target.value) {
+        console.log(`📅 EDIT SALE: Date changed to ${e.target.value}`);
+
+        // Clear previous timeout
+        clearTimeout(priceUpdateTimeout);
+
+        // Add small delay to prevent rapid API calls
+        priceUpdateTimeout = setTimeout(() => {
+          updatePriceForDate(e.target.value);
+        }, 300);
+      }
+    });
+
+    // Set initial price suggestion for current date (if needed)
+    if (saleDateInput.value && saleDateInput.value !== saleData.sale_date) {
+      // Only suggest if the date has been changed from original
+      updatePriceForDate(saleDateInput.value);
+    }
+
+    console.log("✅ Dynamic price lookup configured for edit sale modal");
   },
   // SIMPLEST SOLUTION: Replace populateEditSaleModal with inline functions
   // This avoids all context binding issues completely
@@ -1117,52 +1282,222 @@ const ModalManager = {
   },
   // Add to ModalManager section in ui-state-management.js
   /**
-   * Updated showSellModal function with date field and simplified calculations
-   * This replaces the existing showSellModal function in modal-manager.js
-   */
-  /**
-   * Updated showSellModal function with date field and simplified calculations
-   * This replaces the existing showSellModal function in modal-manager.js
+   * Enhanced showSellModal with dynamic price lookup
+   * Replace your existing showSellModal method with this:
    */
   async showSellModal(app, entryId) {
-    const entry = app.portfolioData.find((e) => e.id === entryId);
-    if (!entry) {
-      alert("Portfolio entry not found");
+    try {
+      console.log(`💰 Opening sell modal for entry ID: ${entryId}`);
+
+      // Get entry data
+      const entry = app.portfolioData.find((e) => e.id === entryId);
+      if (!entry) {
+        console.error(`❌ Portfolio entry not found for ID: ${entryId}`);
+        alert("Portfolio entry not found");
+        return;
+      }
+
+      // Check if entry is sellable
+      if (entry.selling_status !== "SELLABLE") {
+        const statusMessage = window.FormatHelpers.getSellButtonTooltip(
+          entry.selling_status,
+          entry.can_sell_after,
+          entry.expires_on
+        );
+        alert(`Cannot sell these options: ${statusMessage}`);
+        return;
+      }
+
+      // Store entry for validation
+      app.currentSellEntry = entry;
+
+      // Show modal with setup callback
+      this.showModal("sellOptionsModal", () => {
+        // Populate the sellOptionDetails div
+        const detailsContainer = document.getElementById("sellOptionDetails");
+        if (detailsContainer) {
+          detailsContainer.innerHTML = `
+          <div class="option-summary">
+            <h4>📊 Option Details</h4>
+            <div class="detail-row">
+              <span>Grant Date:</span>
+              <span>${window.FormatHelpers.formatDate(entry.grant_date)}</span>
+            </div>
+            <div class="detail-row">
+              <span>Fund:</span>
+              <span>${app.helpers.formatFundName(entry.fund_name)}</span>
+            </div>
+            <div class="detail-row">
+              <span>Exercise Price:</span>
+              <span>${app.helpers.formatCurrency(entry.exercise_price)}</span>
+            </div>
+            <div class="detail-row">
+              <span>Available to Sell:</span>
+              <span><strong>${entry.quantity_remaining.toLocaleString()} options</strong></span>
+            </div>
+            <div class="detail-row">
+              <span>Current Value per Option:</span>
+              <span>${app.helpers.formatCurrency(entry.current_value || 0)}</span>
+            </div>
+          </div>
+        `;
+        }
+
+        // Update the max quantity help text
+        const maxQuantityHelp = document.getElementById("maxQuantityHelp");
+        if (maxQuantityHelp) {
+          maxQuantityHelp.textContent = `Maximum available: ${entry.quantity_remaining.toLocaleString()} options`;
+        }
+
+        // Set quantity input max value
+        const quantityInput = document.getElementById("quantityToSell");
+        if (quantityInput) {
+          quantityInput.max = entry.quantity_remaining;
+          quantityInput.placeholder = `1 to ${entry.quantity_remaining.toLocaleString()}`;
+        }
+
+        // Set up date restrictions
+        window.UIStateManager.Validation.setupSellDateRestrictions(app);
+
+        // *** NEW: Set up dynamic price lookup ***
+        this.setupDynamicPriceUpdate(app);
+
+        // Set up validation listeners
+        window.UIStateManager.Validation.setupSellValidationListeners(app);
+
+        // Run initial validation
+        window.UIStateManager.Validation.validateSellGrantsForm(app);
+
+        console.log("✅ Sell modal opened with dynamic price lookup");
+      });
+
+      return true;
+    } catch (error) {
+      console.error("❌ Error in showSellModal:", error);
+      alert("Error opening sell modal: " + error.message);
+      return false;
+    }
+  },
+  /**
+   * Set up dynamic price lookup based on sale date
+   * @param {Object} app - Application instance
+   */
+  setupDynamicPriceUpdate(app) {
+    const saleDateInput = document.getElementById("saleDate");
+    const salePriceInput = document.getElementById("salePrice");
+
+    if (!saleDateInput || !salePriceInput || !app.currentSellEntry) {
+      console.warn("⚠️ Missing elements for dynamic price update");
       return;
     }
 
-    app.currentSellEntry = entry;
+    console.log("🔗 Setting up dynamic price lookup");
 
-    // Update the option details HTML
-    document.getElementById("sellOptionDetails").innerHTML = `
-    <div class="option-details">
-      <h4>📊 ${window.FormatHelpers.formatFundName(entry.fund_name)} Option</h4>
-      <p><strong>Underlying Fund:</strong> ${entry.fund_name || "Unknown Fund"}</p>
-      <p><strong>Grant Date:</strong> ${new Date(entry.grant_date).toLocaleDateString()}</p>
-      <p><strong>Exercise Price:</strong> ${window.FormatHelpers.formatCurrencyValue(entry.exercise_price)}</p>
-      <p><strong>Quantity:</strong> ${entry.quantity_remaining.toLocaleString()} options</p>
-      <p><strong>Current Value:</strong> ${window.FormatHelpers.formatCurrencyValue(entry.current_value || 0)}</p>
-      <p><strong>Return %:</strong> 
-        <span class="${window.FormatHelpers.getReturnClass(entry.current_return_percentage, app.targetPercentage?.value || 65)}">
-          ${entry.current_return_percentage ? entry.current_return_percentage.toFixed(1) + "%" : "N/A"}
-        </span>
-      </p>
-    </div>
-  `;
+    // Function to update price based on date
+    const updatePriceForDate = async (selectedDate) => {
+      try {
+        console.log(`🔍 Looking up price for ${selectedDate}`);
 
-    // Show modal with validation setup
-    this.showModal("sellOptionsModal", () => {
-      // Clear and set up form defaults
-      window.UIStateManager.Forms.clearSellForm(app);
+        // Show loading state
+        const originalValue = salePriceInput.value;
+        salePriceInput.value = ""; // Clear value
+        salePriceInput.placeholder = "Loading price..."; // Show loading message
+        salePriceInput.style.opacity = "0.6"; // Visual feedback
+        salePriceInput.disabled = true; // Prevent interaction
+        salePriceInput.disabled = true;
 
-      // Set up validation listeners
-      window.UIStateManager.Validation.setupSellValidationListeners(app);
+        // Call backend to get closest price
+        const priceData = await window.ipcRenderer.invoke(
+          "get-price-for-date",
+          selectedDate,
+          app.currentSellEntry.exercise_price,
+          app.currentSellEntry.grant_date
+        );
 
-      // Initial validation (should disable button)
-      window.UIStateManager.Validation.validateSellGrantsForm(app);
+        // Re-enable input
+        salePriceInput.disabled = false;
 
-      console.log("✅ Sell modal opened with validation");
+        if (priceData && !priceData.error && priceData.current_value) {
+          salePriceInput.value = priceData.current_value.toFixed(2);
+
+          // Update help text to show price source
+          const salePriceHelp = document.querySelector(
+            "#salePrice + .form-help"
+          );
+          if (salePriceHelp) {
+            let sourceText;
+            if (priceData.match_type === "exact") {
+              sourceText = `✅ Exact price for ${selectedDate}`;
+            } else {
+              const daysDiff = Math.round(priceData.day_difference || 0);
+              sourceText = `📅 Price from ${priceData.price_date} (${daysDiff} days ${priceData.match_type})`;
+            }
+            salePriceHelp.innerHTML = `${sourceText} - <strong>adjust if needed</strong>`;
+          }
+
+          console.log(
+            `✅ Price updated to €${priceData.current_value} (${priceData.match_type})`
+          );
+        } else {
+          // Fallback to current value
+          const fallbackPrice = app.currentSellEntry.current_value || 0;
+          salePriceInput.value = fallbackPrice.toFixed(2);
+
+          const salePriceHelp = document.querySelector(
+            "#salePrice + .form-help"
+          );
+          if (salePriceHelp) {
+            salePriceHelp.innerHTML = `⚠️ No historical price data - using current value of €${fallbackPrice.toFixed(2)}`;
+          }
+
+          console.log("⚠️ No historical price found, using current value");
+        }
+
+        // Trigger validation and calculation updates
+        window.UIStateManager.Validation.validateSellGrantsForm(app);
+        if (typeof app.calculateSaleProceeds === "function") {
+          app.calculateSaleProceeds();
+        }
+      } catch (error) {
+        console.error("❌ Error fetching price for date:", error);
+
+        // Re-enable input and set fallback
+        salePriceInput.disabled = false;
+        const fallbackPrice = app.currentSellEntry.current_value || 0;
+        salePriceInput.value = fallbackPrice.toFixed(2);
+
+        const salePriceHelp = document.querySelector("#salePrice + .form-help");
+        if (salePriceHelp) {
+          salePriceHelp.innerHTML = `❌ Error loading price data - using current value`;
+        }
+      }
+    };
+
+    // Set up date change listener with debouncing
+    let priceUpdateTimeout;
+    saleDateInput.addEventListener("change", (e) => {
+      if (e.target.value) {
+        // Clear previous timeout
+        clearTimeout(priceUpdateTimeout);
+
+        // Add small delay to prevent rapid API calls
+        priceUpdateTimeout = setTimeout(() => {
+          updatePriceForDate(e.target.value);
+        }, 300);
+      }
     });
+
+    // Set initial price for default date
+    if (saleDateInput.value) {
+      updatePriceForDate(saleDateInput.value);
+    } else {
+      // Set fallback price if no date is set
+      const fallbackPrice = app.currentSellEntry.current_value || 0;
+      salePriceInput.value = fallbackPrice.toFixed(2);
+      salePriceInput.placeholder = `Current: €${fallbackPrice.toFixed(2)}`;
+    }
+
+    console.log("✅ Dynamic price lookup configured");
   },
 
   configureForDelete() {

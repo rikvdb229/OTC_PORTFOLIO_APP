@@ -591,7 +591,32 @@ ipcMain.handle("get-sale-details", async (event, saleId) => {
     return { error: error.message };
   }
 });
-
+ipcMain.handle("get-sale-with-portfolio-data", async (event, saleId) => {
+  try {
+    return await portfolioDb.getSaleWithPortfolioData(saleId);
+  } catch (error) {
+    console.error("Error getting sale with portfolio data:", error);
+    return { error: error.message };
+  }
+});
+ipcMain.handle(
+  "get-price-for-date",
+  async (event, targetDate, exercisePrice, grantDate) => {
+    try {
+      console.log(`📡 IPC: get-price-for-date called for ${targetDate}`);
+      const result = await portfolioDb.getPriceForDate(
+        targetDate,
+        exercisePrice,
+        grantDate
+      );
+      console.log(`📡 IPC: get-price-for-date result:`, result);
+      return result;
+    } catch (error) {
+      console.error("❌ IPC: Error getting price for date:", error);
+      return { error: error.message };
+    }
+  }
+);
 // Update sale details
 ipcMain.handle("update-sale", async (event, updatedSale) => {
   try {

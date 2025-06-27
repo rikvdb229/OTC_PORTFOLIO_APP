@@ -478,9 +478,13 @@ const FormValidation = {
    * Validate sell grants form and update button state
    * @param {Object} app - Application instance
    */
+  /**
+   * Enhanced validation for sell grants form WITH SELLABLE DATE VALIDATION
+   * @param {Object} app - Application instance
+   */
   validateSellGrantsForm(app) {
     if (!app.currentSellEntry) {
-      console.log("No sell entry, skipping validation");
+      console.log("No current sell entry, skipping validation");
       return { isValid: false, errors: ["No option selected for sale"] };
     }
 
@@ -504,6 +508,24 @@ const FormValidation = {
     } else if (this.isFutureDate(saleDate)) {
       validation.isValid = false;
       validation.errors.push("Sale date cannot be in the future");
+    } else if (
+      !this.isDateWithinSellablePeriod(saleDate, app.currentSellEntry)
+    ) {
+      // *** NEW: Validate against sellable period ***
+      const sellableDate = app.currentSellEntry.can_sell_after;
+      const expiresDate = app.currentSellEntry.expires_on;
+
+      if (new Date(saleDate) < new Date(sellableDate)) {
+        validation.isValid = false;
+        validation.errors.push(
+          `Sale date cannot be before ${new Date(sellableDate).toLocaleDateString()} (1-year waiting period)`
+        );
+      } else if (new Date(saleDate) > new Date(expiresDate)) {
+        validation.isValid = false;
+        validation.errors.push(
+          `Sale date cannot be after ${new Date(expiresDate).toLocaleDateString()} (options expired)`
+        );
+      }
     }
 
     // Validate quantity to sell
@@ -599,7 +621,11 @@ const FormValidation = {
    * Validate edit sale form and update button state
    * @param {Object} app - Application instance
    */
-  validateEditSaleForm(app) {
+  /**
+   * Enhanced validation for edit sale form WITH SELLABLE DATE VALIDATION
+   * @param {Object} app - Application instance
+   */
+  async validateEditSaleForm(app) {
     if (!app.currentEditingSaleId) {
       console.log("No edit sale ID, skipping validation");
       return { isValid: false, errors: ["No sale selected for editing"] };
@@ -614,16 +640,44 @@ const FormValidation = {
       errors: [],
     };
 
-    // Validate sale date
-    if (!saleDate) {
+    // *** NEW: Get the original portfolio entry data for validation ***
+    const originalSaleData = await this.getOriginalSaleData(
+      app.currentEditingSaleId
+    );
+
+    if (!originalSaleData) {
       validation.isValid = false;
-      validation.errors.push("Sale date is required");
-    } else if (!this.isValidDate(saleDate)) {
-      validation.isValid = false;
-      validation.errors.push("Sale date must be a valid date");
-    } else if (this.isFutureDate(saleDate)) {
-      validation.isValid = false;
-      validation.errors.push("Sale date cannot be in the future");
+      validation.errors.push(
+        "Could not load original sale data for validation"
+      );
+    } else {
+      // Validate sale date against sellable period
+      if (!saleDate) {
+        validation.isValid = false;
+        validation.errors.push("Sale date is required");
+      } else if (!this.isValidDate(saleDate)) {
+        validation.isValid = false;
+        validation.errors.push("Sale date must be a valid date");
+      } else if (this.isFutureDate(saleDate)) {
+        validation.isValid = false;
+        validation.errors.push("Sale date cannot be in the future");
+      } else if (!this.isDateWithinSellablePeriod(saleDate, originalSaleData)) {
+        // *** NEW: Validate against sellable period ***
+        const sellableDate = originalSaleData.can_sell_after;
+        const expiresDate = originalSaleData.expires_on;
+
+        if (new Date(saleDate) < new Date(sellableDate)) {
+          validation.isValid = false;
+          validation.errors.push(
+            `Sale date cannot be before ${new Date(sellableDate).toLocaleDateString()} (1-year waiting period)`
+          );
+        } else if (new Date(saleDate) > new Date(expiresDate)) {
+          validation.isValid = false;
+          validation.errors.push(
+            `Sale date cannot be after ${new Date(expiresDate).toLocaleDateString()} (options expired)`
+          );
+        }
+      }
     }
 
     // Validate sale price
@@ -651,6 +705,110 @@ const FormValidation = {
     }
 
     return validation;
+  },
+  /**
+   * Check if a date is within the sellable period for an option
+   * @param {string} dateString - Date to check (YYYY-MM-DD)
+   * @param {Object} optionData - Option data with can_sell_after and expires_on
+   * @returns {boolean} True if date is within sellable period
+   */
+  isDateWithinSellablePeriod(dateString, optionData) {
+    if (!optionData || !optionData.can_sell_after || !optionData.expires_on) {
+      console.warn("Missing sellable period data for validation");
+      return true; // Allow if data is missing (graceful degradation)
+    }
+
+    const checkDate = new Date(dateString);
+    const sellableDate = new Date(optionData.can_sell_after);
+    const expiresDate = new Date(optionData.expires_on);
+
+    return checkDate >= sellableDate && checkDate <= expiresDate;
+  },
+
+  /**
+   * Get original sale data for edit validation
+   * @param {number} saleId - Sale ID
+   * @returns {Object} Original portfolio entry data
+   */
+  async getOriginalSaleData(saleId) {
+    try {
+      // Get sale details with portfolio entry info
+      const result = await window.ipcRenderer.invoke(
+        "get-sale-with-portfolio-data",
+        saleId
+      );
+
+      if (result.error) {
+        console.error("Error getting original sale data:", result.error);
+        return null;
+      }
+
+      return result;
+    } catch (error) {
+      console.error("Error fetching original sale data:", error);
+      return null;
+    }
+  },
+
+  // ===== ENHANCED DATE INPUT RESTRICTIONS =====
+
+  /**
+   * Set up date input restrictions for sell modal
+   * @param {Object} app - Application instance
+   */
+  setupSellDateRestrictions(app) {
+    if (!app.currentSellEntry) return;
+
+    const dateInput = document.getElementById("saleDate");
+    if (!dateInput) return;
+
+    // Set min and max dates based on sellable period
+    const minDate = app.currentSellEntry.can_sell_after;
+    const maxDate = app.currentSellEntry.expires_on;
+    const today = new Date().toISOString().split("T")[0];
+
+    // Set restrictions
+    dateInput.min = minDate;
+    dateInput.max = Math.min(maxDate, today); // Cannot be future or past expiry
+
+    // Set default to today (if within valid range)
+    if (!dateInput.value) {
+      if (today >= minDate && today <= maxDate) {
+        dateInput.value = today;
+      } else if (today < minDate) {
+        dateInput.value = minDate;
+      } else {
+        dateInput.value = maxDate;
+      }
+    }
+
+    console.log(
+      `📅 Date restrictions set: ${minDate} to ${Math.min(maxDate, today)}`
+    );
+  },
+
+  /**
+   * Set up date input restrictions for edit sale modal
+   * @param {Object} originalSaleData - Original portfolio entry data
+   */
+  setupEditSaleDateRestrictions(originalSaleData) {
+    if (!originalSaleData) return;
+
+    const dateInput = document.getElementById("editSaleDate");
+    if (!dateInput) return;
+
+    // Set min and max dates based on sellable period
+    const minDate = originalSaleData.can_sell_after;
+    const maxDate = originalSaleData.expires_on;
+    const today = new Date().toISOString().split("T")[0];
+
+    // Set restrictions
+    dateInput.min = minDate;
+    dateInput.max = Math.min(maxDate, today); // Cannot be future or past expiry
+
+    console.log(
+      `📅 Edit date restrictions set: ${minDate} to ${Math.min(maxDate, today)}`
+    );
   },
 
   /**

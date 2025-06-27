@@ -13,7 +13,75 @@ class AppHelpers {
   constructor(app) {
     this.app = app; // Reference to main portfolio app for accessing properties
   }
+  async confirmEditSale(app) {
+    console.log("🐛 DEBUG: confirmEditSale called with app:", app);
 
+    if (!app || !app.currentEditingSaleId) {
+      console.log("🐛 DEBUG: No app or currentEditingSaleId found");
+      return;
+    }
+
+    try {
+      const saleDate = document.getElementById("editSaleDate").value;
+      const salePrice = parseFloat(
+        document.getElementById("editSalePrice").value
+      );
+      const notes = document.getElementById("editSaleNotes").value || null;
+
+      console.log("🐛 DEBUG: Edit sale data:", { saleDate, salePrice, notes });
+
+      // Validation
+      if (!saleDate) {
+        alert("Please enter a valid sale date");
+        return;
+      }
+
+      if (!salePrice || salePrice <= 0) {
+        alert("Please enter a valid sale price");
+        return;
+      }
+
+      console.log("🐛 DEBUG: About to call update-sale");
+
+      // Update the sale transaction
+      const result = await window.ipcRenderer.invoke("update-sale", {
+        id: app.currentEditingSaleId,
+        sale_date: saleDate,
+        sale_price: salePrice,
+        notes: notes,
+      });
+
+      console.log("🐛 DEBUG: IPC result:", result);
+
+      if (result.error) {
+        alert("Error updating sale: " + result.error);
+        return;
+      }
+
+      console.log("✅ Sale updated successfully:", result);
+
+      // Show success notification
+      window.UIStateManager.showSuccess(
+        `Sale updated: ${salePrice.toLocaleString()} per option`,
+        3000
+      );
+
+      // Close modal and refresh data
+      app.closeModals();
+      await app.loadPortfolioData();
+
+      // Refresh the current tab data
+      if (app.activeTab === "sales-history") {
+        await app.loadSalesHistory();
+      }
+
+      // Clear current editing sale ID
+      app.currentEditingSaleId = null;
+    } catch (error) {
+      console.error("❌ Error confirming edit sale:", error);
+      alert("Error updating sale: " + error.message);
+    }
+  }
   /**
    * Format fund name with truncation
    * EXTRACTED FROM: renderer.js formatFundName() method
@@ -399,76 +467,6 @@ class AppHelpers {
 
   async loadChartData(period = "all") {
     return await window.DataLoader.loadChartData.call(this, period);
-  }
-
-  async confirmEditSale(app) {
-    console.log("🐛 DEBUG: confirmEditSale called with app:", app);
-
-    if (!app || !app.currentEditingSaleId) {
-      console.log("🐛 DEBUG: No app or currentEditingSaleId found");
-      return;
-    }
-
-    try {
-      const saleDate = document.getElementById("editSaleDate").value;
-      const salePrice = parseFloat(
-        document.getElementById("editSalePrice").value
-      );
-      const notes = document.getElementById("editSaleNotes").value || null;
-
-      console.log("🐛 DEBUG: Edit sale data:", { saleDate, salePrice, notes });
-
-      // Validation
-      if (!saleDate) {
-        alert("Please enter a valid sale date");
-        return;
-      }
-
-      if (!salePrice || salePrice <= 0) {
-        alert("Please enter a valid sale price");
-        return;
-      }
-
-      console.log("🐛 DEBUG: About to call update-sale");
-
-      // Update the sale transaction
-      const result = await window.ipcRenderer.invoke("update-sale", {
-        id: app.currentEditingSaleId,
-        sale_date: saleDate,
-        sale_price: salePrice,
-        notes: notes,
-      });
-
-      console.log("🐛 DEBUG: IPC result:", result);
-
-      if (result.error) {
-        alert("Error updating sale: " + result.error);
-        return;
-      }
-
-      console.log("✅ Sale updated successfully:", result);
-
-      // Show success notification
-      window.UIStateManager.showSuccess(
-        `Sale updated: ${salePrice.toLocaleString()} per option`,
-        3000
-      );
-
-      // Close modal and refresh data
-      app.closeModals();
-      await app.loadPortfolioData();
-
-      // Refresh the current tab data
-      if (app.activeTab === "sales-history") {
-        await app.loadSalesHistory();
-      }
-
-      // Clear current editing sale ID
-      app.currentEditingSaleId = null;
-    } catch (error) {
-      console.error("❌ Error confirming edit sale:", error);
-      alert("Error updating sale: " + error.message);
-    }
   }
 
   async updateTax() {

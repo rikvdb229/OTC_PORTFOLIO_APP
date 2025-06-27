@@ -567,6 +567,212 @@ CREATE TABLE IF NOT EXISTS settings (
     }
   }
   /**
+   * Get sale details with original portfolio entry data for validation
+   * @param {number} saleId - Sale ID
+   * @returns {Object} Sale data with portfolio entry validation info
+   */
+  async getSaleWithPortfolioData(saleId) {
+    try {
+      const stmt = this.db.prepare(`
+      SELECT 
+        st.*,
+        pe.grant_date,
+        pe.exercise_price,
+        pe.fund_name,
+        -- Calculate sellable period
+        date(pe.grant_date, '+1 year') as can_sell_after,
+        date(pe.grant_date, '+10 years') as expires_on,
+        -- Current selling status
+        CASE 
+          WHEN date(pe.grant_date, '+1 year') > date('now') THEN 'WAITING_PERIOD'
+          WHEN date(pe.grant_date, '+10 years') < date('now') THEN 'EXPIRED'
+          WHEN date(pe.grant_date, '+9 years') < date('now') THEN 'EXPIRING_SOON'
+          ELSE 'SELLABLE'
+        END as selling_status
+      FROM sales_transactions st
+      JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
+      WHERE st.id = ?
+    `);
+
+      stmt.bind([saleId]);
+
+      let result = null;
+      if (stmt.step()) {
+        result = stmt.getAsObject();
+      }
+      stmt.free();
+
+      if (!result) {
+        throw new Error(`Sale with ID ${saleId} not found`);
+      }
+
+      console.log("✅ Sale with portfolio data retrieved:", {
+        saleId: result.id,
+        saleDate: result.sale_date,
+        grantDate: result.grant_date,
+        canSellAfter: result.can_sell_after,
+        expiresOn: result.expires_on,
+        sellingStatus: result.selling_status,
+      });
+
+      return result;
+    } catch (error) {
+      console.error("❌ Error getting sale with portfolio data:", error);
+      throw error;
+    }
+  }
+  async getClosestPriceForDate(targetDate, exercisePrice, grantDate) {
+    try {
+      console.log(`📊 DEBUG: Looking for price data:`);
+      console.log(`   Target date: ${targetDate}`);
+      console.log(`   Exercise price: €${exercisePrice}`);
+      console.log(`   Grant date: ${grantDate}`);
+
+      // First, check what price data we have for this option
+      const debugStmt = this.db.prepare(`
+      SELECT price_date, current_value, exercise_price, grant_date
+      FROM price_history 
+      WHERE exercise_price = ? AND grant_date = ?
+      ORDER BY price_date DESC
+      LIMIT 10
+    `);
+
+      console.log(
+        `🔍 DEBUG: Available price history for €${exercisePrice} (${grantDate}):`
+      );
+      debugStmt.bind([exercisePrice, grantDate]);
+      let count = 0;
+      while (debugStmt.step()) {
+        const row = debugStmt.getAsObject();
+        console.log(`   ${row.price_date}: €${row.current_value}`);
+        count++;
+      }
+      debugStmt.free();
+
+      if (count === 0) {
+        console.log(
+          `   ❌ NO PRICE HISTORY FOUND for €${exercisePrice} (${grantDate})`
+        );
+
+        // Check if we have ANY price data at all
+        const allDataStmt = this.db.prepare(`
+        SELECT DISTINCT exercise_price, grant_date, COUNT(*) as price_count
+        FROM price_history 
+        GROUP BY exercise_price, grant_date
+        ORDER BY exercise_price, grant_date
+      `);
+
+        console.log(`🔍 DEBUG: All available price data in database:`);
+        let totalCount = 0;
+        while (allDataStmt.step()) {
+          const row = allDataStmt.getAsObject();
+          console.log(
+            `   €${row.exercise_price} (${row.grant_date}): ${row.price_count} price points`
+          );
+          totalCount++;
+        }
+        allDataStmt.free();
+
+        if (totalCount === 0) {
+          console.log(
+            `   ❌ NO PRICE HISTORY DATA AT ALL - run price update first!`
+          );
+        }
+
+        return null;
+      }
+
+      console.log(
+        `✅ Found ${count} price history records, looking for closest to ${targetDate}...`
+      );
+
+      // First, try to get exact price for this date
+      const exactStmt = this.db.prepare(`
+      SELECT current_value, price_date, 'exact' as match_type
+      FROM price_history 
+      WHERE price_date = ? AND exercise_price = ? AND grant_date = ?
+      LIMIT 1
+    `);
+
+      exactStmt.bind([targetDate, exercisePrice, grantDate]);
+      if (exactStmt.step()) {
+        const result = exactStmt.getAsObject();
+        exactStmt.free();
+        console.log(
+          `📍 Found exact price for ${targetDate}: €${result.current_value}`
+        );
+        return result;
+      }
+      exactStmt.free();
+
+      // No exact match - find closest price (before or after)
+      const closestStmt = this.db.prepare(`
+      SELECT 
+        current_value,
+        price_date,
+        ABS(julianday(?) - julianday(price_date)) as day_difference,
+        CASE 
+          WHEN price_date <= ? THEN 'before'
+          ELSE 'after'
+        END as match_type
+      FROM price_history 
+      WHERE exercise_price = ? AND grant_date = ?
+      ORDER BY day_difference ASC
+      LIMIT 1
+    `);
+
+      closestStmt.bind([targetDate, targetDate, exercisePrice, grantDate]);
+      if (closestStmt.step()) {
+        const result = closestStmt.getAsObject();
+        closestStmt.free();
+
+        console.log(
+          `📍 Found ${result.match_type} price for ${targetDate}: €${result.current_value} (${result.day_difference.toFixed(1)} days ${result.match_type})`
+        );
+        return result;
+      }
+      closestStmt.free();
+
+      // Still no match
+      console.warn(
+        `⚠️ No price history found for €${exercisePrice} (${grantDate})`
+      );
+      return null;
+    } catch (error) {
+      console.error(`❌ Error getting closest price for ${targetDate}:`, error);
+      return null;
+    }
+  }
+  /**
+   * Get price for specific date - wrapper for existing method
+   * @param {string} targetDate - Date to find price for (YYYY-MM-DD)
+   * @param {number} exercisePrice - Exercise price of the option
+   * @param {string} grantDate - Grant date of the option
+   * @returns {Object} Price data with metadata
+   */
+  async getPriceForDate(targetDate, exercisePrice, grantDate) {
+    console.log(
+      `📈 Getting price for ${targetDate}, exercise: €${exercisePrice}, grant: ${grantDate}`
+    );
+
+    // Use the existing getClosestPriceForDate method
+    const result = await this.getClosestPriceForDate(
+      targetDate,
+      exercisePrice,
+      grantDate
+    );
+
+    if (result) {
+      console.log(
+        `✅ Found price: €${result.current_value} (${result.match_type})`
+      );
+    } else {
+      console.log(`⚠️ No price data found for ${targetDate}`);
+    }
+
+    return result;
+  }
+  /**
    * Get sale details by ID for editing
    * @param {number} saleId - Sale transaction ID
    * @returns {Object} Sale details including grant information
@@ -644,6 +850,17 @@ CREATE TABLE IF NOT EXISTS settings (
       const currentSale = await this.getSaleDetails(updatedSale.id);
       console.log("📦 Current sale data:", currentSale);
 
+      // Check if the sale date is changing
+      const oldSaleDate = currentSale.sale_date;
+      const newSaleDate = updatedSale.sale_date;
+      const isDateChanging = oldSaleDate !== newSaleDate;
+
+      console.log("📅 Date change analysis:", {
+        oldSaleDate,
+        newSaleDate,
+        isDateChanging,
+      });
+
       // Calculate new values based on updated price
       const newTotalSaleValue =
         updatedSale.sale_price * currentSale.quantity_sold;
@@ -657,47 +874,70 @@ CREATE TABLE IF NOT EXISTS settings (
       const newProfitLossVsTarget =
         newTotalSaleValue - taxDeducted - targetValue;
 
-      console.log("🧮 Recalculated values:", {
-        oldSalePrice: currentSale.sale_price,
-        newSalePrice: updatedSale.sale_price,
-        quantity: currentSale.quantity_sold,
-        newTotalSaleValue,
-        taxDeducted,
-        targetValue,
-        newProfitLossVsTarget,
-        oldProfitLoss: currentSale.profit_loss_vs_target,
-      });
-
       // Update the sale record
       const stmt = this.db.prepare(`
-    UPDATE sales_transactions 
-    SET 
-      sale_date = ?,
-      sale_price = ?,
-      total_sale_value = ?,
-      notes = ?,
-      updated_at = CURRENT_TIMESTAMP
-    WHERE id = ?
+      UPDATE sales_transactions 
+      SET 
+        sale_date = ?,
+        sale_price = ?,
+        total_sale_value = ?,
+        notes = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
     `);
 
-      stmt.bind([
+      stmt.run([
         updatedSale.sale_date,
         updatedSale.sale_price,
         newTotalSaleValue,
         updatedSale.notes || null,
         updatedSale.id,
       ]);
-
-      const result = stmt.step();
       stmt.free();
 
-      // Save database changes
-      this.saveDatabase();
+      // ===== HANDLE EVOLUTION ENTRIES AND TIMELINE RECALCULATION =====
+      if (isDateChanging) {
+        console.log("📅 Sale date changed, updating evolution timeline...");
 
-      console.log(`✅ Updated sale ID ${updatedSale.id} successfully`);
-      console.log(
-        `📊 P&L vs Target changed from €${currentSale.profit_loss_vs_target?.toFixed(2)} to €${newProfitLossVsTarget.toFixed(2)}`
-      );
+        // Create the sale note text
+        const saleNote = `Sale: ${currentSale.quantity_sold} options at €${updatedSale.sale_price}`;
+
+        // 1. Remove the sale note from the OLD date
+        await this.removeSaleNoteFromEvolution(
+          oldSaleDate,
+          currentSale.quantity_sold,
+          currentSale.sale_price
+        );
+
+        // 2. Add the sale note to the NEW date
+        await this.addSaleNoteToEvolution(newSaleDate, saleNote);
+
+        // 3. *** NEW: Recalculate evolution timeline from the earliest affected date ***
+        const earliestDate =
+          oldSaleDate < newSaleDate ? oldSaleDate : newSaleDate;
+        await this.recalculateEvolutionFromDate(earliestDate);
+
+        console.log(
+          `✅ Evolution timeline recalculated from ${earliestDate} forward`
+        );
+      } else if (updatedSale.sale_price !== currentSale.sale_price) {
+        // Price changed but not date - update the note and recalculate from this date
+        console.log("💰 Sale price changed, updating evolution...");
+
+        const oldSaleNote = `Sale: ${currentSale.quantity_sold} options at €${currentSale.sale_price}`;
+        const newSaleNote = `Sale: ${currentSale.quantity_sold} options at €${updatedSale.sale_price}`;
+
+        await this.updateSaleNoteInEvolution(
+          newSaleDate,
+          oldSaleNote,
+          newSaleNote
+        );
+
+        // Recalculate from this date forward (price change affects realized gains)
+        await this.recalculateEvolutionFromDate(newSaleDate);
+      }
+
+      this.saveDatabase();
 
       return {
         success: true,
@@ -705,9 +945,392 @@ CREATE TABLE IF NOT EXISTS settings (
         newTotalSaleValue,
         newProfitLossVsTarget,
         oldProfitLoss: currentSale.profit_loss_vs_target,
+        dateChanged: isDateChanging,
+        oldDate: oldSaleDate,
+        newDate: newSaleDate,
+        timelineRecalculated: true,
       };
     } catch (error) {
       console.error("❌ Error updating sale:", error);
+      throw error;
+    }
+  }
+
+  // ===== NEW HELPER METHODS FOR EVOLUTION MANAGEMENT =====
+
+  /**
+   * Remove a sale note from an evolution entry
+   */
+  async removeSaleNoteFromEvolution(date, quantity, price) {
+    try {
+      const saleNote = `Sale: ${quantity} options at €${price}`;
+
+      // Get current evolution entry for this date
+      const stmt = this.db.prepare(`
+      SELECT notes FROM portfolio_evolution 
+      WHERE snapshot_date = ?
+    `);
+
+      stmt.bind([date]);
+      let evolutionEntry = null;
+      if (stmt.step()) {
+        evolutionEntry = stmt.getAsObject();
+      }
+      stmt.free();
+
+      if (!evolutionEntry || !evolutionEntry.notes) {
+        console.log(`No evolution entry found for ${date}`);
+        return;
+      }
+
+      // Remove the specific sale note
+      let notes = evolutionEntry.notes;
+
+      // Remove lines containing the sale note
+      const lines = notes
+        .split("\n")
+        .filter(
+          (line) => !line.includes(`Sale: ${quantity} options at €${price}`)
+        );
+
+      const updatedNotes = lines.join("\n").trim();
+
+      if (updatedNotes === "" || updatedNotes === "•") {
+        // If no notes left, delete the evolution entry
+        const deleteStmt = this.db.prepare(`
+        DELETE FROM portfolio_evolution WHERE snapshot_date = ?
+      `);
+        deleteStmt.run([date]);
+        deleteStmt.free();
+        console.log(`✅ Removed empty evolution entry for ${date}`);
+      } else {
+        // Update with remaining notes
+        const updateStmt = this.db.prepare(`
+        UPDATE portfolio_evolution 
+        SET notes = ? 
+        WHERE snapshot_date = ?
+      `);
+        updateStmt.run([updatedNotes, date]);
+        updateStmt.free();
+        console.log(`✅ Updated evolution entry for ${date}`);
+      }
+    } catch (error) {
+      console.error("❌ Error removing sale note from evolution:", error);
+    }
+  }
+
+  /**
+   * Add a sale note to an evolution entry (creates entry if needed)
+   */
+  async addSaleNoteToEvolution(date, saleNote) {
+    try {
+      // Check if evolution entry exists for this date
+      const checkStmt = this.db.prepare(`
+      SELECT notes FROM portfolio_evolution 
+      WHERE snapshot_date = ?
+    `);
+
+      checkStmt.bind([date]);
+      let existingEntry = null;
+      if (checkStmt.step()) {
+        existingEntry = checkStmt.getAsObject();
+      }
+      checkStmt.free();
+
+      let finalNotes = `• ${saleNote}`;
+
+      if (existingEntry && existingEntry.notes) {
+        // Entry exists - append new note
+        const existingNotes = existingEntry.notes;
+        if (!existingNotes.includes(saleNote)) {
+          finalNotes = `${existingNotes}\n• ${saleNote}`;
+        } else {
+          finalNotes = existingNotes; // Don't duplicate
+        }
+      }
+
+      // Get current portfolio value for this date (approximate)
+      const portfolioOverview = await this.getPortfolioOverview();
+      const currentTotalValue = portfolioOverview.reduce(
+        (sum, entry) => sum + (entry.current_total_value || 0),
+        0
+      );
+
+      // Create or update the evolution entry
+      const stmt = this.db.prepare(`
+      INSERT OR REPLACE INTO portfolio_evolution 
+      (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+      stmt.run([
+        date,
+        currentTotalValue || 0,
+        0, // unrealized gain
+        0, // realized gain
+        0, // total options count
+        0, // active options count
+        finalNotes,
+      ]);
+      stmt.free();
+
+      console.log(`✅ Added sale note to evolution entry for ${date}`);
+    } catch (error) {
+      console.error("❌ Error adding sale note to evolution:", error);
+    }
+  }
+
+  /**
+   * Update a sale note in an evolution entry (when price changes but not date)
+   */
+  async updateSaleNoteInEvolution(date, oldNote, newNote) {
+    try {
+      const stmt = this.db.prepare(`
+      SELECT notes FROM portfolio_evolution 
+      WHERE snapshot_date = ?
+    `);
+
+      stmt.bind([date]);
+      let evolutionEntry = null;
+      if (stmt.step()) {
+        evolutionEntry = stmt.getAsObject();
+      }
+      stmt.free();
+
+      if (!evolutionEntry || !evolutionEntry.notes) {
+        return;
+      }
+
+      // Replace the old note with the new note
+      const updatedNotes = evolutionEntry.notes.replace(oldNote, newNote);
+
+      const updateStmt = this.db.prepare(`
+      UPDATE portfolio_evolution 
+      SET notes = ? 
+      WHERE snapshot_date = ?
+    `);
+      updateStmt.run([updatedNotes, date]);
+      updateStmt.free();
+
+      console.log(`✅ Updated sale note in evolution entry for ${date}`);
+    } catch (error) {
+      console.error("❌ Error updating sale note in evolution:", error);
+    }
+  }
+  // Add this method to portfolio-db.js to recalculate evolution timeline
+
+  /**
+   * Recalculate all evolution snapshots from a given date forward
+   * This ensures portfolio values and gains are correct after sale date changes
+   * @param {string} fromDate - Date to start recalculation from (YYYY-MM-DD)
+   */
+  async recalculateEvolutionFromDate(fromDate) {
+    try {
+      console.log(
+        `🔄 Recalculating evolution timeline from ${fromDate} forward...`
+      );
+
+      // Get all evolution entries from the date forward, ordered by date
+      const evolutionStmt = this.db.prepare(`
+      SELECT * FROM portfolio_evolution 
+      WHERE snapshot_date >= ? 
+      ORDER BY snapshot_date ASC
+    `);
+
+      const evolutionEntries = [];
+      evolutionStmt.bind([fromDate]);
+      while (evolutionStmt.step()) {
+        evolutionEntries.push(evolutionStmt.getAsObject());
+      }
+      evolutionStmt.free();
+
+      console.log(
+        `📊 Found ${evolutionEntries.length} evolution entries to recalculate`
+      );
+
+      // Recalculate each entry
+      for (const entry of evolutionEntries) {
+        await this.recalculateEvolutionEntry(entry.snapshot_date, entry.notes);
+      }
+
+      console.log(`✅ Evolution timeline recalculated from ${fromDate}`);
+    } catch (error) {
+      console.error("❌ Error recalculating evolution timeline:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Recalculate a specific evolution entry with correct portfolio values
+   * @param {string} date - Date of the evolution entry (YYYY-MM-DD)
+   * @param {string} existingNotes - Preserve existing notes
+   */
+  async recalculateEvolutionEntry(date, existingNotes) {
+    try {
+      console.log(`🧮 Recalculating evolution entry for ${date}`);
+
+      // Get portfolio state as of this date
+      const portfolioState = await this.getPortfolioStateAsOfDate(date);
+
+      // Calculate total values
+      const totalPortfolioValue = portfolioState.totalCurrentValue;
+      const totalRealizedGain = portfolioState.totalRealizedGain;
+      const totalUnrealizedGain = portfolioState.totalUnrealizedGain;
+      const totalOptionsCount = portfolioState.totalOptionsCount;
+      const activeOptionsCount = portfolioState.activeOptionsCount;
+
+      // Update the evolution entry
+      const updateStmt = this.db.prepare(`
+      UPDATE portfolio_evolution 
+      SET 
+        total_portfolio_value = ?,
+        total_unrealized_gain = ?,
+        total_realized_gain = ?,
+        total_options_count = ?,
+        active_options_count = ?
+      WHERE snapshot_date = ?
+    `);
+
+      updateStmt.run([
+        totalPortfolioValue,
+        totalUnrealizedGain,
+        totalRealizedGain,
+        totalOptionsCount,
+        activeOptionsCount,
+        date,
+      ]);
+      updateStmt.free();
+
+      console.log(`✅ Updated evolution entry for ${date}:`, {
+        totalPortfolioValue,
+        totalRealizedGain,
+        totalUnrealizedGain,
+      });
+    } catch (error) {
+      console.error(
+        `❌ Error recalculating evolution entry for ${date}:`,
+        error
+      );
+    }
+  }
+
+  /**
+   * Get portfolio state as of a specific date
+   * This calculates what the portfolio looked like on that date
+   * @param {string} asOfDate - Date to calculate state for (YYYY-MM-DD)
+   * @returns {Object} Portfolio state
+   */
+  async getPortfolioStateAsOfDate(asOfDate) {
+    try {
+      // Get all portfolio entries
+      const entriesStmt = this.db.prepare(`
+      SELECT * FROM portfolio_entries
+    `);
+
+      const entries = [];
+      while (entriesStmt.step()) {
+        entries.push(entriesStmt.getAsObject());
+      }
+      entriesStmt.free();
+
+      // Get all sales that happened up to this date
+      const salesStmt = this.db.prepare(`
+      SELECT 
+        portfolio_entry_id,
+        SUM(quantity_sold) as total_sold,
+        SUM(total_sale_value) as total_sale_value,
+        SUM(realized_gain_loss) as total_realized_gain
+      FROM sales_transactions 
+      WHERE sale_date <= ?
+      GROUP BY portfolio_entry_id
+    `);
+
+      const salesByEntry = {};
+      salesStmt.bind([asOfDate]);
+      while (salesStmt.step()) {
+        const sale = salesStmt.getAsObject();
+        salesByEntry[sale.portfolio_entry_id] = sale;
+      }
+      salesStmt.free();
+
+      // Get price data as of this date (or closest before)
+      const priceStmt = this.db.prepare(`
+      SELECT 
+        exercise_price,
+        current_value,
+        grant_date
+      FROM price_history 
+      WHERE price_date <= ?
+      ORDER BY price_date DESC
+    `);
+
+      const pricesByKey = {};
+      priceStmt.bind([asOfDate]);
+      while (priceStmt.step()) {
+        const price = priceStmt.getAsObject();
+        const key = `${price.exercise_price}-${price.grant_date}`;
+        if (!pricesByKey[key]) {
+          pricesByKey[key] = price.current_value;
+        }
+      }
+      priceStmt.free();
+
+      // Calculate portfolio state
+      let totalCurrentValue = 0;
+      let totalRealizedGain = 0;
+      let totalUnrealizedGain = 0;
+      let totalOptionsCount = 0;
+      let activeOptionsCount = 0;
+
+      for (const entry of entries) {
+        // Calculate quantities as of this date
+        const salesForEntry = salesByEntry[entry.id];
+        const soldQuantity = salesForEntry ? salesForEntry.total_sold : 0;
+        const remainingQuantity = entry.quantity - soldQuantity;
+
+        // Add to totals
+        totalOptionsCount += entry.quantity;
+        activeOptionsCount += remainingQuantity;
+
+        // Add realized gains from sales
+        if (salesForEntry) {
+          totalRealizedGain += salesForEntry.total_realized_gain || 0;
+        }
+
+        // Calculate current value using price as of this date
+        const priceKey = `${entry.exercise_price}-${entry.grant_date}`;
+        const currentPrice = pricesByKey[priceKey] || entry.current_value || 0;
+        const currentEntryValue = remainingQuantity * currentPrice;
+
+        totalCurrentValue += currentEntryValue;
+
+        // Calculate unrealized gain for this entry
+        const targetPercentageQuery =
+          await this.getSetting("target_percentage");
+        const targetPercentage = parseFloat(targetPercentageQuery || "65");
+        const targetValue = remainingQuantity * 10 * (targetPercentage / 100);
+
+        // Tax calculation (proportional to remaining quantity)
+        const taxRatio = remainingQuantity / entry.quantity;
+        const entryTax =
+          (entry.tax_amount || entry.tax_auto_calculated || 0) * taxRatio;
+
+        const unrealizedGain = currentEntryValue - entryTax - targetValue;
+        totalUnrealizedGain += unrealizedGain;
+      }
+
+      return {
+        totalCurrentValue,
+        totalRealizedGain,
+        totalUnrealizedGain,
+        totalOptionsCount,
+        activeOptionsCount,
+      };
+    } catch (error) {
+      console.error(
+        `❌ Error calculating portfolio state for ${asOfDate}:`,
+        error
+      );
       throw error;
     }
   }

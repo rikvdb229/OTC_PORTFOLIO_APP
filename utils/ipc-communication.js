@@ -72,6 +72,57 @@ const PortfolioOperations = {
       throw error;
     }
   },
+  /**
+   * Update tax for a portfolio entry
+   * @param {Object} app - Application instance
+   */
+  async updateTax(app) {
+    console.log("🔄 IPCCommunication: updateTax called");
+
+    if (!app || !app.currentEditingTaxId) {
+      console.log("❌ No app or currentEditingTaxId found");
+      return;
+    }
+
+    try {
+      const newTaxAmount = parseFloat(
+        document.getElementById("newTaxAmount").value
+      );
+
+      if (isNaN(newTaxAmount) || newTaxAmount < 0) {
+        alert("Please enter a valid tax amount");
+        return;
+      }
+
+      const result = await window.ipcRenderer.invoke("update-portfolio-entry", {
+        id: app.currentEditingTaxId,
+        tax_amount: newTaxAmount,
+      });
+
+      if (result.error) {
+        alert("Error updating tax: " + result.error);
+        return;
+      }
+
+      console.log("✅ Tax updated successfully");
+
+      // Show success notification
+      window.UIStateManager.showSuccess(
+        `Tax updated: €${newTaxAmount.toFixed(2)}`,
+        3000
+      );
+
+      // Close modal and refresh data
+      app.closeModals();
+      await app.loadPortfolioData();
+
+      // Clear current editing ID
+      app.currentEditingTaxId = null;
+    } catch (error) {
+      console.error("❌ Error updating tax:", error);
+      alert("Error updating tax: " + error.message);
+    }
+  },
 
   async updateEntry(id, quantity, taxAmount, notes) {
     try {
@@ -654,6 +705,143 @@ const SalesOperations = {
     } catch (error) {
       console.error("❌ Error recording sale:", error);
       throw error;
+    }
+  },
+  /**
+   * Confirm and execute sale transaction
+   * @param {Object} app - Application instance
+   */
+  async confirmSale(app) {
+    console.log("🔄 IPCCommunication: confirmSale called");
+
+    if (!app || !app.currentSellEntry) {
+      console.log("❌ No app or currentSellEntry found");
+      return;
+    }
+
+    try {
+      const quantityToSell = parseInt(
+        document.getElementById("quantityToSell").value
+      );
+      const salePrice = parseFloat(document.getElementById("salePrice").value);
+      const notes = document.getElementById("saleNotes").value || null;
+      const saleDateInput = document.getElementById("saleDate");
+      const saleDate = saleDateInput
+        ? saleDateInput.value
+        : new Date().toISOString().split("T")[0];
+
+      // Call the existing recordSale method
+      const result = await this.recordSale(
+        app.currentSellEntry.id,
+        saleDate,
+        quantityToSell,
+        salePrice,
+        notes
+      );
+
+      if (result.error) {
+        alert("Error recording sale: " + result.error);
+        return;
+      }
+
+      console.log("✅ Sale recorded successfully");
+
+      // Show success notification
+      window.UIStateManager.showSuccess(
+        `Sale recorded: ${quantityToSell} options at €${salePrice}`,
+        3000
+      );
+
+      // Close modal and refresh data
+      app.closeModals();
+      await app.loadPortfolioData();
+
+      // Refresh the current tab data
+      if (app.activeTab === "portfolio") {
+        // Already refreshed with loadPortfolioData
+      } else if (app.activeTab === "evolution") {
+        await app.loadEvolutionData();
+      } else if (app.activeTab === "chart") {
+        await app.loadChartData();
+      } else if (app.activeTab === "sales-history") {
+        await app.loadSalesHistory();
+      } else if (app.activeTab === "grant-history") {
+        await app.loadGrantHistory();
+      }
+
+      // Clear current sell entry
+      app.currentSellEntry = null;
+    } catch (error) {
+      console.error("❌ Error confirming sale:", error);
+      alert("Error recording sale: " + error.message);
+    }
+  },
+
+  /**
+   * Confirm and save sale edits
+   * @param {Object} app - Application instance
+   */
+  async confirmEditSale(app) {
+    console.log("🔄 IPCCommunication: confirmEditSale called");
+
+    if (!app || !app.currentEditingSaleId) {
+      console.log("❌ No app or currentEditingSaleId found");
+      return;
+    }
+
+    try {
+      const saleDate = document.getElementById("editSaleDate").value;
+      const salePrice = parseFloat(
+        document.getElementById("editSalePrice").value
+      );
+      const notes = document.getElementById("editSaleNotes").value || null;
+
+      // Validation
+      if (!saleDate) {
+        alert("Please enter a valid sale date");
+        return;
+      }
+
+      if (!salePrice || salePrice <= 0) {
+        alert("Please enter a valid sale price");
+        return;
+      }
+
+      // Update the sale transaction
+      const result = await window.ipcRenderer.invoke("update-sale", {
+        id: app.currentEditingSaleId,
+        sale_date: saleDate,
+        sale_price: salePrice,
+        notes: notes,
+      });
+
+      if (result.error) {
+        alert("Error updating sale: " + result.error);
+        return;
+      }
+
+      console.log("✅ Sale updated successfully:", result);
+
+      // Show success notification
+      window.UIStateManager.showSuccess(
+        `Sale updated: ${salePrice.toLocaleString()} per option`,
+        3000
+      );
+
+      // Close modal and refresh data
+      app.closeModals();
+      await app.loadPortfolioData();
+
+      // Refresh the current tab data
+      if (app.activeTab === "sales-history") {
+        await app.loadSalesHistory();
+      }
+
+      // Clear current editing sale ID
+      app.currentEditingSaleId = null;
+    } catch (error) {
+      console.error("❌ Error confirming edit sale:", error);
+      alert("Error updating sale: " + error.message);
     }
   },
 

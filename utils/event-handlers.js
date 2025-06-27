@@ -418,7 +418,7 @@ const ModalHandlers = {
    * @param {Object} app - Application instance (this)
    */
   setupModalButtons(app) {
-    // Define modal button mappings
+    // Define modal button mappings - STANDARDIZED VERSION
     const modalButtons = [
       // Add Grants Modal
       { id: "canceladdGrants", handler: () => app.closeModals() },
@@ -434,15 +434,21 @@ const ModalHandlers = {
         handler: () => window.IPCCommunication.Grants.confirmMergeGrants(app),
       },
 
-      // Sell Options Modal
+      // Sell Options Modal - CHANGED TO EXTERNAL CALL
       { id: "cancelSellOptions", handler: () => app.closeModals() },
-      { id: "confirmSellOptions", handler: () => app.confirmSale() },
+      {
+        id: "confirmSellOptions",
+        handler: () => window.IPCCommunication.Sales.confirmSale(app),
+      },
 
-      // Edit Tax Modal
+      // Edit Tax Modal - CHANGED TO EXTERNAL CALL
       { id: "cancelEditTax", handler: () => app.closeModals() },
-      { id: "confirmEditTax", handler: () => app.updateTax() },
+      {
+        id: "confirmEditTax",
+        handler: () => window.IPCCommunication.Portfolio.updateTax(app),
+      },
 
-      // Delete Confirmation Modal
+      // Delete Confirmation Modal - ALREADY EXTERNAL
       { id: "cancelDelete", handler: () => app.closeModals() },
       {
         id: "confirmDelete",
@@ -451,9 +457,13 @@ const ModalHandlers = {
 
       // Option Info Modal
       { id: "closeOptionInfo", handler: () => app.closeModals() },
-      // Edit Sale Modal
+
+      // Edit Sale Modal - CHANGED TO EXTERNAL CALL
       { id: "cancelEditSale", handler: () => app.closeModals() },
-      { id: "confirmEditSale", handler: () => app.confirmEditSale() },
+      {
+        id: "confirmEditSale",
+        handler: () => window.IPCCommunication.Sales.confirmEditSale(app),
+      },
     ];
 
     // Set up each button handler
