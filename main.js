@@ -617,6 +617,15 @@ ipcMain.handle(
     }
   }
 );
+ipcMain.handle("recalculate-evolution-timeline", async () => {
+  try {
+    await portfolioDb.recalculateEntireEvolutionTimeline();
+    return { success: true };
+  } catch (error) {
+    console.error("Error recalculating evolution timeline:", error);
+    return { error: error.message };
+  }
+});
 // Update sale details
 ipcMain.handle("update-sale", async (event, updatedSale) => {
   try {

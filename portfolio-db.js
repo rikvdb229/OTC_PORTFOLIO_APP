@@ -1789,84 +1789,50 @@ CREATE TABLE IF NOT EXISTS settings (
     notes = null
   ) {
     try {
+      console.log(`💰 Recording sale transaction for ${saleDate}`);
+
       // Get the portfolio entry to calculate proportional tax
       const entryStmt = this.db.prepare(
         "SELECT * FROM portfolio_entries WHERE id = ?"
       );
       entryStmt.bind([portfolioEntryId]);
 
-      let entry = null;
+      let portfolioEntry = null;
       if (entryStmt.step()) {
-        entry = entryStmt.getAsObject();
+        portfolioEntry = entryStmt.getAsObject();
       }
       entryStmt.free();
 
-      console.log("Raw entry from database:", entry);
-
-      if (!entry) {
-        return Promise.reject(new Error("Portfolio entry not found"));
-      }
-
-      // Handle undefined/null values with defaults
-      const quantity = entry.quantity || 0;
-      const totalSoldQuantity = entry.total_sold_quantity || 0;
-      const taxAmount = entry.tax_amount || 0;
-      const taxAutoCalculated = entry.tax_auto_calculated || 0;
-
-      console.log("Processed entry values:", {
-        id: entry.id,
-        quantity,
-        totalSoldQuantity,
-        taxAmount,
-        taxAutoCalculated,
-      });
-
-      const remainingQuantity = quantity - totalSoldQuantity;
-
-      if (quantitySold > remainingQuantity) {
-        return Promise.reject(
-          new Error(
-            `Cannot sell more options than available. Available: ${remainingQuantity}, Trying to sell: ${quantitySold}`
-          )
+      if (!portfolioEntry) {
+        throw new Error(
+          `Portfolio entry with ID ${portfolioEntryId} not found`
         );
       }
 
-      // FIXED TAX CALCULATION:
-      // Tax should be reduced proportionally from the REMAINING quantity
-      const totalTax = taxAmount || taxAutoCalculated || 0;
-
-      // Calculate current tax per option based on REMAINING quantity
-      const currentTaxPerOption =
-        remainingQuantity > 0 ? totalTax / remainingQuantity : 0;
-
-      // Tax allocated to sold options = tax per option × quantity sold
-      const taxAllocatedToSold = currentTaxPerOption * quantitySold;
-
-      // New total tax = old tax - tax allocated to sold options
-      const newTaxAmount = Math.max(0, totalTax - taxAllocatedToSold);
-
-      console.log("FIXED Tax calculation:", {
-        originalQuantity: quantity,
-        totalSoldBefore: totalSoldQuantity,
-        remainingQuantityBefore: remainingQuantity,
-        quantitySold,
-        remainingQuantityAfter: remainingQuantity - quantitySold,
-        totalTaxBefore: totalTax,
-        currentTaxPerOption, // Changed from currentTaxPerOption
-        taxAllocatedToSold,
-        newTaxAmount,
-      });
-
-      // Calculate sale values (no tax deduction from proceeds - tax was already paid)
+      // Calculate values
       const totalSaleValue = quantitySold * salePrice;
-      const costBasis = quantitySold * 10; // €10 per option cost basis
-      const realizedGainLoss = totalSaleValue - costBasis;
+      const taxAmount = portfolioEntry.tax_amount || 0;
+      const taxAutoCalculated = portfolioEntry.tax_auto_calculated || 0;
+      const totalTax = taxAmount > 0 ? taxAmount : taxAutoCalculated;
 
-      // Insert sale transaction (tax_deducted is just for record keeping)
+      // Calculate proportional tax allocation
+      const taxAllocatedToSold =
+        (totalTax * quantitySold) / portfolioEntry.quantity;
+      const newTaxAmount = totalTax - taxAllocatedToSold;
+
+      // Calculate realized gain/loss vs target
+      const targetPercentageQuery = await this.getSetting("target_percentage");
+      const targetPercentage = parseFloat(targetPercentageQuery || "65");
+      const targetValue = quantitySold * 10 * (targetPercentage / 100);
+      const realizedGainLoss =
+        totalSaleValue - taxAllocatedToSold - targetValue;
+
+      // Insert sale transaction
       const saleStmt = this.db.prepare(`
-      INSERT INTO sales_transactions 
-      (portfolio_entry_id, sale_date, quantity_sold, sale_price, total_sale_value, tax_deducted, realized_gain_loss, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO sales_transactions (
+        portfolio_entry_id, sale_date, quantity_sold, sale_price, 
+        total_sale_value, tax_deducted, realized_gain_loss, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
       const saleResult = saleStmt.run([
@@ -1875,23 +1841,15 @@ CREATE TABLE IF NOT EXISTS settings (
         quantitySold || 0,
         salePrice || 0,
         totalSaleValue || 0,
-        taxAllocatedToSold || 0, // Just for record keeping
+        taxAllocatedToSold || 0,
         realizedGainLoss || 0,
         notes || null,
       ]);
       saleStmt.free();
 
-      // SIMPLIFIED: Update portfolio entry with correct tax reduction
-      console.log("Tax update debug:", {
-        entryTaxAmount: taxAmount,
-        entryTaxAuto: taxAutoCalculated,
-        newTaxAmount: newTaxAmount,
-        hasManualTax: taxAmount > 0,
-      });
-
+      // Update portfolio entry with reduced tax and increased sold quantity
       if (taxAmount > 0) {
         // Manual tax exists - update it
-        console.log("Updating manual tax from", taxAmount, "to", newTaxAmount);
         const updateStmt = this.db.prepare(`
         UPDATE portfolio_entries 
         SET total_sold_quantity = total_sold_quantity + ?, 
@@ -1899,17 +1857,10 @@ CREATE TABLE IF NOT EXISTS settings (
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
-
         updateStmt.run([quantitySold, newTaxAmount, portfolioEntryId]);
         updateStmt.free();
       } else {
         // Auto tax - update the auto calculated field
-        console.log(
-          "Updating auto tax from",
-          taxAutoCalculated,
-          "to",
-          newTaxAmount
-        );
         const updateStmt = this.db.prepare(`
         UPDATE portfolio_entries 
         SET total_sold_quantity = total_sold_quantity + ?, 
@@ -1917,26 +1868,29 @@ CREATE TABLE IF NOT EXISTS settings (
             updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `);
-
         updateStmt.run([quantitySold, newTaxAmount, portfolioEntryId]);
         updateStmt.free();
       }
 
       this.saveDatabase();
 
-      // FIXED: Create evolution snapshot for sales - use UPSERT to avoid duplicates
+      // Create evolution snapshot for the sale date
       await this.createPortfolioSnapshot(
         saleDate,
         "sale",
         `Sale: ${quantitySold} options at €${salePrice}`
       );
 
+      // 🔥 CRITICAL FIX: Recalculate ALL evolution entries from the sale date forward
       console.log(
-        `✅ FIXED: Sale recorded. Tax reduced from €${totalTax.toFixed(
+        `🔄 Recalculating evolution timeline from ${saleDate} forward due to past sale...`
+      );
+      await this.recalculateEvolutionFromDate(saleDate);
+
+      console.log(
+        `✅ Sale recorded and evolution timeline updated. Tax reduced from €${totalTax.toFixed(
           2
-        )} to €${newTaxAmount.toFixed(
-          2
-        )} (reduced by €${taxAllocatedToSold.toFixed(2)})`
+        )} to €${newTaxAmount.toFixed(2)}`
       );
 
       return Promise.resolve({
@@ -1945,9 +1899,10 @@ CREATE TABLE IF NOT EXISTS settings (
         realizedGainLoss: realizedGainLoss || 0,
         totalSaleValue: totalSaleValue || 0,
         remainingTax: newTaxAmount || 0,
+        evolutionRecalculated: true, // Indicate that evolution was updated
       });
     } catch (error) {
-      console.error("Error in recordSaleTransaction:", error);
+      console.error("❌ Error in recordSaleTransaction:", error);
       return Promise.reject(error);
     }
   }
@@ -2344,82 +2299,179 @@ ORDER BY st.sale_date DESC
   }
 
   // FIXED: Enhanced portfolio snapshot creation with duplicate handling
-  async createPortfolioSnapshot(date = null, type = "update", note = null) {
+  async createPortfolioSnapshot(date, triggerType = "auto", notes = "") {
     try {
-      const snapshotDate = date || new Date().toISOString().split("T")[0];
-
-      // Skip grant snapshots - handled separately by createEvolutionEntryForGrant
-      if (type === "grant") {
-        return;
-      }
-
-      // Get current portfolio overview
-      const portfolioOverview = await this.getPortfolioOverview();
-      const currentTotalValue = portfolioOverview.reduce(
-        (sum, entry) => sum + (entry.current_total_value || 0),
-        0
+      console.log(
+        `📸 Creating portfolio snapshot for ${date} (${triggerType})`
       );
 
-      // FIXED: Check if entry already exists for this date
+      // Check if snapshot already exists for this date
       const existingStmt = this.db.prepare(`
-      SELECT notes FROM portfolio_evolution 
+      SELECT id, notes FROM portfolio_evolution 
       WHERE snapshot_date = ?
     `);
+      existingStmt.bind([date]);
 
-      let existingEntry = null;
-      existingStmt.bind([snapshotDate]);
+      let existingSnapshot = null;
       if (existingStmt.step()) {
-        existingEntry = existingStmt.getAsObject();
+        existingSnapshot = existingStmt.getAsObject();
       }
       existingStmt.free();
 
-      let finalNotes = note || `Portfolio ${type}`;
+      // Get accurate portfolio state as of this date
+      const portfolioState = await this.getPortfolioStateAsOfDate(date);
 
-      if (existingEntry && existingEntry.notes) {
-        // Entry exists - append new note with bullet point
-        const existingNotes = existingEntry.notes;
-        // Only append if the new note is different from existing
-        if (!existingNotes.includes(finalNotes)) {
-          finalNotes = `${existingNotes}\n• ${finalNotes}`;
-        } else {
-          finalNotes = existingNotes; // Don't duplicate identical notes
+      if (existingSnapshot) {
+        // Update existing snapshot with new notes and accurate values
+        let updatedNotes = existingSnapshot.notes || "";
+
+        if (notes && notes.trim() !== "") {
+          if (updatedNotes && !updatedNotes.includes(notes)) {
+            updatedNotes += updatedNotes.endsWith(".") ? " " : ". ";
+            updatedNotes += notes;
+          } else if (!updatedNotes) {
+            updatedNotes = notes;
+          }
         }
+
+        const updateStmt = this.db.prepare(`
+        UPDATE portfolio_evolution 
+        SET 
+          total_portfolio_value = ?,
+          total_unrealized_gain = ?,
+          total_realized_gain = ?,
+          total_options_count = ?,
+          active_options_count = ?,
+          notes = ?
+        WHERE snapshot_date = ?
+      `);
+
+        updateStmt.run([
+          portfolioState.totalCurrentValue,
+          portfolioState.totalUnrealizedGain,
+          portfolioState.totalRealizedGain,
+          portfolioState.totalOptionsCount,
+          portfolioState.activeOptionsCount,
+          updatedNotes,
+          date,
+        ]);
+        updateStmt.free();
+
+        console.log(`✅ Updated existing portfolio snapshot for ${date}`);
       } else {
-        // New entry - add bullet point for consistency
-        finalNotes = `• ${finalNotes}`;
+        // Create new snapshot with accurate values
+        const insertStmt = this.db.prepare(`
+        INSERT INTO portfolio_evolution (
+          snapshot_date,
+          total_portfolio_value,
+          total_unrealized_gain,
+          total_realized_gain,
+          total_options_count,
+          active_options_count,
+          notes
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+
+        insertStmt.run([
+          date,
+          portfolioState.totalCurrentValue,
+          portfolioState.totalUnrealizedGain,
+          portfolioState.totalRealizedGain,
+          portfolioState.totalOptionsCount,
+          portfolioState.activeOptionsCount,
+          notes,
+        ]);
+        insertStmt.free();
+
+        console.log(`✅ Created new portfolio snapshot for ${date}`);
       }
 
-      console.log(`📝 Evolution note for ${snapshotDate}: ${finalNotes}`);
-
-      // FIXED: Use INSERT OR REPLACE but preserve and concatenate notes
-      const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO portfolio_evolution 
-      (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-      stmt.run([
-        snapshotDate,
-        currentTotalValue || 0,
-        0, // unrealized gain - calculate later if needed
-        0, // realized gain - calculate later if needed
-        0, // total options count - calculate later if needed
-        0, // active options count - calculate later if needed
-        finalNotes,
-      ]);
-
-      stmt.free();
       this.saveDatabase();
-
-      console.log(
-        `✅ Created/updated portfolio evolution snapshot for ${snapshotDate}: ${finalNotes}`
-      );
+      return Promise.resolve({ success: true });
     } catch (error) {
-      console.error("Error creating portfolio snapshot:", error);
-      // Don't throw - this is not critical
+      console.error(`❌ Error creating portfolio snapshot for ${date}:`, error);
+      return Promise.reject(error);
     }
   }
+  async recalculateEntireEvolutionTimeline() {
+    try {
+      console.log("🔄 Manually recalculating entire evolution timeline...");
 
+      // Get the earliest evolution entry date
+      const earliestStmt = this.db.prepare(`
+      SELECT MIN(snapshot_date) as earliest_date 
+      FROM portfolio_evolution
+    `);
+
+      let earliestDate = null;
+      if (earliestStmt.step()) {
+        const result = earliestStmt.getAsObject();
+        earliestDate = result.earliest_date;
+      }
+      earliestStmt.free();
+
+      if (earliestDate) {
+        console.log(`📅 Recalculating from earliest date: ${earliestDate}`);
+        await this.recalculateEvolutionFromDate(earliestDate);
+        console.log("✅ Entire evolution timeline recalculated");
+      } else {
+        console.log("ℹ️ No evolution entries found to recalculate");
+      }
+    } catch (error) {
+      console.error("❌ Error in manual evolution recalculation:", error);
+      throw error;
+    }
+  }
+  async debugEvolutionConsistency() {
+    try {
+      console.log("🔍 Checking evolution timeline consistency...");
+
+      // Get all evolution entries with sales dates
+      const stmt = this.db.prepare(`
+      SELECT 
+        e.snapshot_date,
+        e.total_portfolio_value,
+        e.notes,
+        s.sale_date,
+        s.quantity_sold,
+        s.sale_price
+      FROM portfolio_evolution e
+      LEFT JOIN sales_transactions s ON DATE(e.snapshot_date) = DATE(s.sale_date)
+      ORDER BY e.snapshot_date DESC
+      LIMIT 10
+    `);
+
+      const rows = [];
+      while (stmt.step()) {
+        rows.push(stmt.getAsObject());
+      }
+      stmt.free();
+
+      console.table(rows);
+
+      // Check for potential issues
+      for (let i = 0; i < rows.length - 1; i++) {
+        const current = rows[i];
+        const next = rows[i + 1];
+
+        const change =
+          current.total_portfolio_value - next.total_portfolio_value;
+        const changePercent = (change / next.total_portfolio_value) * 100;
+
+        if (Math.abs(changePercent) > 10) {
+          console.warn(
+            `⚠️ Large change detected: ${current.snapshot_date} vs ${next.snapshot_date}: ${changePercent.toFixed(1)}%`
+          );
+          console.warn(
+            `Current: €${current.total_portfolio_value}, Previous: €${next.total_portfolio_value}`
+          );
+          console.warn(`Notes: "${current.notes}"`);
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error in evolution consistency check:", error);
+    }
+  }
   // Database export functionality
   async exportDatabase() {
     try {
