@@ -867,5 +867,32 @@ ipcMain.handle("debug-database-state", async () => {
     return { error: error.message };
   }
 });
+ipcMain.handle("export-database-data", async () => {
+  try {
+    console.log("📤 Exporting database data for snapshot...");
+    const exportData = await portfolioDb.exportDatabase();
+    return { success: true, data: exportData };
+  } catch (error) {
+    console.error("❌ Error exporting database data:", error);
+    return { success: false, error: error.message };
+  }
+});
+
+// Import database from data object
+ipcMain.handle("import-database-data", async (event, importData, mergeMode = false) => {
+  try {
+    console.log("📥 Importing database from data object...");
+    
+    if (!importData || !importData.metadata || !importData.portfolioEntries) {
+      throw new Error("Invalid import data format");
+    }
+    
+    const importResult = await portfolioDb.importDatabase(importData, mergeMode);
+    return { success: true, importedEntries: importResult.importedEntries || 0 };
+  } catch (error) {
+    console.error("❌ Error importing database data:", error);
+    return { success: false, error: error.message };
+  }
+});
 
 console.log("🚀 KBC ESOP Portfolio Tracker v0.1 - Main process initialized");

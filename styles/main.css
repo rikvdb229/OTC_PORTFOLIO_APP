@@ -3275,3 +3275,182 @@ body {
   transform: none !important;
   box-shadow: none !important;
 }
+/**
+ * ===== UNDO/REDO BUTTON STYLES =====
+ * Add these styles to your main.css or create a new CSS file
+ * Integrates with existing header button styling
+ */
+
+/* Undo/Redo Button Group */
+.undo-redo-group {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* Tight spacing between undo/redo buttons */
+  margin-right: 12px; /* Space from next element */
+}
+
+/* Base Undo/Redo Button Styling */
+.btn-undo,
+.btn-redo {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 16px !important;
+  border: 2px solid transparent !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  white-space: nowrap !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer;
+  font-family: inherit;
+  min-width: 80px; /* Smaller than other header buttons */
+}
+
+/* Undo Button - Enabled State */
+.btn-undo:not(:disabled) {
+  background: linear-gradient(135deg, #10b981, #059669) !important;
+  color: #fff !important;
+  border-color: #059669 !important;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
+}
+
+.btn-undo:not(:disabled):hover {
+  background: linear-gradient(135deg, #059669, #047857) !important;
+  border-color: #047857 !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+/* Redo Button - Enabled State */
+.btn-redo:not(:disabled) {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: #fff !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+.btn-redo:not(:disabled):hover {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+  border-color: #1d4ed8 !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+  transform: translateY(-1px);
+}
+
+/* Disabled State for Both Buttons */
+.btn-undo:disabled,
+.btn-redo:disabled {
+  background: rgba(156, 163, 175, 0.5) !important;
+  color: rgba(107, 114, 128, 0.7) !important;
+  border-color: rgba(156, 163, 175, 0.3) !important;
+  box-shadow: none !important;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-undo:disabled:hover,
+.btn-redo:disabled:hover {
+  transform: none;
+  background: rgba(156, 163, 175, 0.5) !important;
+  box-shadow: none !important;
+}
+
+/* Active/Pressed State */
+.btn-undo:not(:disabled):active {
+  background: linear-gradient(135deg, #047857, #065f46) !important;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+}
+
+.btn-redo:not(:disabled):active {
+  background: linear-gradient(135deg, #1d4ed8, #1e40af) !important;
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .undo-redo-group {
+    gap: 2px;
+    margin-right: 8px;
+  }
+  
+  .btn-undo,
+  .btn-redo {
+    height: 40px !important;
+    padding: 0 12px !important;
+    font-size: 13px !important;
+    min-width: 70px;
+  }
+}
+
+@media (max-width: 480px) {
+  .undo-redo-group {
+    flex-direction: column;
+    gap: 4px;
+    margin-right: 6px;
+  }
+  
+  .btn-undo,
+  .btn-redo {
+    height: 36px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+    min-width: 60px;
+  }
+}
+
+/* Keyboard Focus States */
+.btn-undo:focus,
+.btn-redo:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+}
+
+/* Loading State (optional for future use) */
+.btn-undo.loading,
+.btn-redo.loading {
+  position: relative;
+  color: transparent !important;
+}
+
+.btn-undo.loading::after,
+.btn-redo.loading::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Integration with existing header layout */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+}
+
+/* Ensure proper spacing between all header elements */
+.undo-redo-group + #priceUpdateNotification {
+  margin-left: 0; /* Remove extra margin since gap handles spacing */
+}
+
+/* Notification positioning update */
+#priceUpdateNotification {
+  order: -1; /* Move notification to the left of undo/redo buttons */
+  margin-right: 8px;
+}

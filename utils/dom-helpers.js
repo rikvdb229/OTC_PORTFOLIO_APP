@@ -11,7 +11,8 @@
  */
 function initializeApplicationElements(app) {
   console.log("🔍 Initializing DOM elements with helpers...");
-
+app.undoBtn = this.safeGetElementById("undoBtn");
+app.redoBtn = this.safeGetElementById("redoBtn");
   // Define all elements in one organized structure
   const elementMap = {
     // Header elements

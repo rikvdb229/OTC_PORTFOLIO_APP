@@ -52,6 +52,10 @@ class EnhancedPortfolioApp {
 
     window.IPCCommunication.Price.checkPriceUpdateStatus(this);
     this.checkAutoUpdate();
+    // Initialize undo/redo system
+setTimeout(async () => {
+  await window.UndoRedoManager.initialize(this);
+}, 100);
   }
 
   // ADD HERE: New method to initialize footer (add this method to your class)

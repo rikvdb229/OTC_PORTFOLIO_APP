@@ -66,6 +66,25 @@ const NavigationHandlers = {
     }
   },
 };
+const UndoRedoHandlers = {
+  initialize(app) {
+    console.log("🔄 Setting up undo/redo handlers...");
+
+    if (app.undoBtn) {
+      window.DOMHelpers.safeAddEventListener(app.undoBtn, "click", () => {
+        window.UndoRedoManager.undo();
+      });
+    }
+
+    if (app.redoBtn) {
+      window.DOMHelpers.safeAddEventListener(app.redoBtn, "click", () => {
+        window.UndoRedoManager.redo();
+      });
+    }
+
+    console.log("✅ Undo/redo handlers initialized");
+  }
+};
 
 /**
  * Settings panel event handlers
@@ -566,6 +585,7 @@ const EventHandlerCoordinator = {
       DynamicControlHandlers,
       ModalHandlers,
       FormHandlers,
+      UndoRedoHandlers,
     ];
 
     let totalHandlers = 0;
@@ -601,6 +621,7 @@ window.EventHandlers = {
   ModalHandlers,
   FormHandlers,
   EventHandlerCoordinator,
+  UndoRedoHandlers,
 };
 
 // Debug logging
