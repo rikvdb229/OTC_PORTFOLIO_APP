@@ -112,8 +112,7 @@ class ChromeDownloader {
         console.log("❌ Chrome executable not found in download directory");
         return null;
       }
-    } catch (error) {
-      console.error("Error verifying download:", error.message);
+    } catch (_error) {      console.error("Error verifying download:", error.message);
       return null;
     }
   }
@@ -136,8 +135,7 @@ class ChromeDownloader {
 
       console.log("✅ Chromium copied successfully");
       return true;
-    } catch (error) {
-      console.warn("⚠️ Copy failed:", error.message);
+    } catch (_error) {      console.warn("⚠️ Copy failed:", error.message);
       return false;
     }
   }

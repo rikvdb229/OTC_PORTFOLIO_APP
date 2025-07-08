@@ -60,8 +60,7 @@ class CSSMigrator {
       }
 
       this.reportResults();
-    } catch (error) {
-      console.error("❌ Migration failed:", error.message);
+    } catch (_error) {      console.error("❌ Migration failed:", error.message);
       console.log("💡 Use git to revert changes if needed");
       process.exit(1);
     }

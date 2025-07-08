@@ -50,8 +50,7 @@ class UndoRedoManager {
         this.currentSnapshot = snapshot.data;
         console.log("📸 Initial snapshot captured");
       }
-    } catch (error) {
-      console.error("❌ Failed to take initial snapshot:", error);
+    } catch (_error) {      console.error("❌ Failed to take initial snapshot:", error);
     }
   }
 
@@ -101,8 +100,7 @@ class UndoRedoManager {
       console.log(`✅ Snapshot taken: ${operationName} (${this.undoStack.length} in stack)`);
       return true;
       
-    } catch (error) {
-      console.error("❌ Error taking snapshot:", error);
+    } catch (_error) {      console.error("❌ Error taking snapshot:", error);
       return false;
     }
   }
@@ -186,8 +184,7 @@ async undo() {
       this.showNotification("Undo failed: " + (importResult.error || "Unknown error"), "error");
     }
     
-  } catch (error) {
-    console.error("❌ Error during undo:", error);
+  } catch (_error) {    console.error("❌ Error during undo:", error);
     this.showNotification("Undo error occurred: " + error.message, "error");
   } finally {
     this.isOperationInProgress = false;
@@ -272,8 +269,7 @@ async redo() {
       this.showNotification("Redo failed: " + (importResult.error || "Unknown error"), "error");
     }
     
-  } catch (error) {
-    console.error("❌ Error during redo:", error);
+  } catch (_error) {    console.error("❌ Error during redo:", error);
     this.showNotification("Redo error occurred: " + error.message, "error");
   } finally {
     this.isOperationInProgress = false;
@@ -299,8 +295,7 @@ async redo() {
       await this.reloadCurrentTabData(currentTab);
       
       console.log("🔄 App data reloaded after undo/redo");
-    } catch (error) {
-      console.error("❌ Error reloading app data:", error);
+    } catch (_error) {      console.error("❌ Error reloading app data:", error);
     }
   }
 
@@ -376,8 +371,7 @@ async redo() {
         default:
           console.log(`ℹ️ No specific reload needed for tab: ${tabName}`);
       }
-    } catch (error) {
-      console.error(`❌ Error reloading ${tabName} tab data:`, error);
+    } catch (_error) {      console.error(`❌ Error reloading ${tabName} tab data:`, error);
     }
   }
 

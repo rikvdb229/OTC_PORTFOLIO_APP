@@ -189,8 +189,7 @@ function safeQuerySelector(selector, required = false) {
       console.error(`❌ Required element not found: ${selector}`);
     }
     return element;
-  } catch (error) {
-    console.error(`❌ Error selecting element "${selector}":`, error);
+  } catch (_error) {    console.error(`❌ Error selecting element "${selector}":`, error);
     return null;
   }
 }
@@ -208,8 +207,7 @@ function safeGetElementById(id, required = false) {
       console.error(`❌ Required element not found: #${id}`);
     }
     return element;
-  } catch (error) {
-    console.error(`❌ Error getting element by ID "${id}":`, error);
+  } catch (_error) {    console.error(`❌ Error getting element by ID "${id}":`, error);
     return null;
   }
 }
@@ -222,8 +220,7 @@ function safeGetElementById(id, required = false) {
 function safeQuerySelectorAll(selector) {
   try {
     return document.querySelectorAll(selector);
-  } catch (error) {
-    console.error(`❌ Error selecting elements "${selector}":`, error);
+  } catch (_error) {    console.error(`❌ Error selecting elements "${selector}":`, error);
     return document.querySelectorAll("never-matches"); // Empty NodeList
   }
 }
@@ -305,8 +302,7 @@ function safeAddEventListener(element, event, handler, options = false) {
   try {
     element.addEventListener(event, handler, options);
     return true;
-  } catch (error) {
-    console.error(`❌ Error adding ${event} listener:`, error);
+  } catch (_error) {    console.error(`❌ Error adding ${event} listener:`, error);
     return false;
   }
 }
@@ -330,8 +326,7 @@ function safeSetContent(element, content, isHTML = false) {
       element.textContent = content;
     }
     return true;
-  } catch (error) {
-    console.error(`❌ Error setting content:`, error);
+  } catch (_error) {    console.error(`❌ Error setting content:`, error);
     return false;
   }
 }
@@ -351,8 +346,7 @@ function safeToggleVisibility(element, show, displayType = "block") {
   try {
     element.style.display = show ? displayType : "none";
     return true;
-  } catch (error) {
-    console.error(`❌ Error toggling visibility:`, error);
+  } catch (_error) {    console.error(`❌ Error toggling visibility:`, error);
     return false;
   }
 }
@@ -377,8 +371,7 @@ function safeGetFormData(formElement) {
     }
 
     return data;
-  } catch (error) {
-    console.error(`❌ Error getting form data:`, error);
+  } catch (_error) {    console.error(`❌ Error getting form data:`, error);
     return {};
   }
 }
@@ -394,8 +387,7 @@ function safeGetElementWithFallbacks(selectors) {
       if (element) {
         return element;
       }
-    } catch (error) {
-      console.warn(`Error trying selector "${selector}":`, error);
+    } catch (_error) {      console.warn(`Error trying selector "${selector}":`, error);
     }
   }
   return null;

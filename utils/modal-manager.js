@@ -17,8 +17,7 @@ const ModalManager = {
     if (setupCallback && typeof setupCallback === "function") {
       try {
         setupCallback();
-      } catch (error) {
-        console.error(`❌ Error in modal setup callback:`, error);
+      } catch (_error) {        console.error(`❌ Error in modal setup callback:`, error);
       }
     }
 
@@ -501,8 +500,7 @@ const ModalManager = {
       });
 
       return true;
-    } catch (error) {
-      console.error("❌ Error in showEditSaleModal:", error);
+    } catch (_error) {      console.error("❌ Error in showEditSaleModal:", error);
       alert("Error opening edit sale modal: " + error.message);
       return false;
     }
@@ -621,8 +619,7 @@ const ModalManager = {
         if (app.editSaleInputHandler) {
           app.editSaleInputHandler();
         }
-      } catch (error) {
-        console.error("❌ EDIT SALE: Error fetching price for date:", error);
+      } catch (_error) {        console.error("❌ EDIT SALE: Error fetching price for date:", error);
 
         // Restore visual state
         salePriceInput.style.opacity = "1";
@@ -805,8 +802,7 @@ const ModalManager = {
           console.log(
             "✅ Edit sale calculations updated with stored tax values"
           );
-        } catch (error) {
-          console.error("❌ Error updating edit sale calculations:", error);
+        } catch (_error) {          console.error("❌ Error updating edit sale calculations:", error);
         }
       }
 
@@ -833,8 +829,7 @@ const ModalManager = {
       }
 
       console.log("✅ Modal population completed successfully");
-    } catch (error) {
-      console.error("❌ Error populating edit sale modal:", error);
+    } catch (_error) {      console.error("❌ Error populating edit sale modal:", error);
       alert("Error setting up edit sale form: " + error.message);
     }
   },
@@ -941,8 +936,7 @@ const ModalManager = {
       } else {
         console.error("❌ Delete confirmation modal element not found");
       }
-    } catch (error) {
-      console.error("❌ Error showing delete confirmation modal:", error);
+    } catch (_error) {      console.error("❌ Error showing delete confirmation modal:", error);
       alert("Error showing delete confirmation: " + error.message);
     }
   },
@@ -1163,8 +1157,7 @@ const ModalManager = {
           }
         }, 50);
       });
-    } catch (error) {
-      console.error("Error showing option info:", error);
+    } catch (_error) {      console.error("Error showing option info:", error);
       alert("Error loading option information: " + error.message);
     }
   },
@@ -1372,8 +1365,7 @@ const ModalManager = {
       });
 
       return true;
-    } catch (error) {
-      console.error("❌ Error in showSellModal:", error);
+    } catch (_error) {      console.error("❌ Error in showSellModal:", error);
       alert("Error opening sell modal: " + error.message);
       return false;
     }
@@ -1458,8 +1450,7 @@ const ModalManager = {
         if (typeof app.calculateSaleProceeds === "function") {
           app.calculateSaleProceeds();
         }
-      } catch (error) {
-        console.error("❌ Error fetching price for date:", error);
+      } catch (_error) {        console.error("❌ Error fetching price for date:", error);
 
         // Re-enable input and set fallback
         salePriceInput.disabled = false;
@@ -1611,8 +1602,7 @@ const ModalManager = {
           result?.error || result?.message || "Unknown error occurred";
         throw new Error(errorMsg);
       }
-    } catch (error) {
-      console.error("❌ Error deleting database:", error);
+    } catch (_error) {      console.error("❌ Error deleting database:", error);
       window.UIStateManager.showError(
         "Error deleting database: " + error.message
       );
@@ -1801,8 +1791,7 @@ const ModalManager = {
 
         try {
           await this.handleFileSelection(app);
-        } catch (error) {
-          console.error("❌ Error in file selection:", error);
+        } catch (_error) {          console.error("❌ Error in file selection:", error);
           alert("Error selecting file: " + error.message);
         }
       };
@@ -1833,8 +1822,7 @@ const ModalManager = {
 
         try {
           await this.executeImport(app);
-        } catch (error) {
-          console.error("❌ Error in import execution:", error);
+        } catch (_error) {          console.error("❌ Error in import execution:", error);
         }
       };
       console.log("✅ Confirm listener attached to app.confirmDatabaseAction");
@@ -1879,8 +1867,7 @@ const ModalManager = {
       } else {
         console.log("📁 File selection cancelled");
       }
-    } catch (error) {
-      console.error("❌ Error selecting file:", error);
+    } catch (_error) {      console.error("❌ Error selecting file:", error);
       window.UIStateManager.showError("Error selecting file: " + error.message);
     }
   },
@@ -2017,8 +2004,7 @@ const ModalManager = {
         window.UIStateManager.showError("Import cancelled or failed");
         console.log("❌ Database import cancelled or failed");
       }
-    } catch (error) {
-      console.error("❌ Error importing database:", error);
+    } catch (_error) {      console.error("❌ Error importing database:", error);
       window.UIStateManager.showError(
         "Error importing database: " + error.message
       );

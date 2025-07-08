@@ -25,8 +25,7 @@ if (!fs.existsSync(chromiumPath)) {
     });
 
     console.log("✅ Chromium downloaded successfully");
-  } catch (error) {
-    console.error("❌ Failed to download Chromium:", error.message);
+  } catch (_error) {    console.error("❌ Failed to download Chromium:", error.message);
 
     // Try alternative method
     try {

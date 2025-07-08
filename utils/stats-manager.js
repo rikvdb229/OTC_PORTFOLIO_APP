@@ -1,34 +1,5 @@
 const StatsManager = {
   /**
-   * Update portfolio statistics in the header
-   * @param {Object} app - Application instance
-   * @param {Object} stats - Portfolio statistics object
-   */
-  updateHeaderStats(app, stats) {
-    console.log("📊 Updating header stats...");
-
-    const headerTotalValue = document.getElementById("totalPortfolioValue");
-     const headerSellableValue = document.getElementById("totalSellableValue");
-    const headerActiveOptions = document.getElementById("totalOptions");
-    const headerLastUpdate = document.getElementById("lastPriceUpdate");
-
-    if (headerTotalValue && app.formatCurrency) {
-      headerTotalValue.textContent = app.formatCurrency(stats.totalValue);
-    }
-    if (headerSellableValue) {
-    headerSellableValue.textContent = app.helpers.formatCurrency(stats.totalSellableValue);
-  } 
-
-    if (headerActiveOptions) {
-      headerActiveOptions.textContent = stats.totalQuantityFormatted || "0";
-    }
-
-    if (headerLastUpdate) {
-      headerLastUpdate.textContent = stats.latestUpdateFormatted || "Never";
-    }
-  },
-
-  /**
    * Update portfolio statistics using business logic
    * @param {Object} app - Application instance
    * @param {Array} overview - Portfolio overview data
@@ -131,8 +102,7 @@ const StatsManager = {
         portfolioChangeEl.className = "stat-change";
         console.log("📊 No portfolio evolution data available");
       }
-    } catch (error) {
-      console.log("Could not get portfolio change data:", error);
+    } catch (_error) {      console.log("Could not get portfolio change data:", error);
       const portfolioChangeEl = document.getElementById("portfolioChange");
       if (portfolioChangeEl) {
         portfolioChangeEl.textContent = "---";

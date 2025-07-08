@@ -70,8 +70,7 @@ function analyzeCurrentRenderer() {
     console.log("");
     console.log("📋 RECOMMENDED NEXT STEP:");
     console.log("Extract the simplest methods first (update/wrapper methods)");
-  } catch (error) {
-    console.error("Error reading renderer.js:", error.message);
+  } catch (_error) {    console.error("Error reading renderer.js:", error.message);
     console.log("");
     console.log(
       "📝 ALTERNATIVE: Please copy/paste the method names from your renderer.js"

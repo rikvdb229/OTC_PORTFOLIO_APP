@@ -43,8 +43,7 @@ const SettingsManager = {
       if (settings.auto_update_prices && app.autoUpdatePrices) {
         app.autoUpdatePrices.checked = settings.auto_update_prices === "true";
       }
-    } catch (error) {
-      console.error("Error loading settings:", error);
+    } catch (_error) {      console.error("Error loading settings:", error);
     }
   },
 
@@ -73,8 +72,7 @@ const SettingsManager = {
         app.saveSettingsBtn.textContent = originalText;
         app.saveSettingsBtn.style.backgroundColor = "";
       }, 2000);
-    } catch (error) {
-      console.error("Error saving settings:", error);
+    } catch (_error) {      console.error("Error saving settings:", error);
 
       // Show error feedback
       const originalText = app.saveSettingsBtn.textContent;

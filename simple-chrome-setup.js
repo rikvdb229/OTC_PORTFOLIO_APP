@@ -66,8 +66,7 @@ async function ensurePuppeteerChromium() {
     console.log("📥 Installing Puppeteer...");
     try {
       execSync("npm install puppeteer", { stdio: "inherit" });
-    } catch (error) {
-      console.error("❌ Failed to install Puppeteer:", error.message);
+    } catch (_error) {      console.error("❌ Failed to install Puppeteer:", error.message);
       return null;
     }
   }
@@ -115,8 +114,7 @@ const path = require('path');
     }
     
     process.exit(0);
-  } catch (error) {
-    console.error('❌ Chromium download/launch failed:', error.message);
+  } catch (_error) {    console.error('❌ Chromium download/launch failed:', error.message);
     process.exit(1);
   }
 })();
@@ -156,8 +154,7 @@ const path = require('path');
     }
 
     throw new Error("Chromium directory not found after download");
-  } catch (error) {
-    console.error("❌ Chromium download failed:", error.message);
+  } catch (_error) {    console.error("❌ Chromium download failed:", error.message);
     console.log("💡 Fallback: Will rely on system Chrome for distribution");
     return null;
   }
@@ -206,8 +203,7 @@ function updatePackageJsonForBundling(chromiumPath) {
     // Write back to package.json
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
     console.log("✅ package.json updated for Chrome bundling");
-  } catch (error) {
-    console.error("❌ Failed to update package.json:", error.message);
+  } catch (_error) {    console.error("❌ Failed to update package.json:", error.message);
   }
 }
 
@@ -232,8 +228,7 @@ async function testChromeSetup() {
       console.log("❌ Chrome setup test: FAILED");
       console.log(`   Error: ${testResult.error}`);
     }
-  } catch (error) {
-    console.log("❌ Chrome test failed:", error.message);
+  } catch (_error) {    console.log("❌ Chrome test failed:", error.message);
   }
 }
 

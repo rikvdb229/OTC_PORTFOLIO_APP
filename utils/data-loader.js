@@ -27,8 +27,7 @@ async function loadPortfolioData() {
     window.StatsManager.updateHeaderStats(app, overview);
 
     console.log("✅ Portfolio data loaded successfully");
-  } catch (error) {
-    console.error("❌ Error loading portfolio data:", error);
+  } catch (_error) {    console.error("❌ Error loading portfolio data:", error);
     // Initialize empty data on error
     const app = this.app || this;
     app.portfolioData = [];
@@ -59,8 +58,7 @@ async function loadEvolutionData(days = "all") {
     this.app.htmlGen.renderEvolutionTable(evolutionData);
 
     console.log("✅ Evolution data loaded successfully");
-  } catch (error) {
-    console.error("❌ Error loading evolution data:", error);
+  } catch (_error) {    console.error("❌ Error loading evolution data:", error);
     // Initialize empty data on error
     this.app.evolutionData = [];
   }
@@ -149,8 +147,7 @@ async function loadChartData(period = "all") {
     }
 
     console.log("✅ Chart data loaded successfully");
-  } catch (error) {
-    console.error("❌ Error in loadChartData:", error);
+  } catch (_error) {    console.error("❌ Error in loadChartData:", error);
   }
 }
 confirm;
@@ -179,8 +176,7 @@ async function updateTax(app) {
     app.closeModals();
     await app.loadPortfolioData();
     console.log(`✅ Updated tax amount to €${newTaxAmount}`);
-  } catch (error) {
-    console.error("Error updating tax:", error);
+  } catch (_error) {    console.error("Error updating tax:", error);
     alert("Error updating tax amount");
   }
 }

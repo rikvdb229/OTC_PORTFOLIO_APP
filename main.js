@@ -51,8 +51,7 @@ process.on("uncaughtException", (error) => {
   dialog.showErrorBox("Main Process Error", error.message);
 });
 
-process.on("unhandledRejection", (reason, promise) => {
-  console.error("Unhandled Rejection:", reason);
+process.on("unhandledRejection", (reason, _promise) => {  console.error("Unhandled Rejection:", reason);
 });
 
 function createWindow() {
@@ -127,8 +126,7 @@ async function initializeApp() {
     portfolioDb = new PortfolioDatabase();
     await portfolioDb.initialize();
     console.log("✅ Portfolio database initialized successfully");
-  } catch (error) {
-    console.error("❌ Failed to initialize portfolio database:", error);
+  } catch (_error) {    console.error("❌ Failed to initialize portfolio database:", error);
     dialog.showErrorBox(
       "Database Error",
       "Failed to initialize portfolio database: " + error.message
@@ -188,8 +186,7 @@ ipcMain.handle("select-import-file", async () => {
     }
 
     return { success: false, message: "File selection cancelled" };
-  } catch (error) {
-    console.error("Error selecting import file:", error);
+  } catch (_error) {    console.error("Error selecting import file:", error);
     return { success: false, error: error.message };
   }
 });
@@ -209,8 +206,7 @@ ipcMain.handle(
         mergeMode
       );
       return { success: true, importedEntries: importResult.importedEntries };
-    } catch (error) {
-      console.error("Error importing database from file:", error);
+    } catch (_error) {      console.error("Error importing database from file:", error);
       return { success: false, error: error.message };
     }
   }
@@ -240,8 +236,7 @@ ipcMain.handle("delete-database", async () => {
     } else {
       throw new Error(result.error || "Failed to delete database");
     }
-  } catch (error) {
-    console.error("❌ Error deleting database:", error);
+  } catch (_error) {    console.error("❌ Error deleting database:", error);
     return {
       success: false,
       error: error.message || "Unknown error occurred while deleting database",
@@ -374,8 +369,7 @@ ipcMain.handle("scrape-data", async (event) => {
                     }
                   }
                   return null;
-                } catch (error) {
-                  console.warn(`⚠️ Error parsing row ${index}:`, error);
+                } catch (_error) {                  console.warn(`⚠️ Error parsing row ${index}:`, error);
                   return null;
                 }
               })
@@ -483,8 +477,7 @@ ipcMain.handle("get-latest-csv", async () => {
 ipcMain.handle("get-portfolio-overview", async () => {
   try {
     return await portfolioDb.getPortfolioOverview();
-  } catch (error) {
-    console.error("Error getting portfolio overview:", error);
+  } catch (_error) {    console.error("Error getting portfolio overview:", error);
     return { error: error.message };
   }
 });
@@ -494,8 +487,7 @@ ipcMain.handle("get-latest-price-date", async () => {
       return null;
     }
     return await portfolioDb.getLatestPriceDate();
-  } catch (error) {
-    console.error("Error getting latest price date:", error);
+  } catch (_error) {    console.error("Error getting latest price date:", error);
     return null;
   }
 });
@@ -532,8 +524,7 @@ ipcMain.handle(
 
       console.log("=== END MAIN DEBUG ===");
       return existingGrant;
-    } catch (error) {
-      console.error("❌ Error in check-existing-grant:", error);
+    } catch (_error) {      console.error("❌ Error in check-existing-grant:", error);
       return { error: error.message };
     }
   }
@@ -550,8 +541,7 @@ ipcMain.handle(
         additionalTaxAmount
       );
       return result;
-    } catch (error) {
-      console.error("Error merging grant:", error);
+    } catch (_error) {      console.error("Error merging grant:", error);
       return { error: error.message };
     }
   }
@@ -576,8 +566,7 @@ ipcMain.handle(
         taxAmount
       );
       return result;
-    } catch (error) {
-      console.error("Error adding portfolio entry:", error);
+    } catch (_error) {      console.error("Error adding portfolio entry:", error);
       return { error: error.message };
     }
   }
@@ -586,16 +575,14 @@ ipcMain.handle(
 ipcMain.handle("get-sale-details", async (event, saleId) => {
   try {
     return await portfolioDb.getSaleDetails(saleId);
-  } catch (error) {
-    console.error("Error getting sale details:", error);
+  } catch (_error) {    console.error("Error getting sale details:", error);
     return { error: error.message };
   }
 });
 ipcMain.handle("get-sale-with-portfolio-data", async (event, saleId) => {
   try {
     return await portfolioDb.getSaleWithPortfolioData(saleId);
-  } catch (error) {
-    console.error("Error getting sale with portfolio data:", error);
+  } catch (_error) {    console.error("Error getting sale with portfolio data:", error);
     return { error: error.message };
   }
 });
@@ -611,8 +598,7 @@ ipcMain.handle(
       );
       console.log(`📡 IPC: get-price-for-date result:`, result);
       return result;
-    } catch (error) {
-      console.error("❌ IPC: Error getting price for date:", error);
+    } catch (_error) {      console.error("❌ IPC: Error getting price for date:", error);
       return { error: error.message };
     }
   }
@@ -621,8 +607,7 @@ ipcMain.handle("recalculate-evolution-timeline", async () => {
   try {
     await portfolioDb.recalculateEntireEvolutionTimeline();
     return { success: true };
-  } catch (error) {
-    console.error("Error recalculating evolution timeline:", error);
+  } catch (_error) {    console.error("Error recalculating evolution timeline:", error);
     return { error: error.message };
   }
 });
@@ -633,16 +618,14 @@ ipcMain.handle("update-sale", async (event, updatedSale) => {
     const result = await portfolioDb.updateSale(updatedSale);
     console.log("📝 IPC: update-sale result:", result);
     return result;
-  } catch (error) {
-    console.error("❌ IPC: update-sale error:", error);
+  } catch (_error) {    console.error("❌ IPC: update-sale error:", error);
     return { error: error.message };
   }
 });
 ipcMain.handle("update-tax-amount", async (event, entryId, taxAmount) => {
   try {
     return await portfolioDb.updateTaxAmount(entryId, taxAmount);
-  } catch (error) {
-    console.error("Error updating tax amount:", error);
+  } catch (_error) {    console.error("Error updating tax amount:", error);
     return { error: error.message };
   }
 });
@@ -650,8 +633,7 @@ ipcMain.handle("update-tax-amount", async (event, entryId, taxAmount) => {
 ipcMain.handle("delete-portfolio-entry", async (event, entryId) => {
   try {
     return await portfolioDb.deletePortfolioEntry(entryId);
-  } catch (error) {
-    console.error("Error deleting portfolio entry:", error);
+  } catch (_error) {    console.error("Error deleting portfolio entry:", error);
     return { error: error.message };
   }
 });
@@ -659,8 +641,7 @@ ipcMain.handle("delete-portfolio-entry", async (event, entryId) => {
 ipcMain.handle("get-options-by-grant-date", async (event, grantDate) => {
   try {
     return await portfolioDb.getOptionsByGrantDate(grantDate);
-  } catch (error) {
-    console.error("Error getting options by grant date:", error);
+  } catch (_error) {    console.error("Error getting options by grant date:", error);
     return { error: error.message };
   }
 });
@@ -668,8 +649,7 @@ ipcMain.handle("get-options-by-grant-date", async (event, grantDate) => {
 ipcMain.handle("get-available-exercise-prices", async () => {
   try {
     return await portfolioDb.getAvailableExercisePrices();
-  } catch (error) {
-    console.error("Error getting available exercise prices:", error);
+  } catch (_error) {    console.error("Error getting available exercise prices:", error);
     return { error: error.message };
   }
 });
@@ -686,8 +666,7 @@ ipcMain.handle(
         salePrice,
         notes
       );
-    } catch (error) {
-      console.error("Error recording sale transaction:", error);
+    } catch (_error) {      console.error("Error recording sale transaction:", error);
       return { error: error.message };
     }
   }
@@ -696,8 +675,7 @@ ipcMain.handle(
 ipcMain.handle("get-sales-history", async () => {
   try {
     return await portfolioDb.getSalesHistory();
-  } catch (error) {
-    console.error("Error getting sales history:", error);
+  } catch (_error) {    console.error("Error getting sales history:", error);
     return { error: error.message };
   }
 });
@@ -706,8 +684,7 @@ ipcMain.handle("get-sales-history", async () => {
 ipcMain.handle("get-grant-history", async () => {
   try {
     return await portfolioDb.getGrantHistory();
-  } catch (error) {
-    console.error("Error getting grant history:", error);
+  } catch (_error) {    console.error("Error getting grant history:", error);
     return { error: error.message };
   }
 });
@@ -716,8 +693,7 @@ ipcMain.handle("get-grant-history", async () => {
 ipcMain.handle("get-portfolio-evolution", async (event, days = null) => {
   try {
     return await portfolioDb.getPortfolioEvolution(days);
-  } catch (error) {
-    console.error("Error getting portfolio evolution:", error);
+  } catch (_error) {    console.error("Error getting portfolio evolution:", error);
     return { error: error.message };
   }
 });
@@ -728,8 +704,7 @@ ipcMain.handle(
   async (event, exercisePrice, grantDate) => {
     try {
       return await portfolioDb.getOptionPriceHistory(exercisePrice, grantDate);
-    } catch (error) {
-      console.error("Error getting option price history:", error);
+    } catch (_error) {      console.error("Error getting option price history:", error);
       return { error: error.message };
     }
   }
@@ -739,8 +714,7 @@ ipcMain.handle(
 ipcMain.handle("get-portfolio-events", async () => {
   try {
     return await portfolioDb.getPortfolioEvents();
-  } catch (error) {
-    console.error("Error getting portfolio events:", error);
+  } catch (_error) {    console.error("Error getting portfolio events:", error);
     return { error: error.message };
   }
 });
@@ -765,8 +739,7 @@ ipcMain.handle("export-database", async () => {
     }
 
     return { success: false, message: "Export cancelled" };
-  } catch (error) {
-    console.error("Error exporting database:", error);
+  } catch (_error) {    console.error("Error exporting database:", error);
     return { error: error.message };
   }
 });
@@ -793,8 +766,7 @@ ipcMain.handle("import-database", async (event, mergeMode = false) => {
     }
 
     return { success: false, message: "Import cancelled" };
-  } catch (error) {
-    console.error("Error importing database:", error);
+  } catch (_error) {    console.error("Error importing database:", error);
     return { error: error.message };
   }
 });
@@ -803,8 +775,7 @@ ipcMain.handle("import-database", async (event, mergeMode = false) => {
 ipcMain.handle("get-setting", async (event, key) => {
   try {
     return await portfolioDb.getSetting(key);
-  } catch (error) {
-    console.error("Error getting setting:", error);
+  } catch (_error) {    console.error("Error getting setting:", error);
     return { error: error.message };
   }
 });
@@ -815,8 +786,7 @@ ipcMain.handle("update-setting", async (event, key, value) => {
     const result = await portfolioDb.updateSetting(key, value);
     console.log(`🔍 DEBUG MAIN: updateSetting result for ${key}:`, result);
     return result;
-  } catch (error) {
-    console.error("Error updating setting:", error);
+  } catch (_error) {    console.error("Error updating setting:", error);
     return { error: error.message };
   }
 });
@@ -863,8 +833,7 @@ ipcMain.handle("debug-database-state", async () => {
       pricesCount: prices.length,
       evolutionCount: evolution.length,
     };
-  } catch (error) {
-    return { error: error.message };
+  } catch (_error) {    return { error: error.message };
   }
 });
 // Export database data (for undo/redo snapshots) - returns data object instead of saving file
@@ -877,8 +846,7 @@ ipcMain.handle("export-database-data", async () => {
       success: true, 
       data: exportData 
     };
-  } catch (error) {
-    console.error("❌ Error exporting database data:", error);
+  } catch (_error) {    console.error("❌ Error exporting database data:", error);
     return { 
       success: false, 
       error: error.message 
@@ -903,8 +871,7 @@ ipcMain.handle("import-database-data", async (event, importData, mergeMode = fal
       success: true, 
       importedEntries: importResult.importedEntries || 0
     };
-  } catch (error) {
-    console.error("❌ Error importing database data:", error);
+  } catch (_error) {    console.error("❌ Error importing database data:", error);
     return { 
       success: false, 
       error: error.message 

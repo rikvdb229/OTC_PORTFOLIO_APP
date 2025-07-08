@@ -77,8 +77,7 @@ class AppHelpers {
 
       // Clear current editing sale ID
       app.currentEditingSaleId = null;
-    } catch (error) {
-      console.error("❌ Error confirming edit sale:", error);
+    } catch (_error) {      console.error("❌ Error confirming edit sale:", error);
       alert("Error updating sale: " + error.message);
     }
   }
@@ -146,8 +145,7 @@ class AppHelpers {
       if (autoUpdate === "true") {
         setTimeout(() => this.app.updatePrices(), 2000);
       }
-    } catch (error) {
-      console.error("Error checking auto-update setting:", error);
+    } catch (_error) {      console.error("Error checking auto-update setting:", error);
     }
   }
 
@@ -327,8 +325,7 @@ class AppHelpers {
       } else {
         throw new Error(result.error || "Price update failed");
       }
-    } catch (error) {
-      console.error("❌ Price update error:", error);
+    } catch (_error) {      console.error("❌ Price update error:", error);
 
       // SAFE: Handle error case
       const progressBar =
@@ -452,8 +449,7 @@ class AppHelpers {
 
       // Clear current sell entry
       app.currentSellEntry = null;
-    } catch (error) {
-      console.error("❌ Error confirming sale:", error);
+    } catch (_error) {      console.error("❌ Error confirming sale:", error);
       alert("Error recording sale: " + error.message);
     }
   }

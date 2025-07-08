@@ -45,8 +45,7 @@ class KBCScraper {
         const os = require("os");
         dataDir = path.join(os.homedir(), "Documents", "OTC_Portfolio_Data");
       }
-    } catch (error) {
-      // Final fallback to current working directory
+    } catch (_error) {      // Final fallback to current working directory
       console.warn(
         "Could not determine user data directory, using current directory"
       );
@@ -62,8 +61,7 @@ class KBCScraper {
         fs.mkdirSync(this.downloadDir, { recursive: true });
         console.log(`✅ Created data directory: ${this.downloadDir}`);
       }
-    } catch (error) {
-      console.error(`❌ Could not create data directory: ${error.message}`);
+    } catch (_error) {      console.error(`❌ Could not create data directory: ${error.message}`);
       // Try alternative location
       this.downloadDir = path.join(
         require("os").tmpdir(),
@@ -127,8 +125,7 @@ class KBCScraper {
       }
 
       console.log(`✅ Human typed: "${text}" in ${selector}`);
-    } catch (error) {
-      console.error(`❌ Human typing failed for ${selector}:`, error);
+    } catch (_error) {      console.error(`❌ Human typing failed for ${selector}:`, error);
       throw error;
     }
   }
@@ -175,8 +172,7 @@ class KBCScraper {
 
       // Small post-click delay
       await this.humanDelay(this.humanTiming.postAction.min, 0.3);
-    } catch (error) {
-      console.error(`❌ Human click failed for ${selector}:`, error);
+    } catch (_error) {      console.error(`❌ Human click failed for ${selector}:`, error);
       throw error;
     }
   }
@@ -209,8 +205,7 @@ class KBCScraper {
       }
 
       console.log(`✅ Simulated reading with ${scrolls} scrolls`);
-    } catch (error) {
-      console.warn("⚠️ Reading simulation failed:", error);
+    } catch (_error) {      console.warn("⚠️ Reading simulation failed:", error);
     }
   }
 
@@ -246,8 +241,7 @@ class KBCScraper {
             await this.humanClick(page, selector, clickOptions);
             return true;
           }
-        } catch (error) {
-          console.warn(`⚠️ Strategy failed: ${strategy.description}`, error);
+        } catch (_error) {          console.warn(`⚠️ Strategy failed: ${strategy.description}`, error);
         }
       }
 
@@ -332,8 +326,7 @@ class KBCScraper {
           console.log(`✅ Found Chrome: ${chromePath}`);
           return chromePath;
         }
-      } catch (error) {
-        continue;
+      } catch (_error) {        continue;
       }
     }
 
@@ -554,8 +547,7 @@ class KBCScraper {
         if (cookieHandled) {
           await this.humanDelay(800, 0.3); // Wait after cookie handling
         }
-      } catch (error) {
-        console.log("⚠️ Cookie handling skipped:", error.message);
+      } catch (_error) {        console.log("⚠️ Cookie handling skipped:", error.message);
       }
 
       if (onProgress) onProgress("Setting date and submitting...");
@@ -688,8 +680,7 @@ class KBCScraper {
         message: "Data scraped successfully with human-like behavior",
         downloadDir: this.downloadDir,
       };
-    } catch (error) {
-      console.error("Scraping error:", error);
+    } catch (_error) {      console.error("Scraping error:", error);
       return {
         success: false,
         error: error.message,
@@ -729,8 +720,7 @@ class KBCScraper {
         .sort((a, b) => b.stats.mtime.getTime() - a.stats.mtime.getTime());
 
       return files.length > 0 ? files[0] : null;
-    } catch (error) {
-      console.error("Error finding latest CSV:", error);
+    } catch (_error) {      console.error("Error finding latest CSV:", error);
       return null;
     }
   }
@@ -767,8 +757,7 @@ class KBCScraper {
         chromeFound: true,
         chromePath: chromeExecutable,
       };
-    } catch (error) {
-      return {
+    } catch (_error) {      return {
         success: false,
         error: error.message,
         message: "Connection failed",

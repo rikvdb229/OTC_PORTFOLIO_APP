@@ -38,8 +38,7 @@ function findChrome() {
           path: chromePath,
         });
       });
-    } catch (error) {
-      console.warn("Could not scan Puppeteer directory:", error.message);
+    } catch (_error) {      console.warn("Could not scan Puppeteer directory:", error.message);
     }
   }
 
@@ -122,8 +121,7 @@ async function testChrome(chromePath) {
     console.log("✅ Chrome test completed successfully");
 
     return true;
-  } catch (error) {
-    console.log(`❌ Chrome test failed: ${error.message}`);
+  } catch (_error) {    console.log(`❌ Chrome test failed: ${error.message}`);
     return false;
   }
 }
@@ -136,8 +134,7 @@ async function main() {
   try {
     require("puppeteer");
     console.log("✅ Puppeteer module available\n");
-  } catch (error) {
-    console.log("❌ Puppeteer not found - installing...");
+  } catch (_error) {    console.log("❌ Puppeteer not found - installing...");
     try {
       const { execSync } = require("child_process");
       execSync("npm install puppeteer", { stdio: "inherit" });

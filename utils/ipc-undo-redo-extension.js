@@ -23,8 +23,7 @@ const DatabaseUndoRedoExtension = {
         success: true,
         data: result.data
       };
-    } catch (error) {
-      console.error("❌ Error exporting database data:", error);
+    } catch (_error) {      console.error("❌ Error exporting database data:", error);
       return {
         success: false,
         error: error.message
@@ -50,8 +49,7 @@ const DatabaseUndoRedoExtension = {
         success: true,
         importedEntries: result.importedEntries || 0
       };
-    } catch (error) {
-      console.error("❌ Error importing database data:", error);
+    } catch (_error) {      console.error("❌ Error importing database data:", error);
       return {
         success: false,
         error: error.message
