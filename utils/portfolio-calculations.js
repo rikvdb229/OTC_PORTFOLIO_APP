@@ -47,6 +47,20 @@ function calculateWeightedAverageReturn(overview) {
 
   return totalWeight > 0 ? totalWeightedReturn / totalWeight : 0;
 }
+/**
+ * Calculate total sellable value (sum of all grants with selling_status = 'SELLABLE')
+ * @param {Array} overview - Portfolio overview data
+ * @returns {number} Total sellable value
+ */
+function calculateTotalSellableValue(overview) {
+  return overview.reduce((sum, entry) => {
+    // Only count entries that are currently sellable
+    if (entry.selling_status === 'SELLABLE') {
+      return sum + (entry.current_total_value || 0);
+    }
+    return sum;
+  }, 0);
+}
 
 /**
  * Calculate total profit/loss vs target
@@ -83,6 +97,7 @@ function generatePortfolioStats(overview) {
   const totalQuantity = calculateTotalQuantity(overview);
   const avgReturn = calculateWeightedAverageReturn(overview);
   const totalProfitLoss = calculateTotalProfitLoss(overview);
+  const totalSellableValue = calculateTotalSellableValue(overview); // ← ADD THIS
   const latestUpdate = findLatestPriceUpdate(overview);
 
   return {
@@ -90,10 +105,12 @@ function generatePortfolioStats(overview) {
     totalQuantity,
     avgReturn,
     totalProfitLoss,
+    totalSellableValue,
     latestUpdate,
     // Formatted versions for display
     totalValueFormatted: totalValue,
     totalQuantityFormatted: totalQuantity.toLocaleString(),
+    totalSellableValueFormatted: totalSellableValue,
     avgReturnFormatted:
       isNaN(avgReturn) || !isFinite(avgReturn)
         ? "0.0%"
@@ -138,6 +155,7 @@ window.PortfolioCalculations = {
   calculateTotalQuantity,
   calculateWeightedAverageReturn,
   calculateTotalProfitLoss,
+  calculateTotalSellableValue,
   findLatestPriceUpdate,
   generatePortfolioStats,
   hasPortfolioData,

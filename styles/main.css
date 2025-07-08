@@ -455,50 +455,7 @@ textarea {
   border-bottom-color: var(--color-primary);
   font-weight: var(--font-weight-medium);
 }
-.global-portfolio-header {
-  background: var(--color-white);
-  padding: var(--spacing-lg);
-  border-radius: 0 0 var(--border-radius-xl) var(--border-radius-xl);
-  box-shadow: none;
-  margin: 0 0 var(--spacing-lg) 0;
-  border-bottom: 1px solid var(--border-light);
-}
-.global-portfolio-stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--spacing-lg);
-  width: 100%;
-}
-.global-portfolio-stats .stat-card {
-  text-align: center;
-  padding: 15px;
-  border-radius: var(--border-radius-lg);
-  border: 1px solid var(--border-light);
-  background: var(--color-light);
-}
-.global-portfolio-stats .stat-card:first-child {
-  background: var(--color-light);
-  border: 1px solid var(--border-light);
-}
-.global-portfolio-stats .stat-card h4 {
-  margin: 0 0 var(--spacing-sm) 0;
-  color: var(--text-light);
-  font-size: var(--font-size-base);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-.global-portfolio-stats .stat-value {
-  font-size: var(--font-size-xxl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
-  margin-bottom: var(--spacing-xs);
-}
-.global-portfolio-stats .stat-note {
-  font-size: var(--font-size-xs);
-  color: var(--text-muted);
-  margin-top: 2px;
-  display: block;
-}
+
 .stat-change.positive {
   color: var(--color-success) !important;
   font-weight: var(--font-weight-bold);
@@ -671,13 +628,17 @@ textarea {
     justify-content: center;
     gap: var(--spacing-xs);
   }
-  .global-portfolio-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+
+  
+  /* Make the layout 2-3 instead of 2-2-1 */
+  .global-portfolio-stats .stat-card:nth-child(3) {
+    grid-column: span 2;
   }
-  .global-portfolio-header {
-    padding: 15px;
+  .global-portfolio-stats .stat-card:nth-child(4),
+  .global-portfolio-stats .stat-card:nth-child(5) {
+    grid-column: span 1;
   }
+
   .nav-tabs {
     overflow-x: auto;
   }
@@ -2578,12 +2539,15 @@ textarea {
     width: 100%;
     justify-content: center;
   }
-  .global-portfolio-stats {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 15px;
+
+  
+  /* Make the layout 2-3 instead of 2-2-1 */
+  .global-portfolio-stats .stat-card:nth-child(3) {
+    grid-column: span 2;
   }
-  .global-portfolio-header {
-    padding: 15px;
+  .global-portfolio-stats .stat-card:nth-child(4),
+  .global-portfolio-stats .stat-card:nth-child(5) {
+    grid-column: span 1;
   }
   .nav-tabs {
     overflow-x: auto;
@@ -2629,10 +2593,7 @@ textarea {
   }
 }
 @media (max-width: 480px) {
-  .global-portfolio-stats {
-    grid-template-columns: 1fr;
-    gap: var(--spacing-md);
-  }
+
   .global-portfolio-stats .stat-card:first-child .stat-value {
     font-size: var(--spacing-lg);
   }
@@ -3453,4 +3414,147 @@ body {
 #priceUpdateNotification {
   order: -1; /* Move notification to the left of undo/redo buttons */
   margin-right: 8px;
+}
+/* ===== COMPACT HORIZONTAL STATS (ABOVE TABS) ===== */
+.global-portfolio-stats-compact {
+  background: var(--color-white);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-bottom: 1px solid var(--border-light);
+  /* Remove border-radius since it's part of header now */
+}
+
+.portfolio-stats-horizontal {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--spacing-md);
+  width: 100%;
+}
+
+.stat-item-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: center;  /* ← ADD THIS */
+  gap: 4px;
+  flex: 1;
+  text-align: center;       /* ← ADD THIS */
+}
+
+.stat-label-compact {
+  color: var(--text-light);
+  font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: var(--font-weight-normal);
+}
+
+.stat-value-compact {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.stat-change-compact.positive {
+  color: var(--color-success) !important;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  margin-left: 4px;
+}
+
+.stat-change-compact.negative {
+  color: var(--color-danger) !important;
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  margin-left: 4px;
+}
+
+.stat-change-compact {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.stat-separator {
+  color: var(--border-light);
+  font-weight: var(--font-weight-light);
+  font-size: var(--font-size-lg);
+  user-select: none;
+}
+
+/* ===== UPDATE MAIN HEADER TO INCLUDE STATS ===== */
+.main-header {
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 300;
+  background: var(--color-white); /* Ensure solid background */
+}
+
+/* ===== RESPONSIVE FOR COMPACT STATS ===== */
+@media (max-width: 768px) {
+  .portfolio-stats-horizontal {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+  
+  .stat-item-horizontal {
+    flex: 0 1 calc(50% - var(--spacing-sm));
+    min-width: 120px;
+  }
+  
+  .stat-separator {
+    display: none;
+  }
+  
+  .stat-label-compact {
+    font-size: var(--font-size-xs);
+  }
+  
+  .stat-value-compact {
+    font-size: var(--font-size-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-item-horizontal {
+    flex: 1 1 100%;
+    justify-content: space-between;
+    padding: var(--spacing-xs) 0;
+    border-bottom: 1px solid var(--border-light);
+  }
+  
+  .stat-item-horizontal:last-child {
+    border-bottom: none;
+  }
+}
+.global-portfolio-stats-compact {
+  background: #f8f9fa; /* Subtle gray background */
+  border-top: 1px solid #e9ecef;
+  border-bottom: 2px solid #e9ecef; /* Slightly thicker bottom border */
+  padding: 12px var(--spacing-lg); /* Slightly more padding */
+}
+.header-filter-dropdown {
+  display: block;
+  width: 100%;
+  max-width: 120px;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  background: white;
+  font-size: 11px;
+  color: #333;
+  cursor: pointer;
+}
+
+.header-filter-dropdown:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.1);
+}
+
+/* Ensure table header has enough height */
+.grant-table th {
+  vertical-align: top;
+  padding: 8px 4px;
 }

@@ -10,11 +10,9 @@
     "build-win": "npm run setup-chrome && electron-builder --win",
     "rebuild": "electron-rebuild",
     "postinstall": "electron-rebuild",
-    "test": "node validate-changes.js",
     "clean": "rimraf node_modules package-lock.json && npm install",
     "setup-chrome": "node simple-chrome-setup.js",
     "test-chrome": "node test-chrome-simple.js",
-    "diagnose-db": "node database-diagnostic.js",
     "check-db": "node migrate-database.js",
     "migrate-db": "node migrate-database.js migrate"
   },

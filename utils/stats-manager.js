@@ -8,12 +8,16 @@ const StatsManager = {
     console.log("📊 Updating header stats...");
 
     const headerTotalValue = document.getElementById("totalPortfolioValue");
+     const headerSellableValue = document.getElementById("totalSellableValue");
     const headerActiveOptions = document.getElementById("totalOptions");
     const headerLastUpdate = document.getElementById("lastPriceUpdate");
 
     if (headerTotalValue && app.formatCurrency) {
       headerTotalValue.textContent = app.formatCurrency(stats.totalValue);
     }
+    if (headerSellableValue) {
+    headerSellableValue.textContent = app.helpers.formatCurrency(stats.totalSellableValue);
+  } 
 
     if (headerActiveOptions) {
       headerActiveOptions.textContent = stats.totalQuantityFormatted || "0";
@@ -152,6 +156,7 @@ const StatsManager = {
 
     // Update header values using calculated stats
     const headerTotalValue = document.getElementById("totalPortfolioValue");
+    const headerSellableValue = document.getElementById("totalSellableValue");
     const headerActiveOptions = document.getElementById("totalOptions");
     const headerLastUpdate = document.getElementById("lastPriceUpdate");
 
@@ -160,6 +165,11 @@ const StatsManager = {
         stats.totalValue
       );
     }
+    if (headerSellableValue) {
+    headerSellableValue.textContent = app.helpers.formatCurrency(
+      stats.totalSellableValue
+    );
+  }
     if (headerActiveOptions) {
       headerActiveOptions.textContent = stats.totalQuantityFormatted;
     }

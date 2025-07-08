@@ -272,7 +272,7 @@ const TableManager = {
    * Apply filtering logic to grant history table rows
    * @param {Object} app - Application instance (optional, for future extension)
    */
-  filterGrantHistory(app = null) {
+  filterGrantHistory(statusFilter = "all") {
     console.log("🎛️ Applying grant filters with improved matching...");
 
     // Get active filter states

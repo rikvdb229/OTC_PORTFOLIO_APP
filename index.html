@@ -57,6 +57,37 @@
       </button>
     </div>
   </header>
+  
+  <!-- NEW: Compact stats bar (ABOVE tabs) -->
+  <div class="global-portfolio-stats-compact">
+    <div class="portfolio-stats-horizontal">
+      <div class="stat-item-horizontal">
+        <span class="stat-label-compact">Portfolio:</span>
+        <span id="totalPortfolioValue" class="stat-value-compact">€ ---</span>
+        <span id="portfolioChange" class="stat-change-compact">---</span>
+      </div>
+      <div class="stat-separator">|</div>
+      <div class="stat-item-horizontal">
+        <span class="stat-label-compact">Sellable:</span>
+        <span id="totalSellableValue" class="stat-value-compact">€ ---</span>
+      </div>
+      <div class="stat-separator">|</div>
+      <div class="stat-item-horizontal">
+        <span class="stat-label-compact">Return:</span>
+        <span id="totalReturnPercentage" class="stat-value-compact">---%</span>
+      </div>
+      <div class="stat-separator">|</div>
+      <div class="stat-item-horizontal">
+        <span class="stat-label-compact">Options:</span>
+        <span id="totalOptions" class="stat-value-compact">---</span>
+      </div>
+      <div class="stat-separator">|</div>
+      <div class="stat-item-horizontal">
+        <span class="stat-label-compact">Updated:</span>
+        <span id="lastPriceUpdate" class="stat-value-compact">---</span>
+      </div>
+    </div>
+  </div>
 </div>
       <!-- Navigation Tabs - SEAMLESS CONNECTION -->
       <nav class="nav-tabs">
@@ -68,30 +99,6 @@
       </nav>
 
       <!-- Global Portfolio Stats - CONSISTENT SPACING -->
-      <div class="global-portfolio-header">
-        <div class="global-portfolio-stats">
-          <div class="stat-card">
-            <h4>Total Portfolio Value</h4>
-            <div id="totalPortfolioValue" class="stat-value">€ ---</div>
-            <div id="portfolioChange" class="stat-change">---</div>
-          </div>
-          <div class="stat-card">
-            <h4>Weighted Avg Return</h4>
-            <div id="totalReturnPercentage" class="stat-value">---%</div>
-            <small class="stat-note">Portfolio-wide performance</small>
-          </div>
-          <div class="stat-card">
-            <h4>Active Options</h4>
-            <div id="totalOptions" class="stat-value">---</div>
-          </div>
-          <div class="stat-card">
-            <h4>Last Update</h4>
-            <div id="lastPriceUpdate" class="stat-value">---</div>
-            <small class="stat-note">From CSV data</small>
-          </div>
-        </div>
-      </div>
-
       <!-- TAB HEADERS - UPDATED STRUCTURE -->
       <div class="tab-header">
         <!-- Portfolio Tab Header - Action Buttons -->
