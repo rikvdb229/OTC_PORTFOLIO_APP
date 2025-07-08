@@ -102,7 +102,8 @@ const StatsManager = {
         portfolioChangeEl.className = "stat-change";
         console.log("📊 No portfolio evolution data available");
       }
-    } catch (_error) {      console.log("Could not get portfolio change data:", error);
+    } catch (error) {
+      console.log("Could not get portfolio change data:", error);
       const portfolioChangeEl = document.getElementById("portfolioChange");
       if (portfolioChangeEl) {
         portfolioChangeEl.textContent = "---";
@@ -136,10 +137,10 @@ const StatsManager = {
       );
     }
     if (headerSellableValue) {
-    headerSellableValue.textContent = app.helpers.formatCurrency(
-      stats.totalSellableValue
-    );
-  }
+      headerSellableValue.textContent = app.helpers.formatCurrency(
+        stats.totalSellableValue
+      );
+    }
     if (headerActiveOptions) {
       headerActiveOptions.textContent = stats.totalQuantityFormatted;
     }

@@ -27,68 +27,92 @@
     <div class="main-content">
       <!-- MAIN HEADER - Always Sticky -->
       <div class="main-header">
-  <header class="header">
-    <div class="header-brand">
-      <img src="assets/logo.svg" alt="Portfolio Tracker" class="header-logo" />
-    </div>
-    <div class="header-actions">
-      <!-- Undo/Redo Buttons - NEW -->
-      <div class="undo-redo-group">
-        <button id="undoBtn" class="header-btn btn-undo" disabled title="Nothing to undo">
-          ↶ Undo
-        </button>
-        <button id="redoBtn" class="header-btn btn-redo" disabled title="Nothing to redo">
-          ↷ Redo
-        </button>
+        <header class="header">
+          <div class="header-brand">
+            <img
+              src="assets/logo.svg"
+              alt="Portfolio Tracker"
+              class="header-logo"
+            />
+          </div>
+          <div class="header-actions">
+            <!-- Undo/Redo Buttons - NEW -->
+            <div class="undo-redo-group">
+              <button
+                id="undoBtn"
+                class="header-btn btn-undo"
+                disabled
+                title="Nothing to undo"
+              >
+                ↶ Undo
+              </button>
+              <button
+                id="redoBtn"
+                class="header-btn btn-redo"
+                disabled
+                title="Nothing to redo"
+              >
+                ↷ Redo
+              </button>
+            </div>
+
+            <!-- Notification - Moved to left of undo/redo -->
+            <div
+              id="priceUpdateNotification"
+              class="header-notification"
+              style="display: none"
+            >
+              <span class="notification-icon">⚠️</span>
+              <span class="notification-text">Prices not current</span>
+            </div>
+
+            <!-- Existing buttons -->
+            <button id="updatePricesBtn" class="header-btn btn-update-prices">
+              📊 Update Prices
+            </button>
+            <button id="settingsToggle" class="header-btn btn-settings">
+              ⚙️ Settings
+            </button>
+          </div>
+        </header>
+
+        <!-- NEW: Compact stats bar (ABOVE tabs) -->
+        <div class="global-portfolio-stats-compact">
+          <div class="portfolio-stats-horizontal">
+            <div class="stat-item-horizontal">
+              <span class="stat-label-compact">Portfolio:</span>
+              <span id="totalPortfolioValue" class="stat-value-compact"
+                >€ ---</span
+              >
+              <span id="portfolioChange" class="stat-change-compact">---</span>
+            </div>
+            <div class="stat-separator">|</div>
+            <div class="stat-item-horizontal">
+              <span class="stat-label-compact">Sellable:</span>
+              <span id="totalSellableValue" class="stat-value-compact"
+                >€ ---</span
+              >
+            </div>
+            <div class="stat-separator">|</div>
+            <div class="stat-item-horizontal">
+              <span class="stat-label-compact">Return:</span>
+              <span id="totalReturnPercentage" class="stat-value-compact"
+                >---%</span
+              >
+            </div>
+            <div class="stat-separator">|</div>
+            <div class="stat-item-horizontal">
+              <span class="stat-label-compact">Options:</span>
+              <span id="totalOptions" class="stat-value-compact">---</span>
+            </div>
+            <div class="stat-separator">|</div>
+            <div class="stat-item-horizontal">
+              <span class="stat-label-compact">Updated:</span>
+              <span id="lastPriceUpdate" class="stat-value-compact">---</span>
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <!-- Notification - Moved to left of undo/redo -->
-      <div id="priceUpdateNotification" class="header-notification" style="display: none">
-        <span class="notification-icon">⚠️</span>
-        <span class="notification-text">Prices not current</span>
-      </div>
-      
-      <!-- Existing buttons -->
-      <button id="updatePricesBtn" class="header-btn btn-update-prices">
-        📊 Update Prices
-      </button>
-      <button id="settingsToggle" class="header-btn btn-settings">
-        ⚙️ Settings
-      </button>
-    </div>
-  </header>
-  
-  <!-- NEW: Compact stats bar (ABOVE tabs) -->
-  <div class="global-portfolio-stats-compact">
-    <div class="portfolio-stats-horizontal">
-      <div class="stat-item-horizontal">
-        <span class="stat-label-compact">Portfolio:</span>
-        <span id="totalPortfolioValue" class="stat-value-compact">€ ---</span>
-        <span id="portfolioChange" class="stat-change-compact">---</span>
-      </div>
-      <div class="stat-separator">|</div>
-      <div class="stat-item-horizontal">
-        <span class="stat-label-compact">Sellable:</span>
-        <span id="totalSellableValue" class="stat-value-compact">€ ---</span>
-      </div>
-      <div class="stat-separator">|</div>
-      <div class="stat-item-horizontal">
-        <span class="stat-label-compact">Return:</span>
-        <span id="totalReturnPercentage" class="stat-value-compact">---%</span>
-      </div>
-      <div class="stat-separator">|</div>
-      <div class="stat-item-horizontal">
-        <span class="stat-label-compact">Options:</span>
-        <span id="totalOptions" class="stat-value-compact">---</span>
-      </div>
-      <div class="stat-separator">|</div>
-      <div class="stat-item-horizontal">
-        <span class="stat-label-compact">Updated:</span>
-        <span id="lastPriceUpdate" class="stat-value-compact">---</span>
-      </div>
-    </div>
-  </div>
-</div>
       <!-- Navigation Tabs - SEAMLESS CONNECTION -->
       <nav class="nav-tabs">
         <button class="nav-tab active" data-tab="portfolio">Portfolio</button>
@@ -1172,7 +1196,7 @@
     <script src="utils/data-loader.js"></script>
     <script src="utils/app-helpers.js"></script>
     <script src="utils/undo-redo-manager.js"></script>
-<script src="utils/ipc-undo-redo-extension.js"></script>
+    <script src="utils/ipc-undo-redo-extension.js"></script>
     <!-- LOAD MAIN APP LAST -->
     <script src="renderer.js"></script>
   </body>

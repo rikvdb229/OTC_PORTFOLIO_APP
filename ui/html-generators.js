@@ -458,7 +458,8 @@ class HTMLGenerators {
     try {
       const prices = await ipcRenderer.invoke("get-available-exercise-prices");
       return prices && prices.length > 0 && !prices.error;
-    } catch (_error) {      return false;
+    } catch (_error) {
+      return false;
     }
   }
 }

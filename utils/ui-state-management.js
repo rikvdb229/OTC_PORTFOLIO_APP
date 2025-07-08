@@ -41,7 +41,8 @@ const FooterManager = {
           window.AppConfig.APP_CONFIG.STATUS
         } initialized`
       );
-    } catch (_error) {      console.error("Error initializing footer:", error);
+    } catch (error) {
+      console.error("Error initializing footer:", error);
     }
   },
 };
@@ -110,7 +111,8 @@ const FormManager = {
       app.currentFormData = null;
       window.UIStateManager.Validation.validateAddGrantsForm(app);
       console.log("✅ Form and stored data cleared");
-    } catch (_error) {      console.warn("⚠️ Error clearing form:", error);
+    } catch (error) {
+      console.warn("⚠️ Error clearing form:", error);
     }
   },
 
@@ -178,7 +180,8 @@ const FormManager = {
         // Call the tax calculation through FormManager
         this.calculateEstimatedTax(app);
       }
-    } catch (_error) {      console.error("Error loading options for grant date:", error);
+    } catch (error) {
+      console.error("Error loading options for grant date:", error);
       exercisePriceSelect.innerHTML =
         '<option value="">Error loading options</option>';
       exercisePriceSelect.disabled = true;
@@ -741,7 +744,8 @@ const FormValidation = {
       }
 
       return result;
-    } catch (_error) {      console.error("Error fetching original sale data:", error);
+    } catch (error) {
+      console.error("Error fetching original sale data:", error);
       return null;
     }
   },
@@ -886,7 +890,8 @@ const DatabaseManager = {
         window.UIStateManager.showError("Export cancelled or failed");
         console.log("❌ Database export cancelled or failed");
       }
-    } catch (_error) {      console.error("❌ Error exporting database:", error);
+    } catch (error) {
+      console.error("❌ Error exporting database:", error);
       window.UIStateManager.showError(
         "Error exporting database: " + error.message
       );
@@ -926,7 +931,8 @@ const DatabaseManager = {
       console.log("=== END DEBUG ===");
 
       return result;
-    } catch (_error) {      console.error("❌ Debug error:", error);
+    } catch (error) {
+      console.error("❌ Debug error:", error);
       return null;
     }
   },

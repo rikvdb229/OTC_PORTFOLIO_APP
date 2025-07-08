@@ -510,7 +510,8 @@ window.ChartUtils = {
         `✅ Chart created successfully with ${chartConfig.data.labels.length} data points`
       );
       return chart;
-    } catch (_error) {      console.error("❌ Error creating chart:", error);
+    } catch (error) {
+      console.error("❌ Error creating chart:", error);
       return null;
     }
   },

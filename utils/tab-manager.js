@@ -55,7 +55,8 @@ const TabManager = {
       );
 
       console.log(`✅ Successfully switched to ${tabName} tab`);
-    } catch (_error) {      console.error("❌ Error switching tabs:", error);
+    } catch (error) {
+      console.error("❌ Error switching tabs:", error);
     }
   },
 
@@ -246,7 +247,8 @@ const TabManager = {
       this.switchTab(app, "portfolio");
 
       console.log("✅ Enhanced tab switching initialized");
-    } catch (_error) {      console.error("❌ Error initializing tab switching:", error);
+    } catch (error) {
+      console.error("❌ Error initializing tab switching:", error);
     }
   },
 
@@ -322,7 +324,8 @@ const TabManager = {
 
         console.log(`📋 Collapsed notes for entry: ${noteId}`);
       }
-    } catch (_error) {      console.error("Error toggling notes:", error);
+    } catch (error) {
+      console.error("Error toggling notes:", error);
     }
   },
 };

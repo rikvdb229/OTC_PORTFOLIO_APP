@@ -83,7 +83,7 @@ const UndoRedoHandlers = {
     }
 
     console.log("✅ Undo/redo handlers initialized");
-  }
+  },
 };
 
 /**
@@ -593,7 +593,8 @@ const EventHandlerCoordinator = {
       try {
         handlerGroup.initialize(app);
         totalHandlers++;
-      } catch (_error) {        console.error(`❌ Error initializing handler group ${index}:`, error);
+      } catch (error) {
+        console.error(`❌ Error initializing handler group ${index}:`, error);
       }
     });
     // ✅ ADD THIS SECTION HERE - after the handler groups:
@@ -601,7 +602,8 @@ const EventHandlerCoordinator = {
     try {
       SettingsHandlers.setupImportModalHandlers(app);
       console.log("✅ Import modal event delegation initialized");
-    } catch (_error) {      console.error("❌ Error setting up import modal delegation:", error);
+    } catch (error) {
+      console.error("❌ Error setting up import modal delegation:", error);
     }
     console.log(
       `✅ Event handler initialization complete: ${totalHandlers}/${handlerGroups.length} groups`

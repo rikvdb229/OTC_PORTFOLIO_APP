@@ -629,7 +629,6 @@ textarea {
     gap: var(--spacing-xs);
   }
 
-  
   /* Make the layout 2-3 instead of 2-2-1 */
   .global-portfolio-stats .stat-card:nth-child(3) {
     grid-column: span 2;
@@ -2540,7 +2539,6 @@ textarea {
     justify-content: center;
   }
 
-  
   /* Make the layout 2-3 instead of 2-2-1 */
   .global-portfolio-stats .stat-card:nth-child(3) {
     grid-column: span 2;
@@ -2593,7 +2591,6 @@ textarea {
   }
 }
 @media (max-width: 480px) {
-
   .global-portfolio-stats .stat-card:first-child .stat-value {
     font-size: var(--spacing-lg);
   }
@@ -3337,7 +3334,7 @@ body {
     gap: 2px;
     margin-right: 8px;
   }
-  
+
   .btn-undo,
   .btn-redo {
     height: 40px !important;
@@ -3353,7 +3350,7 @@ body {
     gap: 4px;
     margin-right: 6px;
   }
-  
+
   .btn-undo,
   .btn-redo {
     height: 36px !important;
@@ -3393,8 +3390,12 @@ body {
 }
 
 @keyframes spin {
-  0% { transform: translate(-50%, -50%) rotate(0deg); }
-  100% { transform: translate(-50%, -50%) rotate(360deg); }
+  0% {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 /* Integration with existing header layout */
@@ -3434,10 +3435,10 @@ body {
 .stat-item-horizontal {
   display: flex;
   align-items: center;
-  justify-content: center;  /* ← ADD THIS */
+  justify-content: center; /* ← ADD THIS */
   gap: 4px;
   flex: 1;
-  text-align: center;       /* ← ADD THIS */
+  text-align: center; /* ← ADD THIS */
 }
 
 .stat-label-compact {
@@ -3496,20 +3497,20 @@ body {
     flex-wrap: wrap;
     gap: var(--spacing-sm);
   }
-  
+
   .stat-item-horizontal {
     flex: 0 1 calc(50% - var(--spacing-sm));
     min-width: 120px;
   }
-  
+
   .stat-separator {
     display: none;
   }
-  
+
   .stat-label-compact {
     font-size: var(--font-size-xs);
   }
-  
+
   .stat-value-compact {
     font-size: var(--font-size-base);
   }
@@ -3522,7 +3523,7 @@ body {
     padding: var(--spacing-xs) 0;
     border-bottom: 1px solid var(--border-light);
   }
-  
+
   .stat-item-horizontal:last-child {
     border-bottom: none;
   }

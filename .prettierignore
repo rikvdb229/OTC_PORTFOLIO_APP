@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+package-lock.json
+*.min.js
+
+# Build outputs
+dist/
+build/
+
+# Chrome portable
+chrome-portable/
+
+# External libraries
+libs/
+
+# Generated files
+*.sqlite
+*.db
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime files
+*.tmp
+*.temp
+
+# Migration scripts (temporary)
+css-migration.js
+simple-chrome-setup.js
+test-chrome-simple.js

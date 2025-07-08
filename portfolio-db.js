@@ -42,7 +42,8 @@ class PortfolioDatabase {
           );
         }
       }
-    } catch (_electronError) {      // Fallback to user directories
+    } catch (_electronError) {
+      // Fallback to user directories
       try {
         if (process.platform === "win32") {
           dbDirectory = path.join(
@@ -56,7 +57,8 @@ class PortfolioDatabase {
         }
         dbPath = path.join(dbDirectory, "portfolio.db");
         console.log(`📁 Fallback: Using user directory: ${dbDirectory}`);
-      } catch (_homeError) {        // Final fallback: temp directory
+      } catch (_homeError) {
+        // Final fallback: temp directory
         console.warn("⚠️ Could not access user directories, using temp folder");
         dbDirectory = path.join(os.tmpdir(), "OTCPortfolioApp");
         dbPath = path.join(dbDirectory, "portfolio.db");
@@ -96,7 +98,8 @@ class PortfolioDatabase {
       console.log(`   Can write to current dir: YES`);
 
       return isDev;
-    } catch (_error) {      console.log(
+    } catch (_error) {
+      console.log(
         `🔍 Development mode detection: NO (cannot write to current directory)`
       );
       return false;
@@ -122,7 +125,8 @@ class PortfolioDatabase {
           `No write permissions for directory: ${this.dbDirectory}`
         );
       }
-    } catch (_error) {      console.error(`❌ Database directory error: ${error.message}`);
+    } catch (error) {
+      console.error(`❌ Database directory error: ${error.message}`);
 
       // Final fallback: use temp directory
       if (!this.dbDirectory.includes("temp")) {
@@ -243,7 +247,8 @@ class PortfolioDatabase {
       await this.testDatabaseOperations();
 
       return Promise.resolve();
-    } catch (_error) {      console.error("❌ Database initialization failed:", error);
+    } catch (error) {
+      console.error("❌ Database initialization failed:", error);
       return Promise.reject(error);
     }
   }
@@ -265,7 +270,8 @@ class PortfolioDatabase {
       // Test write operation (save database)
       this.saveDatabase();
       console.log("✅ Database read/write operations successful");
-    } catch (_error) {      console.error(`❌ Database operation test failed: ${error.message}`);
+    } catch (error) {
+      console.error(`❌ Database operation test failed: ${error.message}`);
       throw error;
     }
   }
@@ -294,7 +300,8 @@ class PortfolioDatabase {
       fs.writeFileSync(this.dbPath, data);
       console.log(`💾 Database saved to: ${this.dbPath}`);
       return true;
-    } catch (_error) {      console.error(`❌ Failed to save database: ${error.message}`);
+    } catch (error) {
+      console.error(`❌ Failed to save database: ${error.message}`);
 
       // Try alternative save location
       try {
@@ -459,7 +466,8 @@ CREATE TABLE IF NOT EXISTS settings (
       this.saveDatabase();
       console.log("✅ Database schema created successfully");
       return Promise.resolve();
-    } catch (_error) {      console.error(`❌ Schema creation failed: ${error.message}`);
+    } catch (error) {
+      console.error(`❌ Schema creation failed: ${error.message}`);
       return Promise.reject(error);
     }
   }
@@ -553,7 +561,8 @@ CREATE TABLE IF NOT EXISTS settings (
       console.log(
         "✅ Successfully added updated_at column to sales_transactions"
       );
-    } catch (_error) {      console.error("❌ Error migrating sales_transactions table:", error);
+    } catch (error) {
+      console.error("❌ Error migrating sales_transactions table:", error);
       throw error;
     }
   }
@@ -607,7 +616,8 @@ CREATE TABLE IF NOT EXISTS settings (
       });
 
       return result;
-    } catch (_error) {      console.error("❌ Error getting sale with portfolio data:", error);
+    } catch (error) {
+      console.error("❌ Error getting sale with portfolio data:", error);
       throw error;
     }
   }
@@ -728,7 +738,8 @@ CREATE TABLE IF NOT EXISTS settings (
         `⚠️ No price history found for €${exercisePrice} (${grantDate})`
       );
       return null;
-    } catch (_error) {      console.error(`❌ Error getting closest price for ${targetDate}:`, error);
+    } catch (error) {
+      console.error(`❌ Error getting closest price for ${targetDate}:`, error);
       return null;
     }
   }
@@ -815,7 +826,8 @@ CREATE TABLE IF NOT EXISTS settings (
         result
       );
       return result;
-    } catch (_error) {      console.error("❌ Error getting sale details:", error);
+    } catch (error) {
+      console.error("❌ Error getting sale details:", error);
       throw error;
     }
   }
@@ -938,7 +950,8 @@ CREATE TABLE IF NOT EXISTS settings (
         newDate: newSaleDate,
         timelineRecalculated: true,
       };
-    } catch (_error) {      console.error("❌ Error updating sale:", error);
+    } catch (error) {
+      console.error("❌ Error updating sale:", error);
       throw error;
     }
   }
@@ -1001,7 +1014,8 @@ CREATE TABLE IF NOT EXISTS settings (
         updateStmt.free();
         console.log(`✅ Updated evolution entry for ${date}`);
       }
-    } catch (_error) {      console.error("❌ Error removing sale note from evolution:", error);
+    } catch (error) {
+      console.error("❌ Error removing sale note from evolution:", error);
     }
   }
 
@@ -1061,7 +1075,8 @@ CREATE TABLE IF NOT EXISTS settings (
       stmt.free();
 
       console.log(`✅ Added sale note to evolution entry for ${date}`);
-    } catch (_error) {      console.error("❌ Error adding sale note to evolution:", error);
+    } catch (error) {
+      console.error("❌ Error adding sale note to evolution:", error);
     }
   }
 
@@ -1098,7 +1113,8 @@ CREATE TABLE IF NOT EXISTS settings (
       updateStmt.free();
 
       console.log(`✅ Updated sale note in evolution entry for ${date}`);
-    } catch (_error) {      console.error("❌ Error updating sale note in evolution:", error);
+    } catch (error) {
+      console.error("❌ Error updating sale note in evolution:", error);
     }
   }
   // Add this method to portfolio-db.js to recalculate evolution timeline
@@ -1138,7 +1154,8 @@ CREATE TABLE IF NOT EXISTS settings (
       }
 
       console.log(`✅ Evolution timeline recalculated from ${fromDate}`);
-    } catch (_error) {      console.error("❌ Error recalculating evolution timeline:", error);
+    } catch (error) {
+      console.error("❌ Error recalculating evolution timeline:", error);
       throw error;
     }
   }
@@ -1189,7 +1206,8 @@ CREATE TABLE IF NOT EXISTS settings (
         totalRealizedGain,
         totalUnrealizedGain,
       });
-    } catch (_error) {      console.error(
+    } catch (error) {
+      console.error(
         `❌ Error recalculating evolution entry for ${date}:`,
         error
       );
@@ -1308,7 +1326,8 @@ CREATE TABLE IF NOT EXISTS settings (
         totalOptionsCount,
         activeOptionsCount,
       };
-    } catch (_error) {      console.error(
+    } catch (error) {
+      console.error(
         `❌ Error calculating portfolio state for ${asOfDate}:`,
         error
       );
@@ -1351,7 +1370,8 @@ CREATE TABLE IF NOT EXISTS settings (
       } else {
         return Promise.resolve(results); // Multiple grants - return array
       }
-    } catch (_error) {      console.error("Error checking existing grant:", error);
+    } catch (error) {
+      console.error("Error checking existing grant:", error);
       return Promise.reject(error);
     }
   }
@@ -1516,7 +1536,8 @@ CREATE TABLE IF NOT EXISTS settings (
         totalQuantity: newQuantity,
         updatedRow: updatedRow,
       });
-    } catch (_error) {      console.error("❌ Error in mergeGrant:", error);
+    } catch (error) {
+      console.error("❌ Error in mergeGrant:", error);
       console.error("❌ Error stack:", error.stack);
       return Promise.reject(error);
     }
@@ -1603,7 +1624,8 @@ CREATE TABLE IF NOT EXISTS settings (
       let taxRateSetting;
       try {
         taxRateSetting = await this.getSetting("tax_auto_rate");
-      } catch (_error) {        console.warn("Could not get tax rate setting, using default:", error);
+      } catch (error) {
+        console.warn("Could not get tax rate setting, using default:", error);
         taxRateSetting = "30";
       }
 
@@ -1665,7 +1687,8 @@ CREATE TABLE IF NOT EXISTS settings (
       }
 
       return Promise.resolve({ id: insertId });
-    } catch (_error) {      console.error("Error adding portfolio entry:", error);
+    } catch (error) {
+      console.error("Error adding portfolio entry:", error);
       return Promise.reject(error);
     }
   }
@@ -1752,7 +1775,8 @@ CREATE TABLE IF NOT EXISTS settings (
       console.log(
         `✅ Created/updated evolution entry for TODAY: ${finalNotes}`
       );
-    } catch (_error) {      console.error("❌ Error creating evolution entry for grant:", error);
+    } catch (error) {
+      console.error("❌ Error creating evolution entry for grant:", error);
     }
   }
 
@@ -1877,7 +1901,8 @@ CREATE TABLE IF NOT EXISTS settings (
         remainingTax: newTaxAmount || 0,
         evolutionRecalculated: true, // Indicate that evolution was updated
       });
-    } catch (_error) {      console.error("❌ Error in recordSaleTransaction:", error);
+    } catch (error) {
+      console.error("❌ Error in recordSaleTransaction:", error);
       return Promise.reject(error);
     }
   }
@@ -1976,7 +2001,8 @@ ORDER BY pe.grant_date DESC
       stmt.free();
 
       return Promise.resolve(rows);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2014,7 +2040,8 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       return Promise.resolve(rows);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2054,7 +2081,8 @@ ORDER BY st.sale_date DESC
 
       console.log("Grant history query results:", rows); // Debug log
       return Promise.resolve(rows);
-    } catch (_error) {      console.error("Grant history query error:", error);
+    } catch (error) {
+      console.error("Grant history query error:", error);
       return Promise.reject(error);
     }
   }
@@ -2114,7 +2142,8 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       return Promise.resolve(rows);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2141,7 +2170,8 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       return Promise.resolve(rows);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2208,7 +2238,8 @@ ORDER BY st.sale_date DESC
       events.sort((a, b) => new Date(a.date) - new Date(b.date));
 
       return Promise.resolve(events);
-    } catch (_error) {      console.error("Error getting portfolio events:", error);
+    } catch (error) {
+      console.error("Error getting portfolio events:", error);
       return Promise.reject(error);
     }
   }
@@ -2262,7 +2293,8 @@ ORDER BY st.sale_date DESC
       await this.createPortfolioSnapshot(today, "price_update", "Price update");
 
       return Promise.resolve({ updatedCount });
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2356,7 +2388,8 @@ ORDER BY st.sale_date DESC
 
       this.saveDatabase();
       return Promise.resolve({ success: true });
-    } catch (_error) {      console.error(`❌ Error creating portfolio snapshot for ${date}:`, error);
+    } catch (error) {
+      console.error(`❌ Error creating portfolio snapshot for ${date}:`, error);
       return Promise.reject(error);
     }
   }
@@ -2384,7 +2417,8 @@ ORDER BY st.sale_date DESC
       } else {
         console.log("ℹ️ No evolution entries found to recalculate");
       }
-    } catch (_error) {      console.error("❌ Error in manual evolution recalculation:", error);
+    } catch (error) {
+      console.error("❌ Error in manual evolution recalculation:", error);
       throw error;
     }
   }
@@ -2434,7 +2468,8 @@ ORDER BY st.sale_date DESC
           console.warn(`Notes: "${current.notes}"`);
         }
       }
-    } catch (_error) {      console.error("❌ Error in evolution consistency check:", error);
+    } catch (error) {
+      console.error("❌ Error in evolution consistency check:", error);
     }
   }
   // Database export functionality
@@ -2455,7 +2490,8 @@ ORDER BY st.sale_date DESC
       };
 
       return Promise.resolve(exportData);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2525,7 +2561,8 @@ ORDER BY st.sale_date DESC
         importedEntries: importData.portfolioEntries.length,
         backup: backup,
       });
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2582,7 +2619,8 @@ ORDER BY st.sale_date DESC
 
       this.saveDatabase();
       return Promise.resolve({ changes: 1 });
-    } catch (_error) {      console.error("Error updating tax amount:", error);
+    } catch (error) {
+      console.error("Error updating tax amount:", error);
       return Promise.reject(error);
     }
   }
@@ -2620,7 +2658,8 @@ ORDER BY st.sale_date DESC
         success: true,
         message: "Database deleted and recreated successfully",
       });
-    } catch (_error) {      console.error("❌ Error during database deletion:", error);
+    } catch (error) {
+      console.error("❌ Error during database deletion:", error);
 
       // If something went wrong, try to restore from backup or create new
       try {
@@ -2669,7 +2708,8 @@ ORDER BY st.sale_date DESC
         success: true,
         backupPath: emergencyBackupPath,
       };
-    } catch (_error) {      console.error("❌ Failed to create emergency backup:", error);
+    } catch (error) {
+      console.error("❌ Failed to create emergency backup:", error);
       // Don't throw error - deletion can proceed without backup
       return {
         success: false,
@@ -2696,7 +2736,8 @@ ORDER BY st.sale_date DESC
 
       // Step 2: Proceed with regular deletion
       return await this.deleteDatabase();
-    } catch (_error) {      console.error("❌ Enhanced database deletion failed:", error);
+    } catch (error) {
+      console.error("❌ Enhanced database deletion failed:", error);
       return Promise.reject(error);
     }
   }
@@ -2762,7 +2803,8 @@ ORDER BY st.sale_date DESC
         success: true,
         deletedEntry: entryToDelete,
       });
-    } catch (_error) {      console.error("Error deleting portfolio entry:", error);
+    } catch (error) {
+      console.error("Error deleting portfolio entry:", error);
       return Promise.reject(error);
     }
   }
@@ -2793,7 +2835,8 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       return Promise.resolve(rows);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2822,7 +2865,8 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       return Promise.resolve(rows);
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 
@@ -2845,7 +2889,8 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       return Promise.resolve(result);
-    } catch (_error) {      console.error(`❌ Error getting setting '${key}':`, error);
+    } catch (error) {
+      console.error(`❌ Error getting setting '${key}':`, error);
       return Promise.reject(error);
     }
   }
@@ -2866,7 +2911,8 @@ ORDER BY st.sale_date DESC
 
       console.log("Latest price date from database:", result);
       return Promise.resolve(result);
-    } catch (_error) {      console.error("Error getting latest price date:", error);
+    } catch (error) {
+      console.error("Error getting latest price date:", error);
       return Promise.reject(error);
     }
   }
@@ -2893,7 +2939,8 @@ ORDER BY st.sale_date DESC
       verifyStmt.free();
       this.saveDatabase();
       return Promise.resolve({ changes: 1 });
-    } catch (_error) {      return Promise.reject(error);
+    } catch (error) {
+      return Promise.reject(error);
     }
   }
 

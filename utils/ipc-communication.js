@@ -12,7 +12,8 @@ const WindowOperations = {
   async minimize() {
     try {
       return await window.ipcRenderer.invoke("window-minimize");
-    } catch (_error) {      console.error("❌ Error minimizing window:", error);
+    } catch (error) {
+      console.error("❌ Error minimizing window:", error);
       throw error;
     }
   },
@@ -20,7 +21,8 @@ const WindowOperations = {
   async maximize() {
     try {
       return await window.ipcRenderer.invoke("window-maximize");
-    } catch (_error) {      console.error("❌ Error maximizing window:", error);
+    } catch (error) {
+      console.error("❌ Error maximizing window:", error);
       throw error;
     }
   },
@@ -28,7 +30,8 @@ const WindowOperations = {
   async close() {
     try {
       return await window.ipcRenderer.invoke("window-close");
-    } catch (_error) {      console.error("❌ Error closing window:", error);
+    } catch (error) {
+      console.error("❌ Error closing window:", error);
       throw error;
     }
   },
@@ -48,7 +51,8 @@ const PortfolioOperations = {
         throw new Error(result.error);
       }
       return result;
-    } catch (_error) {      console.error("❌ Error getting portfolio overview:", error);
+    } catch (error) {
+      console.error("❌ Error getting portfolio overview:", error);
       throw error;
     }
   },
@@ -63,7 +67,8 @@ const PortfolioOperations = {
         taxAmount,
         notes
       );
-    } catch (_error) {      console.error("❌ Error adding portfolio entry:", error);
+    } catch (error) {
+      console.error("❌ Error adding portfolio entry:", error);
       throw error;
     }
   },
@@ -113,7 +118,8 @@ const PortfolioOperations = {
 
       // Clear current editing ID
       app.currentEditingTaxId = null;
-    } catch (_error) {      console.error("❌ Error updating tax:", error);
+    } catch (error) {
+      console.error("❌ Error updating tax:", error);
       alert("Error updating tax: " + error.message);
     }
   },
@@ -127,7 +133,8 @@ const PortfolioOperations = {
         taxAmount,
         notes
       );
-    } catch (_error) {      console.error("❌ Error updating portfolio entry:", error);
+    } catch (error) {
+      console.error("❌ Error updating portfolio entry:", error);
       throw error;
     }
   },
@@ -135,7 +142,8 @@ const PortfolioOperations = {
   async deleteEntry(id) {
     try {
       return await window.ipcRenderer.invoke("delete-portfolio-entry", id);
-    } catch (_error) {      console.error("❌ Error deleting portfolio entry:", error);
+    } catch (error) {
+      console.error("❌ Error deleting portfolio entry:", error);
       throw error;
     }
   },
@@ -147,7 +155,8 @@ const PortfolioOperations = {
         grantDate,
         exercisePrice
       );
-    } catch (_error) {      console.error("❌ Error checking existing grant:", error);
+    } catch (error) {
+      console.error("❌ Error checking existing grant:", error);
       throw error;
     }
   },
@@ -158,7 +167,8 @@ const PortfolioOperations = {
         "get-options-by-grant-date",
         grantDate
       );
-    } catch (_error) {      console.error("❌ Error getting options by grant date:", error);
+    } catch (error) {
+      console.error("❌ Error getting options by grant date:", error);
       throw error;
     }
   },
@@ -193,7 +203,8 @@ const PortfolioOperations = {
       }
 
       return salesHistory;
-    } catch (_error) {      console.error("Error loading sales history:", error);
+    } catch (error) {
+      console.error("Error loading sales history:", error);
       // Initialize empty on error
       if (app) {
         app.salesData = [];
@@ -253,7 +264,8 @@ const PortfolioOperations = {
       }
 
       return grantHistory;
-    } catch (_error) {      console.error("Error loading grant history:", error);
+    } catch (error) {
+      console.error("Error loading grant history:", error);
       // Initialize empty on error
       if (app) {
         app.grantData = [];
@@ -268,14 +280,16 @@ const PortfolioOperations = {
   async getPortfolioEvents() {
     try {
       return await window.ipcRenderer.invoke("get-portfolio-events");
-    } catch (_error) {      console.error("❌ Error getting portfolio events:", error);
+    } catch (error) {
+      console.error("❌ Error getting portfolio events:", error);
       throw error;
     }
   },
   async getAvailableExercisePrices() {
     try {
       return await window.ipcRenderer.invoke("get-available-exercise-prices");
-    } catch (_error) {      console.error("❌ Error getting available exercise prices:", error);
+    } catch (error) {
+      console.error("❌ Error getting available exercise prices:", error);
       throw error;
     }
   },
@@ -394,7 +408,8 @@ const PortfolioOperations = {
       app.closeModals();
       await app.loadPortfolioData();
       console.log(`✅ Deleted portfolio entry`);
-    } catch (_error) {      console.error("Error deleting portfolio entry:", error);
+    } catch (error) {
+      console.error("Error deleting portfolio entry:", error);
       alert("Error deleting entry");
     }
   },
@@ -407,7 +422,8 @@ const PortfolioOperations = {
     try {
       const prices = await ipcRenderer.invoke("get-available-exercise-prices");
       return prices && prices.length > 0 && !prices.error;
-    } catch (_error) {      console.error("Error checking price data existence:", error);
+    } catch (error) {
+      console.error("Error checking price data existence:", error);
       return false;
     }
   },
@@ -540,7 +556,8 @@ Note: KBC doesn't update on bank holidays.`;
           }
         }
       }
-    } catch (_error) {      console.error("Error checking price update status:", error);
+    } catch (error) {
+      console.error("Error checking price update status:", error);
       // Fallback to allow updates on error
       window.UIStateManager.Notifications.showNotification(
         "priceUpdateNotification",
@@ -567,7 +584,8 @@ Note: KBC doesn't update on bank holidays.`;
   async updatePrices() {
     try {
       return await window.ipcRenderer.invoke("scrape-data");
-    } catch (_error) {      console.error("❌ Error updating prices:", error);
+    } catch (error) {
+      console.error("❌ Error updating prices:", error);
       throw error;
     }
   },
@@ -575,7 +593,8 @@ Note: KBC doesn't update on bank holidays.`;
   async getLatestPriceDate() {
     try {
       return await window.ipcRenderer.invoke("get-latest-price-date");
-    } catch (_error) {      console.error("❌ Error getting latest price date:", error);
+    } catch (error) {
+      console.error("❌ Error getting latest price date:", error);
       throw error;
     }
   },
@@ -583,7 +602,8 @@ Note: KBC doesn't update on bank holidays.`;
   async testConnection() {
     try {
       return await window.ipcRenderer.invoke("test-connection");
-    } catch (_error) {      console.error("❌ Error testing connection:", error);
+    } catch (error) {
+      console.error("❌ Error testing connection:", error);
       throw error;
     }
   },
@@ -591,7 +611,8 @@ Note: KBC doesn't update on bank holidays.`;
   async getLatestCSV() {
     try {
       return await window.ipcRenderer.invoke("get-latest-csv");
-    } catch (_error) {      console.error("❌ Error getting latest CSV:", error);
+    } catch (error) {
+      console.error("❌ Error getting latest CSV:", error);
       throw error;
     }
   },
@@ -605,7 +626,8 @@ const SettingsOperations = {
     try {
       const result = await window.ipcRenderer.invoke("get-setting", key);
       return result;
-    } catch (_error) {      console.error(`❌ Error getting setting '${key}':`, error);
+    } catch (error) {
+      console.error(`❌ Error getting setting '${key}':`, error);
       throw error;
     }
   },
@@ -619,7 +641,8 @@ const SettingsOperations = {
       );
       console.log(`🔍 DEBUG: IPC result for ${key}:`, result);
       return result;
-    } catch (_error) {      console.error(`❌ Error updating setting '${key}':`, error);
+    } catch (error) {
+      console.error(`❌ Error updating setting '${key}':`, error);
       throw error;
     }
   },
@@ -639,7 +662,8 @@ const SettingsOperations = {
       }
 
       return settings;
-    } catch (_error) {      console.error("❌ Error loading all settings:", error);
+    } catch (error) {
+      console.error("❌ Error loading all settings:", error);
       throw error;
     }
   },
@@ -657,7 +681,8 @@ const SettingsOperations = {
 
       console.log("🔍 DEBUG: All settings saved, results:", results);
       return results;
-    } catch (_error) {      console.error("❌ Error saving all settings:", error);
+    } catch (error) {
+      console.error("❌ Error saving all settings:", error);
       throw error;
     }
   },
@@ -677,7 +702,8 @@ const SalesOperations = {
         salePrice,
         notes
       );
-    } catch (_error) {      console.error("❌ Error recording sale:", error);
+    } catch (error) {
+      console.error("❌ Error recording sale:", error);
       throw error;
     }
   },
@@ -745,7 +771,8 @@ const SalesOperations = {
 
       // Clear current sell entry
       app.currentSellEntry = null;
-    } catch (_error) {      console.error("❌ Error confirming sale:", error);
+    } catch (error) {
+      console.error("❌ Error confirming sale:", error);
       alert("Error recording sale: " + error.message);
     }
   },
@@ -812,7 +839,8 @@ const SalesOperations = {
 
       // Clear current editing sale ID
       app.currentEditingSaleId = null;
-    } catch (_error) {      console.error("❌ Error confirming edit sale:", error);
+    } catch (error) {
+      console.error("❌ Error confirming edit sale:", error);
       alert("Error updating sale: " + error.message);
     }
   },
@@ -820,7 +848,8 @@ const SalesOperations = {
   async getSalesHistory() {
     try {
       return await window.ipcRenderer.invoke("get-sales-history");
-    } catch (_error) {      console.error("❌ Error getting sales history:", error);
+    } catch (error) {
+      console.error("❌ Error getting sales history:", error);
       throw error;
     }
   },
@@ -833,7 +862,8 @@ const EvolutionOperations = {
   async getPortfolioEvolution(days = null) {
     try {
       return await window.ipcRenderer.invoke("get-portfolio-evolution", days);
-    } catch (_error) {      console.error("❌ Error getting portfolio evolution:", error);
+    } catch (error) {
+      console.error("❌ Error getting portfolio evolution:", error);
       throw error;
     }
   },
@@ -845,7 +875,8 @@ const EvolutionOperations = {
         exercisePrice,
         days
       );
-    } catch (_error) {      console.error("❌ Error getting option price history:", error);
+    } catch (error) {
+      console.error("❌ Error getting option price history:", error);
       throw error;
     }
   },
@@ -853,7 +884,8 @@ const EvolutionOperations = {
   async getGrantHistory() {
     try {
       return await window.ipcRenderer.invoke("get-grant-history");
-    } catch (_error) {      console.error("❌ Error getting grant history:", error);
+    } catch (error) {
+      console.error("❌ Error getting grant history:", error);
       throw error;
     }
   },
@@ -866,7 +898,8 @@ const DatabaseOperations = {
   async exportDatabase() {
     try {
       return await window.ipcRenderer.invoke("export-database");
-    } catch (_error) {      console.error("❌ Error exporting database:", error);
+    } catch (error) {
+      console.error("❌ Error exporting database:", error);
       throw error;
     }
   },
@@ -874,7 +907,8 @@ const DatabaseOperations = {
   async importDatabase(mergeMode = false) {
     try {
       return await window.ipcRenderer.invoke("import-database", mergeMode);
-    } catch (_error) {      console.error("❌ Error importing database:", error);
+    } catch (error) {
+      console.error("❌ Error importing database:", error);
       throw error;
     }
   },
@@ -884,7 +918,8 @@ const DatabaseOperations = {
   async deleteDatabase() {
     try {
       return await window.ipcRenderer.invoke("delete-database");
-    } catch (_error) {      console.error("❌ Error deleting database:", error);
+    } catch (error) {
+      console.error("❌ Error deleting database:", error);
       throw error;
     }
   },
@@ -892,7 +927,8 @@ const DatabaseOperations = {
   async debugState() {
     try {
       return await window.ipcRenderer.invoke("debug-database-state");
-    } catch (_error) {      console.error("❌ Error debugging database state:", error);
+    } catch (error) {
+      console.error("❌ Error debugging database state:", error);
       throw error;
     }
   },
@@ -904,7 +940,8 @@ const DatabaseOperations = {
     try {
       console.log("📁 Opening file selection dialog");
       return await window.ipcRenderer.invoke("select-import-file");
-    } catch (_error) {      console.error("❌ Error selecting import file:", error);
+    } catch (error) {
+      console.error("❌ Error selecting import file:", error);
       return { success: false, error: error.message };
     }
   },
@@ -923,7 +960,8 @@ const DatabaseOperations = {
         filePath,
         mergeMode
       );
-    } catch (_error) {      console.error("❌ Error importing database from file:", error);
+    } catch (error) {
+      console.error("❌ Error importing database from file:", error);
       return { success: false, error: error.message };
     }
   },
@@ -936,7 +974,8 @@ const AppOperations = {
   async getVersion() {
     try {
       return await window.ipcRenderer.invoke("get-app-version");
-    } catch (_error) {      console.error("❌ Error getting app version:", error);
+    } catch (error) {
+      console.error("❌ Error getting app version:", error);
       throw error;
     }
   },
@@ -1129,7 +1168,8 @@ const GrantOperations = {
       app.currentFormData = null;
 
       console.log(`🎉 Successfully added ${quantity} options`);
-    } catch (_error) {      console.error("❌ Error in addGrants:", error);
+    } catch (error) {
+      console.error("❌ Error in addGrants:", error);
       alert("Error adding options: " + error.message);
     }
   },
@@ -1166,7 +1206,8 @@ const GrantOperations = {
         await this.proceedWithMergeGrant(app);
         return;
       }
-    } catch (_error) {      console.error("❌ Error in confirmMergeGrants:", error);
+    } catch (error) {
+      console.error("❌ Error in confirmMergeGrants:", error);
       alert("Error processing grant choice: " + error.message);
     }
   },
@@ -1232,7 +1273,8 @@ const GrantOperations = {
       console.log(
         `🎉 Successfully added ${quantity} options as separate grant`
       );
-    } catch (_error) {      console.error("❌ Error in proceedWithSeparateGrant:", error);
+    } catch (error) {
+      console.error("❌ Error in proceedWithSeparateGrant:", error);
       alert("Error creating separate grant: " + error.message);
       try {
         window.UIStateManager.Modals.closeAllModals(app);
@@ -1339,7 +1381,8 @@ const GrantOperations = {
       console.log(
         `🎉 Successfully merged ${quantity} options into existing grant`
       );
-    } catch (_error) {      console.error("❌ Error in proceedWithMergeGrant:", error);
+    } catch (error) {
+      console.error("❌ Error in proceedWithMergeGrant:", error);
       alert("Error merging grants: " + error.message);
       try {
         app.closeModals();
@@ -1370,7 +1413,8 @@ const IPCCommunication = {
       try {
         window.ipcRenderer = require("electron").ipcRenderer;
         console.log("✅ ipcRenderer loaded successfully");
-      } catch (_error) {        console.error("❌ Failed to load ipcRenderer:", error);
+      } catch (error) {
+        console.error("❌ Failed to load ipcRenderer:", error);
         return false;
       }
     }
@@ -1391,7 +1435,8 @@ const IPCCommunication = {
           console.error("❌ Failed to initialize IPC listeners");
           return false;
         }
-      } catch (_error) {        console.error("❌ Error initializing IPC listeners:", error);
+      } catch (error) {
+        console.error("❌ Error initializing IPC listeners:", error);
         return false;
       }
     } else {

@@ -55,7 +55,7 @@ function calculateWeightedAverageReturn(overview) {
 function calculateTotalSellableValue(overview) {
   return overview.reduce((sum, entry) => {
     // Only count entries that are currently sellable
-    if (entry.selling_status === 'SELLABLE') {
+    if (entry.selling_status === "SELLABLE") {
       return sum + (entry.current_total_value || 0);
     }
     return sum;

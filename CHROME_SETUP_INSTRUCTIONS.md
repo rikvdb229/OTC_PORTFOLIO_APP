@@ -1,4 +1,3 @@
-
 # Chrome Setup Instructions
 
 ## For End Users
@@ -11,25 +10,30 @@ If the application shows "Chrome not found" error:
 ## For Developers
 
 ### Option 1: Bundle Chrome (Recommended)
+
 ```bash
 npm run setup-chrome
 npm run build-win
 ```
 
 ### Option 2: Require Chrome Installation
+
 Include in your installer/documentation that users need Chrome.
 
 ### Option 3: Alternative Scraping
+
 Consider using a different web scraping approach that doesn't require Chrome.
 
 ## Troubleshooting
 
 ### "Chrome not found" Error
+
 - Install Google Chrome
 - Ensure Chrome is in standard installation location
 - Run as administrator (if needed)
 
 ### Permission Errors
+
 - Use user directory for database (already implemented)
 - Install app per-user (not system-wide)
 

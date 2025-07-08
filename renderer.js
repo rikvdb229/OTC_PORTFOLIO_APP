@@ -53,9 +53,9 @@ class EnhancedPortfolioApp {
     window.IPCCommunication.Price.checkPriceUpdateStatus(this);
     this.checkAutoUpdate();
     // Initialize undo/redo system
-setTimeout(async () => {
-  await window.UndoRedoManager.initialize(this);
-}, 100);
+    setTimeout(async () => {
+      await window.UndoRedoManager.initialize(this);
+    }, 100);
   }
 
   // ADD HERE: New method to initialize footer (add this method to your class)
@@ -171,7 +171,8 @@ setTimeout(async () => {
 
       // FIXED: Use the correct reference to ActionButtonManager
       window.ActionButtonManager.updateActionButtons(this, hasData);
-    } catch (_error) {      console.error("Error checking data availability:", error);
+    } catch (error) {
+      console.error("Error checking data availability:", error);
       window.ActionButtonManager.updateActionButtons(this, false);
     }
   }
@@ -189,7 +190,8 @@ setTimeout(async () => {
   async showaddGrantsModal() {
     try {
       window.UIStateManager.Modals.showaddGrantsModal(this);
-    } catch (_error) {      console.error("Error showing Add Grants modal:", error);
+    } catch (error) {
+      console.error("Error showing Add Grants modal:", error);
       alert("Error loading modal data");
     }
   }
@@ -270,7 +272,8 @@ setTimeout(async () => {
       this.closeModals();
       await this.loadPortfolioData();
       console.log(`✅ Deleted portfolio entry`);
-    } catch (_error) {      console.error("Error deleting portfolio entry:", error);
+    } catch (error) {
+      console.error("Error deleting portfolio entry:", error);
       alert("Error deleting entry");
     }
   }
