@@ -17,6 +17,7 @@ const FooterManager = {
       const appVersionElement = document.getElementById("appVersion");
       const appStatusElement = document.getElementById("appStatus");
       const buildDateElement = document.getElementById("buildDate");
+      
 
       if (appVersionElement) {
         appVersionElement.textContent =
@@ -25,9 +26,6 @@ const FooterManager = {
 
       if (appStatusElement) {
         appStatusElement.textContent = window.AppConfig.APP_CONFIG.STATUS;
-        if (window.AppConfig.APP_CONFIG.isDevVersion()) {
-          appStatusElement.classList.add("dev-version");
-        }
       }
 
       if (buildDateElement) {

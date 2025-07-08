@@ -59,7 +59,8 @@ class EnhancedPortfolioApp {
   }
 
   // ADD HERE: New method to initialize footer (add this method to your class)
-  initializeFooter() {
+ async initializeFooter() {
+      await window.AppConfig.APP_CONFIG.loadFromMain();
     window.UIStateManager.Footer.initializeFooter(this);
   }
   /**

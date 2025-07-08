@@ -1,8 +1,12 @@
 {
-  "name": "otc-portfolio-app",
-  "version": "1.0.2",
-  "description": "Option Portfolio Tracker",
+  "name": "portfolio-tracker",
+  "version": "0.1.0",
+  "description": "Portfolio Tracker - Stock Options Management App",
   "main": "main.js",
+  "author": "Portfolio Manager",
+  "license": "MIT",
+  "buildDate": "2025-07-08",
+  "status": "Beta Version",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
@@ -37,15 +41,13 @@
     "puppeteer": "^23.11.1",
     "sql.js": "^1.13.0"
   },
-  "author": "Your Name",
-  "license": "MIT",
   "engines": {
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
   "build": {
-    "appId": "com.yourcompany.otc-portfolio",
-    "productName": "OTC Portfolio Tracker",
+    "appId": "com.portfoliotracker.app",
+    "productName": "Portfolio Tracker",
     "directories": {
       "output": "dist"
     },

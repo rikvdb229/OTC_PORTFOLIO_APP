@@ -2,27 +2,41 @@
  * ===== APP CONFIGURATION & CONSTANTS =====
  * Shared configuration for both main and renderer processes
  */
-
 const APP_CONFIG = {
-  VERSION: "1.0.2",
-  APP_NAME: "Portfolio tracker", // Changed from "KBC ESOP Portfolio Tracker"
+  VERSION: "0.1.0", // Default values
+  APP_NAME: "Portfolio Tracker",
   STATUS: "Development Version",
-  BUILD_DATE: "2025-06-19",
+  BUILD_DATE: "2025-07-08",
   AUTHOR: "Portfolio Manager",
 
-  // Version helpers
+  // Load real values from main process
+  async loadFromMain() {
+    try {
+      if (window.ipcRenderer) {
+        const info = await window.ipcRenderer.invoke("get-app-version");
+        this.VERSION = info.version;
+        this.APP_NAME = info.appName;
+        this.STATUS = info.status;
+        this.BUILD_DATE = info.buildDate;
+        this.AUTHOR = info.author;
+        console.log(`✅ Version loaded from main: ${this.getFullVersion()}`);
+        console.log("Loaded from main:", info);
+console.log("BUILD_DATE set to:", this.BUILD_DATE);
+      }
+    } catch (error) {
+      console.warn("Could not load version from main:", error);
+    }
+  },
+
   getFullVersion() {
     return `${this.APP_NAME} v${this.VERSION}`;
-  },
-
-  getVersionWithStatus() {
-    return `v${this.VERSION} - ${this.STATUS}`;
-  },
-
-  isDevVersion() {
-    return this.STATUS.toLowerCase().includes("development");
-  },
+  }
 };
+
+// Load version info when config loads
+if (typeof window !== 'undefined') {
+  APP_CONFIG.loadFromMain();
+}
 const SettingsManager = {
   /**
    * Load settings from database and populate UI elements

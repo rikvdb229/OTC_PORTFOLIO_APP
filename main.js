@@ -6,40 +6,17 @@ const PortfolioDatabase = require("./portfolio-db");
 
 // ADD HERE: Version checker at the top after imports
 const packageInfo = require("./package.json");
-
-// Version consistency check
-function checkVersionConsistency() {
-  const packageVersion = packageInfo.version;
-  const appVersion = "0.1"; // This should match APP_CONFIG.VERSION from renderer.js
-
-  if (packageVersion !== appVersion) {
-    console.warn(
-      `⚠️ Version mismatch: package.json (${packageVersion}) vs app config (${appVersion})`
-    );
-    console.warn(
-      "   Please update package.json or APP_CONFIG.VERSION to match"
-    );
-  } else {
-    console.log(`✅ Version consistency check passed: v${packageVersion}`);
-  }
-
-  return {
-    packageVersion,
-    appVersion,
-    isConsistent: packageVersion === appVersion,
-  };
-}
-
 // ADD HERE: App configuration that matches renderer.js
+const pkg = require("./package.json");
 const APP_CONFIG = {
-  VERSION: "0.1",
-  APP_NAME: "KBC ESOP Portfolio Tracker",
-  STATUS: "Development Version",
-  BUILD_DATE: "2024-12-15",
-
+  VERSION: pkg.version,
+  APP_NAME: pkg.build.productName,
+  STATUS: "Development Version", 
+  BUILD_DATE: pkg.buildDate,
+  
   getFullVersion() {
     return `${this.APP_NAME} v${this.VERSION}`;
-  },
+  }
 };
 
 let mainWindow;
@@ -141,7 +118,6 @@ app.whenReady().then(async () => {
   console.log("App ready, initializing...");
 
   // ADD HERE: Version consistency check
-  const versionCheck = checkVersionConsistency();
   console.log(`🚀 ${APP_CONFIG.getFullVersion()} - ${APP_CONFIG.STATUS}`);
 
   await initializeApp();
@@ -217,11 +193,12 @@ ipcMain.handle(
 );
 ipcMain.handle("get-app-version", () => {
   return {
-    version: APP_CONFIG.VERSION,
-    fullVersion: APP_CONFIG.getFullVersion(),
-    packageVersion: packageInfo.version,
-    buildDate: APP_CONFIG.BUILD_DATE,
-    status: APP_CONFIG.STATUS,
+    version: pkg.version,
+    appName: pkg.build.productName,
+    description: pkg.description,
+    author: pkg.author,
+    buildDate: pkg.buildDate,
+    status: pkg.status,
   };
 });
 ipcMain.handle("delete-database", async () => {
