@@ -110,148 +110,274 @@ class UndoRedoManager {
   /**
    * Perform undo operation
    */
-  async undo() {
-    if (this.undoStack.length === 0) {
-      console.log("⚠️ Nothing to undo");
-      this.showNotification("Nothing to undo", "warning");
-      return;
-    }
-
-    if (this.isOperationInProgress) {
-      console.log("⏳ Operation in progress, cannot undo");
-      return;
-    }
-
-    try {
-      this.isOperationInProgress = true;
-      
-      const undoEntry = this.undoStack.pop();
-      console.log(`⬅️ Undoing: ${undoEntry.operation}`);
-      
-      // Store current state in redo stack
-      const redoEntry = {
-        snapshot: this.currentSnapshot,
-        operation: `Redo: ${undoEntry.operation}`,
-        timestamp: new Date().toISOString(),
-        id: this.generateSnapshotId()
-      };
-      this.redoStack.push(redoEntry);
-      
-      // Restore previous state
-      const importResult = await window.IPCCommunication.Database.importDatabaseFromData(
-        undoEntry.snapshot, 
-        false // replace mode
-      );
-      
-      if (importResult.success) {
-        this.currentSnapshot = undoEntry.snapshot;
-        
-        // Reload app data
-        await this.reloadAppData();
-        
-        // Show success notification
-        this.showNotification(`Undid: ${undoEntry.operation}`, "success");
-        
-        console.log(`✅ Undo completed: ${undoEntry.operation}`);
-      } else {
-        // Restore undo entry if import failed
-        this.undoStack.push(undoEntry);
-        this.redoStack.pop();
-        
-        console.error("❌ Undo failed:", importResult.error);
-        this.showNotification("Undo failed", "error");
-      }
-      
-    } catch (error) {
-      console.error("❌ Error during undo:", error);
-      this.showNotification("Undo error occurred", "error");
-    } finally {
-      this.isOperationInProgress = false;
-      this.updateButtonStates();
-    }
+/**
+ * FIXED UNDO FUNCTION - Replace your existing undo() method with this
+ */
+async undo() {
+  if (this.undoStack.length === 0) {
+    console.log("⚠️ Nothing to undo");
+    this.showNotification("Nothing to undo", "warning");
+    return;
   }
+
+  if (this.isOperationInProgress) {
+    console.log("⏳ Operation in progress, cannot undo");
+    return;
+  }
+
+  try {
+    this.isOperationInProgress = true;
+    
+    const undoEntry = this.undoStack.pop();
+    console.log(`⬅️ Undoing: ${undoEntry.operation}`);
+    console.log("🔍 Undo entry snapshot size:", JSON.stringify(undoEntry.snapshot).length);
+    
+    // CRITICAL FIX: Store current state BEFORE doing the undo
+    console.log("📸 Taking snapshot of CURRENT state for redo...");
+    const currentStateExport = await window.IPCCommunication.Database.exportDatabase();
+    
+    if (!currentStateExport.success) {
+      throw new Error("Failed to capture current state for redo");
+    }
+    
+    // Store current state in redo stack
+    const redoEntry = {
+      snapshot: currentStateExport.data,
+      operation: `Redo: ${undoEntry.operation}`,
+      timestamp: new Date().toISOString(),
+      id: this.generateSnapshotId()
+    };
+    this.redoStack.push(redoEntry);
+    
+    console.log("📤 About to import undo snapshot...");
+    console.log("📊 Undo snapshot metadata:", undoEntry.snapshot?.metadata);
+    console.log("📊 Portfolio entries count:", undoEntry.snapshot?.portfolioEntries?.length);
+    
+    // Restore previous state
+    const importResult = await window.IPCCommunication.Database.importDatabaseFromData(
+      undoEntry.snapshot, 
+      false // replace mode
+    );
+    
+    console.log("📥 Import result:", importResult);
+    console.log("📊 Import result details:", {
+      success: importResult.success,
+      importedEntries: importResult.importedEntries,
+      error: importResult.error
+    });
+    
+    if (importResult.success) {
+      this.currentSnapshot = undoEntry.snapshot;
+      
+      console.log("🔄 Starting app data reload...");
+      // Reload app data
+      await this.reloadAppData();
+      
+      // Show success notification
+      this.showNotification(`Undid: ${undoEntry.operation}`, "success");
+      
+      console.log(`✅ Undo completed: ${undoEntry.operation}`);
+    } else {
+      // Restore undo entry if import failed
+      this.undoStack.push(undoEntry);
+      this.redoStack.pop();
+      
+      console.error("❌ Undo failed - import error:", importResult.error);
+      this.showNotification("Undo failed: " + (importResult.error || "Unknown error"), "error");
+    }
+    
+  } catch (error) {
+    console.error("❌ Error during undo:", error);
+    this.showNotification("Undo error occurred: " + error.message, "error");
+  } finally {
+    this.isOperationInProgress = false;
+    this.updateButtonStates();
+  }
+}
+
 
   /**
    * Perform redo operation
    */
-  async redo() {
-    if (this.redoStack.length === 0) {
-      console.log("⚠️ Nothing to redo");
-      this.showNotification("Nothing to redo", "warning");
-      return;
-    }
-
-    if (this.isOperationInProgress) {
-      console.log("⏳ Operation in progress, cannot redo");
-      return;
-    }
-
-    try {
-      this.isOperationInProgress = true;
-      
-      const redoEntry = this.redoStack.pop();
-      console.log(`➡️ Redoing: ${redoEntry.operation}`);
-      
-      // Store current state in undo stack
-      const undoEntry = {
-        snapshot: this.currentSnapshot,
-        operation: redoEntry.operation.replace("Redo: ", ""),
-        timestamp: new Date().toISOString(),
-        id: this.generateSnapshotId()
-      };
-      this.undoStack.push(undoEntry);
-      
-      // Restore redo state
-      const importResult = await window.IPCCommunication.Database.importDatabaseFromData(
-        redoEntry.snapshot, 
-        false // replace mode
-      );
-      
-      if (importResult.success) {
-        this.currentSnapshot = redoEntry.snapshot;
-        
-        // Reload app data
-        await this.reloadAppData();
-        
-        // Show success notification
-        this.showNotification(`Redid: ${redoEntry.operation}`, "success");
-        
-        console.log(`✅ Redo completed: ${redoEntry.operation}`);
-      } else {
-        // Restore redo entry if import failed
-        this.redoStack.push(redoEntry);
-        this.undoStack.pop();
-        
-        console.error("❌ Redo failed:", importResult.error);
-        this.showNotification("Redo failed", "error");
-      }
-      
-    } catch (error) {
-      console.error("❌ Error during redo:", error);
-      this.showNotification("Redo error occurred", "error");
-    } finally {
-      this.isOperationInProgress = false;
-      this.updateButtonStates();
-    }
+async redo() {
+  if (this.redoStack.length === 0) {
+    console.log("⚠️ Nothing to redo");
+    this.showNotification("Nothing to redo", "warning");
+    return;
   }
+
+  if (this.isOperationInProgress) {
+    console.log("⏳ Operation in progress, cannot redo");
+    return;
+  }
+
+  try {
+    this.isOperationInProgress = true;
+    
+    const redoEntry = this.redoStack.pop();
+    console.log(`➡️ Redoing: ${redoEntry.operation}`);
+    console.log("🔍 Redo entry snapshot size:", JSON.stringify(redoEntry.snapshot).length);
+    
+    // CRITICAL FIX: Store current state BEFORE doing the redo
+    console.log("📸 Taking snapshot of CURRENT state for undo...");
+    const currentStateExport = await window.IPCCommunication.Database.exportDatabase();
+    
+    if (!currentStateExport.success) {
+      throw new Error("Failed to capture current state for undo");
+    }
+    
+    // Store current state in undo stack
+    const undoEntry = {
+      snapshot: currentStateExport.data,
+      operation: redoEntry.operation.replace("Redo: ", ""),
+      timestamp: new Date().toISOString(),
+      id: this.generateSnapshotId()
+    };
+    this.undoStack.push(undoEntry);
+    
+    console.log("📤 About to import redo snapshot...");
+    console.log("📊 Redo snapshot metadata:", redoEntry.snapshot?.metadata);
+    console.log("📊 Portfolio entries count:", redoEntry.snapshot?.portfolioEntries?.length);
+    
+    // Restore redo state
+    const importResult = await window.IPCCommunication.Database.importDatabaseFromData(
+      redoEntry.snapshot, 
+      false // replace mode
+    );
+    
+    console.log("📥 Import result:", importResult);
+    console.log("📊 Import result details:", {
+      success: importResult.success,
+      importedEntries: importResult.importedEntries,
+      error: importResult.error
+    });
+    
+    if (importResult.success) {
+      this.currentSnapshot = redoEntry.snapshot;
+      
+      console.log("🔄 Starting app data reload...");
+      // Reload app data
+      await this.reloadAppData();
+      
+      // Show success notification
+      this.showNotification(`Redid: ${redoEntry.operation}`, "success");
+      
+      console.log(`✅ Redo completed: ${redoEntry.operation}`);
+    } else {
+      // Restore redo entry if import failed
+      this.redoStack.push(redoEntry);
+      this.undoStack.pop();
+      
+      console.error("❌ Redo failed - import error:", importResult.error);
+      this.showNotification("Redo failed: " + (importResult.error || "Unknown error"), "error");
+    }
+    
+  } catch (error) {
+    console.error("❌ Error during redo:", error);
+    this.showNotification("Redo error occurred: " + error.message, "error");
+  } finally {
+    this.isOperationInProgress = false;
+    this.updateButtonStates();
+  }
+}
 
   /**
    * Reload application data after undo/redo
    */
   async reloadAppData() {
     try {
+      // Always reload portfolio data first
       if (this.app && this.app.loadPortfolioData) {
         await this.app.loadPortfolioData();
       }
       
-      // Reload other data if methods exist
-      if (this.app && this.app.loadEvolutionData) {
-        await this.app.loadEvolutionData();
-      }
+      // Get the currently active tab
+      const currentTab = this.getCurrentActiveTab();
+      console.log(`🔄 Reloading data for active tab: ${currentTab}`);
+      
+      // Reload data specific to the current tab
+      await this.reloadCurrentTabData(currentTab);
       
       console.log("🔄 App data reloaded after undo/redo");
     } catch (error) {
       console.error("❌ Error reloading app data:", error);
+    }
+  }
+
+  /**
+   * Get the currently active tab
+   */
+  getCurrentActiveTab() {
+    // Try to get from app.activeTab first
+    if (this.app && this.app.activeTab) {
+      return this.app.activeTab;
+    }
+    
+    // Fallback to checking DOM
+    const activeTab = document.querySelector(".nav-tab.active");
+    return activeTab ? activeTab.getAttribute("data-tab") : "portfolio";
+  }
+
+  /**
+   * Reload data for the currently active tab
+   */
+  async reloadCurrentTabData(tabName) {
+    try {
+      console.log(`🔄 Attempting to reload ${tabName} tab data...`);
+      
+      switch (tabName) {
+        case "portfolio":
+          // Portfolio data already loaded above
+          console.log("📊 Portfolio data already loaded");
+          break;
+          
+        case "evolution":
+          if (this.app && this.app.loadEvolutionData) {
+            console.log("📈 Calling loadEvolutionData...");
+            await this.app.loadEvolutionData();
+            console.log("✅ Evolution data reloaded");
+          } else {
+            console.warn("⚠️ loadEvolutionData method not found");
+          }
+          break;
+          
+        case "chart":
+          if (this.app && this.app.loadChartData) {
+            console.log("📊 Calling loadChartData...");
+            await this.app.loadChartData();
+            console.log("✅ Chart data reloaded");
+          } else {
+            console.warn("⚠️ loadChartData method not found");
+          }
+          break;
+          
+        case "sales-history":
+          if (this.app && this.app.loadSalesHistory) {
+            console.log("💰 Calling loadSalesHistory...");
+            await this.app.loadSalesHistory();
+            console.log("✅ Sales history data reloaded");
+          } else {
+            console.warn("⚠️ loadSalesHistory method not found");
+            console.log("🔍 Available app methods:", Object.getOwnPropertyNames(this.app).filter(name => name.includes('load')));
+          }
+          break;
+          
+        case "grant-history":
+          if (this.app && this.app.loadGrantHistory) {
+            console.log("📋 Calling loadGrantHistory...");
+            await this.app.loadGrantHistory();
+            console.log("✅ Grant history data reloaded");
+          } else {
+            console.warn("⚠️ loadGrantHistory method not found");
+            console.log("🔍 Available app methods:", Object.getOwnPropertyNames(this.app).filter(name => name.includes('load')));
+          }
+          break;
+          
+        default:
+          console.log(`ℹ️ No specific reload needed for tab: ${tabName}`);
+      }
+    } catch (error) {
+      console.error(`❌ Error reloading ${tabName} tab data:`, error);
     }
   }
 
@@ -340,6 +466,16 @@ class UndoRedoManager {
     this.redoStack = [];
     this.updateButtonStates();
     console.log("🗑️ Undo/redo history cleared");
+  }
+
+  /**
+   * Fix corrupted redo stack (temporary fix for existing sessions)
+   */
+  fixRedoStack() {
+    console.log("🔧 Clearing corrupted redo stack...");
+    this.redoStack = [];
+    this.updateButtonStates();
+    console.log("✅ Redo stack cleared - new operations will work correctly");
   }
 
   /**
