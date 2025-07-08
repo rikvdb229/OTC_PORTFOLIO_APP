@@ -5,18 +5,20 @@
   "main": "main.js",
   "author": "Portfolio Manager",
   "license": "MIT",
-  "buildDate": "2025-07-08",
+  "buildDate": "2025-07-09",
   "status": "Beta Version",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "npm run setup-chrome && electron-builder",
-    "build-win": "npm run setup-chrome && electron-builder --win",
+    "setup-chrome": "node setup-chrome.js",
+    "build": "node setup-chrome.js && electron-builder",
+    "build-win": "node setup-chrome.js && electron-builder --win",
+    "build-portable": "node setup-chrome.js && electron-builder --win portable",
+    "build-installer": "node setup-chrome.js && electron-builder --win nsis",
+    "build-all": "npm run build-portable && npm run build-installer",
     "rebuild": "electron-rebuild",
     "postinstall": "electron-rebuild",
     "clean": "rimraf node_modules package-lock.json && npm install",
-    "setup-chrome": "node simple-chrome-setup.js",
-    "test-chrome": "node test-chrome-simple.js",
     "check-db": "node migrate-database.js",
     "migrate-db": "node migrate-database.js migrate",
     "lint": "eslint .",
@@ -53,8 +55,8 @@
     },
     "files": [
       "**/*",
-      "chrome-portable/**/*",
       "node_modules/puppeteer/.local-chromium/**/*",
+      "node_modules/puppeteer/.cache/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
       "!**/node_modules/*.d.ts",
@@ -65,26 +67,38 @@
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
       "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
+      "!build-prep.js",
+      "!css-migration.js",
+      "!simple-chrome-setup.js",
+      "!test-chrome-simple.js",
+      "!download-chrome.js",
+      "!Todo.txt",
+      "!Archive/**/*"
     ],
     "extraResources": [
       {
-        "from": "chrome-portable",
-        "to": "chrome",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
         "from": "node_modules/puppeteer/.local-chromium",
         "to": "chromium",
-        "filter": [
-          "**/*"
-        ]
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/puppeteer/.cache",
+        "to": "chromium-cache",
+        "filter": ["**/*"]
       }
     ],
     "win": {
-      "target": "nsis",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
       "icon": "assets/icon.ico"
     },
     "nsis": {
@@ -93,7 +107,13 @@
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "perMachine": false,
-      "runAfterFinish": false
+      "runAfterFinish": false,
+      "shortcutName": "Portfolio Tracker",
+      "installerLanguages": ["en_US"],
+      "language": "1033"
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable.${ext}"
     }
   }
 }

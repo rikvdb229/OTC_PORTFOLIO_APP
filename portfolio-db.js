@@ -17,52 +17,55 @@ class PortfolioDatabase {
     let dbDirectory;
     let dbPath;
 
+    // Check if we're running as portable version
+    const isPortable = this.isPortableVersion();
+    
     // Check if we're in development mode (app folder is writable)
     const isDevelopment = this.isInDevelopmentMode();
 
-    try {
-      if (isDevelopment) {
-        // Development mode: use current directory for convenience
+    if (isPortable) {
+      // Portable mode: use app directory for database
+      try {
+        dbDirectory = path.dirname(process.execPath);
+        dbPath = path.join(dbDirectory, "portfolio.db");
+        console.log(`📱 Portable mode: Using app directory: ${dbDirectory}`);
+      } catch (error) {
+        console.log('⚠️ Portable path detection failed, using fallback');
         dbDirectory = process.cwd();
         dbPath = path.join(dbDirectory, "portfolio.db");
-        console.log(
-          `🔧 Development mode: Using current directory: ${dbDirectory}`
-        );
-      } else {
-        // Production mode: prioritize user directories
+      }
+    } else if (isDevelopment) {
+      // Development mode: use current directory for convenience
+      dbDirectory = process.cwd();
+      dbPath = path.join(dbDirectory, "portfolio.db");
+      console.log(`🔧 Development mode: Using current directory: ${dbDirectory}`);
+    } else {
+      // Production mode: prioritize user directories
+      try {
         if (app && app.getPath) {
           dbDirectory = app.getPath("userData");
           dbPath = path.join(dbDirectory, "portfolio.db");
-          console.log(
-            `📁 Production mode: Using Electron userData directory: ${dbDirectory}`
-          );
+          console.log(`📁 Production mode: Using Electron userData directory: ${dbDirectory}`);
         } else {
-          throw new Error(
-            "Electron app not available, trying user directories"
-          );
+          throw new Error("Electron app not available, trying user directories");
         }
-      }
-    } catch (_electronError) {
-      // Fallback to user directories
-      try {
-        if (process.platform === "win32") {
-          dbDirectory = path.join(
-            os.homedir(),
-            "AppData",
-            "Local",
-            "OTCPortfolioApp"
-          );
-        } else {
-          dbDirectory = path.join(os.homedir(), ".otc-portfolio");
+      } catch (error) {
+        // Fallback to user directories
+        try {
+          if (process.platform === "win32") {
+            dbDirectory = path.join(os.homedir(), "AppData", "Local", "PortfolioTracker");
+          } else {
+            dbDirectory = path.join(os.homedir(), ".portfolio-tracker");
+          }
+          dbPath = path.join(dbDirectory, "portfolio.db");
+          console.log(`📁 Fallback: Using user directory: ${dbDirectory}`);
+        } catch (error) {
+          // Final fallback: temp directory
+          console.warn("⚠️ Could not access user directories, using temp folder");
+          dbDirectory = path.join(os.tmpdir(), "PortfolioTracker");
+          dbPath = path.join(dbDirectory, "portfolio.db");
+          console.log(`📁 Final fallback: Using temp directory: ${dbDirectory}`);
         }
-        dbPath = path.join(dbDirectory, "portfolio.db");
-        console.log(`📁 Fallback: Using user directory: ${dbDirectory}`);
-      } catch (_homeError) {
-        // Final fallback: temp directory
-        console.warn("⚠️ Could not access user directories, using temp folder");
-        dbDirectory = path.join(os.tmpdir(), "OTCPortfolioApp");
-        dbPath = path.join(dbDirectory, "portfolio.db");
-        console.log(`📁 Final fallback: Using temp directory: ${dbDirectory}`);
       }
     }
 
@@ -74,6 +77,25 @@ class PortfolioDatabase {
   }
 
   // Detect if we're running in development mode
+  // Detect if running as portable version
+  isPortableVersion() {
+    try {
+      const execPath = process.execPath;
+      
+      // Check if we're in a portable directory structure
+      const isPortable = execPath.includes('Portfolio Tracker') && 
+                        !execPath.includes('Program Files') &&
+                        !execPath.includes('AppData');
+      
+      console.log(`🔍 Portable detection: ${isPortable}`);
+      console.log(`   Exec path: ${execPath}`);
+      
+      return isPortable;
+    } catch (error) {
+      console.log('⚠️ Portable detection failed:', error.message);
+      return false;
+    }
+  }
   isInDevelopmentMode() {
     try {
       const currentDir = process.cwd();
