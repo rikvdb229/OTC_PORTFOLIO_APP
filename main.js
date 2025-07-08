@@ -31,11 +31,13 @@ function checkVersionConsistency() {
 }
 
 // ADD HERE: App configuration that matches renderer.js
+const packageInfo = require("./package.json");
+
 const APP_CONFIG = {
-  VERSION: "0.1",
-  APP_NAME: "KBC ESOP Portfolio Tracker",
-  STATUS: "Development Version",
-  BUILD_DATE: "2024-12-15",
+  VERSION: packageInfo.version, // ✅ Always in sync with package.json
+  APP_NAME: "Portfolio Tracker",
+  STATUS: "Development Version", 
+  BUILD_DATE: new Date().toISOString().split('T')[0],
 
   getFullVersion() {
     return `${this.APP_NAME} v${this.VERSION}`;
