@@ -321,8 +321,10 @@ class PortfolioDatabase {
   }
 
   // Create all necessary tables
-  async createTables() {
-    const schema = `
+// REPLACE the createTables method in portfolio-db.js with this clean version:
+
+async createTables() {
+  const schema = `
     -- Enhanced portfolio entries table
     CREATE TABLE IF NOT EXISTS portfolio_entries (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -339,7 +341,7 @@ class PortfolioDatabase {
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
-    -- Price history table
+    -- Single unified price history table
     CREATE TABLE IF NOT EXISTS price_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       price_date DATE NOT NULL,
@@ -350,7 +352,7 @@ class PortfolioDatabase {
       grant_date DATE,
       fund_name TEXT,
       scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(price_date, exercise_price)
+      UNIQUE(exercise_price, grant_date, price_date)
     );
 
     -- Sales transactions table
@@ -383,31 +385,16 @@ class PortfolioDatabase {
     );
 
     -- Application settings
-CREATE TABLE IF NOT EXISTS settings (
-  setting_key VARCHAR(50) PRIMARY KEY,
-  setting_value TEXT NOT NULL,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-    -- Option price history
-    CREATE TABLE IF NOT EXISTS option_price_history (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      exercise_price DECIMAL(10,2) NOT NULL,
-      grant_date DATE NOT NULL,
-      price_date DATE NOT NULL,
-      current_value DECIMAL(10,2) NOT NULL,
-      high_value DECIMAL(10,2),
-      low_value DECIMAL(10,2),
-      fund_name TEXT,
-      volume INTEGER DEFAULT 0,
-      scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(exercise_price, grant_date, price_date)
+    CREATE TABLE IF NOT EXISTS settings (
+      setting_key VARCHAR(50) PRIMARY KEY,
+      setting_value TEXT NOT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
 
     -- Database metadata
     CREATE TABLE IF NOT EXISTS database_metadata (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      schema_version INTEGER NOT NULL DEFAULT 2,
+      schema_version INTEGER NOT NULL DEFAULT 3,
       last_migration_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       backup_count INTEGER DEFAULT 0
     );
@@ -416,61 +403,56 @@ CREATE TABLE IF NOT EXISTS settings (
     CREATE INDEX IF NOT EXISTS idx_portfolio_grant_date ON portfolio_entries(grant_date);
     CREATE INDEX IF NOT EXISTS idx_portfolio_exercise_price ON portfolio_entries(exercise_price);
     CREATE INDEX IF NOT EXISTS idx_price_history_date ON price_history(price_date);
+    CREATE INDEX IF NOT EXISTS idx_price_history_option ON price_history(exercise_price, grant_date);
     CREATE INDEX IF NOT EXISTS idx_sales_portfolio_entry ON sales_transactions(portfolio_entry_id);
     CREATE INDEX IF NOT EXISTS idx_evolution_date ON portfolio_evolution(snapshot_date);
   `;
 
-    try {
-      this.db.exec(schema);
+  try {
+    this.db.exec(schema);
 
-      // Insert default settings
-      const defaultSettings = [
-        ["target_percentage", "65"],
-        ["tax_auto_rate", "30"],
-        ["currency_symbol", "€"],
-        ["auto_update_prices", "false"],
-        ["date_format", "DD/MM/YYYY"],
-        ["start_maximized", "true"],
-        ["last_backup_date", ""],
-        ["backup_enabled", "true"],
-      ];
+    // Insert default settings
+    const defaultSettings = [
+      ["target_percentage", "65"],
+      ["tax_auto_rate", "30"],
+      ["currency_symbol", "€"],
+      ["auto_update_prices", "false"],
+      ["date_format", "DD/MM/YYYY"],
+      ["start_maximized", "true"],
+      ["last_backup_date", ""],
+      ["backup_enabled", "true"],
+    ];
 
-      defaultSettings.forEach(([key, value]) => {
-        // ✅ ADD DEBUG BEFORE INSERT
-
-        const stmt = this.db.prepare(
-          "INSERT OR IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)"
-        );
-        const result = stmt.run([key, value]);
-
-        // ✅ ADD DEBUG AFTER INSERT
-
-        if (result.changes > 0) {
-          console.log(
-            `🚨 WARNING: OVERWROTE existing setting ${key} with default ${value}!`
-          );
-        } else {
-          console.log(`✅ GOOD: Skipped ${key} because it already exists`);
-        }
-
-        stmt.free();
-      });
-
-      // Initialize database metadata
-      const metaStmt = this.db.prepare(
-        "INSERT OR IGNORE INTO database_metadata (schema_version) VALUES (?)"
+    defaultSettings.forEach(([key, value]) => {
+      const stmt = this.db.prepare(
+        "INSERT OR IGNORE INTO settings (setting_key, setting_value) VALUES (?, ?)"
       );
-      metaStmt.run([2]);
-      metaStmt.free();
+      const result = stmt.run([key, value]);
+      
+      if (result.changes > 0) {
+        console.log(`✅ Created setting: ${key} = ${value}`);
+      } else {
+        console.log(`✅ Setting exists: ${key}`);
+      }
+      
+      stmt.free();
+    });
 
-      this.saveDatabase();
-      console.log("✅ Database schema created successfully");
-      return Promise.resolve();
-    } catch (error) {
-      console.error(`❌ Schema creation failed: ${error.message}`);
-      return Promise.reject(error);
-    }
+    // Initialize database metadata with version 3 (clean schema)
+    const metaStmt = this.db.prepare(
+      "INSERT OR IGNORE INTO database_metadata (schema_version) VALUES (?)"
+    );
+    metaStmt.run([3]);
+    metaStmt.free();
+
+    this.saveDatabase();
+    console.log("✅ Clean database schema created successfully");
+    return Promise.resolve();
+  } catch (error) {
+    console.error(`❌ Schema creation failed: ${error.message}`);
+    return Promise.reject(error);
   }
+}
 
   // Add diagnostic method for troubleshooting
   async runDiagnostics() {
@@ -621,94 +603,30 @@ CREATE TABLE IF NOT EXISTS settings (
       throw error;
     }
   }
-  async getClosestPriceForDate(targetDate, exercisePrice, grantDate) {
-    try {
-      console.log(`📊 DEBUG: Looking for price data:`);
-      console.log(`   Target date: ${targetDate}`);
-      console.log(`   Exercise price: €${exercisePrice}`);
-      console.log(`   Grant date: ${grantDate}`);
+async getClosestPriceForDate(targetDate, exercisePrice, grantDate) {
+  try {
+    console.log(`📊 Looking for price data for €${exercisePrice} (${grantDate}) on ${targetDate}`);
 
-      // First, check what price data we have for this option
-      const debugStmt = this.db.prepare(`
-      SELECT price_date, current_value, exercise_price, grant_date
-      FROM price_history 
-      WHERE exercise_price = ? AND grant_date = ?
-      ORDER BY price_date DESC
-      LIMIT 10
-    `);
-
-      console.log(
-        `🔍 DEBUG: Available price history for €${exercisePrice} (${grantDate}):`
-      );
-      debugStmt.bind([exercisePrice, grantDate]);
-      let count = 0;
-      while (debugStmt.step()) {
-        const row = debugStmt.getAsObject();
-        console.log(`   ${row.price_date}: €${row.current_value}`);
-        count++;
-      }
-      debugStmt.free();
-
-      if (count === 0) {
-        console.log(
-          `   ❌ NO PRICE HISTORY FOUND for €${exercisePrice} (${grantDate})`
-        );
-
-        // Check if we have ANY price data at all
-        const allDataStmt = this.db.prepare(`
-        SELECT DISTINCT exercise_price, grant_date, COUNT(*) as price_count
-        FROM price_history 
-        GROUP BY exercise_price, grant_date
-        ORDER BY exercise_price, grant_date
-      `);
-
-        console.log(`🔍 DEBUG: All available price data in database:`);
-        let totalCount = 0;
-        while (allDataStmt.step()) {
-          const row = allDataStmt.getAsObject();
-          console.log(
-            `   €${row.exercise_price} (${row.grant_date}): ${row.price_count} price points`
-          );
-          totalCount++;
-        }
-        allDataStmt.free();
-
-        if (totalCount === 0) {
-          console.log(
-            `   ❌ NO PRICE HISTORY DATA AT ALL - run price update first!`
-          );
-        }
-
-        return null;
-      }
-
-      console.log(
-        `✅ Found ${count} price history records, looking for closest to ${targetDate}...`
-      );
-
-      // First, try to get exact price for this date
-      const exactStmt = this.db.prepare(`
+    // First, try to get exact price for this date
+    const exactStmt = this.db.prepare(`
       SELECT current_value, price_date, 'exact' as match_type
       FROM price_history 
       WHERE price_date = ? AND exercise_price = ? AND grant_date = ?
-      LIMIT 1
     `);
 
-      exactStmt.bind([targetDate, exercisePrice, grantDate]);
-      if (exactStmt.step()) {
-        const result = exactStmt.getAsObject();
-        exactStmt.free();
-        console.log(
-          `📍 Found exact price for ${targetDate}: €${result.current_value}`
-        );
-        return result;
-      }
+    exactStmt.bind([targetDate, exercisePrice, grantDate]);
+    if (exactStmt.step()) {
+      const result = exactStmt.getAsObject();
       exactStmt.free();
+      console.log(`✅ Found exact price for ${targetDate}: €${result.current_value}`);
+      return result;
+    }
+    exactStmt.free();
 
-      // No exact match - find closest price (before or after)
-      const closestStmt = this.db.prepare(`
+    // If no exact match, find the closest price
+    const closestStmt = this.db.prepare(`
       SELECT 
-        current_value,
+        current_value, 
         price_date,
         ABS(julianday(?) - julianday(price_date)) as day_difference,
         CASE 
@@ -721,28 +639,26 @@ CREATE TABLE IF NOT EXISTS settings (
       LIMIT 1
     `);
 
-      closestStmt.bind([targetDate, targetDate, exercisePrice, grantDate]);
-      if (closestStmt.step()) {
-        const result = closestStmt.getAsObject();
-        closestStmt.free();
-
-        console.log(
-          `📍 Found ${result.match_type} price for ${targetDate}: €${result.current_value} (${result.day_difference.toFixed(1)} days ${result.match_type})`
-        );
-        return result;
-      }
+    closestStmt.bind([targetDate, targetDate, exercisePrice, grantDate]);
+    if (closestStmt.step()) {
+      const result = closestStmt.getAsObject();
       closestStmt.free();
 
-      // Still no match
-      console.warn(
-        `⚠️ No price history found for €${exercisePrice} (${grantDate})`
+      console.log(
+        `📍 Found ${result.match_type} price for ${targetDate}: €${result.current_value} (${result.day_difference.toFixed(1)} days ${result.match_type})`
       );
-      return null;
-    } catch (error) {
-      console.error(`❌ Error getting closest price for ${targetDate}:`, error);
-      return null;
+      return result;
     }
+    closestStmt.free();
+
+    // Still no match
+    console.warn(`⚠️ No price history found for €${exercisePrice} (${grantDate})`);
+    return null;
+  } catch (error) {
+    console.error(`❌ Error getting closest price for ${targetDate}:`, error);
+    return null;
   }
+}
   /**
    * Get price for specific date - wrapper for existing method
    * @param {string} targetDate - Date to find price for (YYYY-MM-DD)
@@ -2148,32 +2064,31 @@ ORDER BY st.sale_date DESC
   }
 
   // Get option price history for charts with events
-  async getOptionPriceHistory(exercisePrice, grantDate) {
-    try {
-      const stmt = this.db.prepare(`
-        SELECT 
-          price_date,
-          current_value,
-          high_value,
-          low_value
-        FROM option_price_history
-        WHERE exercise_price = ? AND grant_date = ?
-        ORDER BY price_date ASC
-      `);
+async getOptionPriceHistory(exercisePrice, grantDate) {
+  try {
+    const stmt = this.db.prepare(`
+      SELECT 
+        price_date,
+        current_value,
+        high_value,
+        low_value
+      FROM price_history
+      WHERE exercise_price = ? AND grant_date = ?
+      ORDER BY price_date ASC
+    `);
 
-      const rows = [];
-      stmt.bind([exercisePrice, grantDate]);
-      while (stmt.step()) {
-        const row = stmt.getAsObject();
-        rows.push(row);
-      }
-      stmt.free();
-
-      return Promise.resolve(rows);
-    } catch (error) {
-      return Promise.reject(error);
+    stmt.bind([exercisePrice, grantDate]);
+    const rows = [];
+    while (stmt.step()) {
+      rows.push(stmt.getAsObject());
     }
+    stmt.free();
+
+    return Promise.resolve(rows);
+  } catch (error) {
+    return Promise.reject(error);
   }
+}
 
   // FIXED: Get portfolio events for chart annotations
   async getPortfolioEvents() {
@@ -2243,60 +2158,47 @@ ORDER BY st.sale_date DESC
       return Promise.reject(error);
     }
   }
+// REPLACE the updatePricesFromCSV method in portfolio-db.js with this clean version:
 
-  // Enhanced price update with option history tracking
-  async updatePricesFromCSV(csvData, priceDate) {
-    try {
-      const today = priceDate || new Date().toISOString().split("T")[0];
-      let updatedCount = 0;
+async updatePricesFromCSV(csvData, priceDate) {
+  try {
+    const today = priceDate || new Date().toISOString().split("T")[0];
+    let updatedCount = 0;
 
-      csvData.forEach((row) => {
-        if (row.exercise_price && row.current_value) {
-          // Update main price history
-          const priceStmt = this.db.prepare(`
-            INSERT OR REPLACE INTO price_history (price_date, exercise_price, current_value, grant_date, fund_name)
-            VALUES (?, ?, ?, ?, ?)
-          `);
-          priceStmt.run([
-            today,
-            row.exercise_price,
-            row.current_value,
-            row.grant_date,
-            row.fund_name,
-          ]);
-          priceStmt.free();
+    csvData.forEach((row) => {
+      if (row.exercise_price && row.current_value) {
+        // Single table update - no duplication!
+        const priceStmt = this.db.prepare(`
+          INSERT OR REPLACE INTO price_history 
+          (price_date, exercise_price, current_value, high_value, low_value, grant_date, fund_name)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `);
+        
+        priceStmt.run([
+          today,
+          row.exercise_price,
+          row.current_value,
+          row.current_value, // For now, high = current
+          row.current_value, // For now, low = current
+          row.grant_date,
+          row.fund_name
+        ]);
+        priceStmt.free();
 
-          // Update detailed option price history
-          const optionStmt = this.db.prepare(`
-            INSERT OR REPLACE INTO option_price_history 
-            (exercise_price, grant_date, price_date, current_value, high_value, low_value, fund_name)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `);
-          optionStmt.run([
-            row.exercise_price,
-            row.grant_date,
-            today,
-            row.current_value,
-            row.current_value, // For now, high = current
-            row.current_value, // For now, low = current
-            row.fund_name,
-          ]);
-          optionStmt.free();
+        updatedCount++;
+      }
+    });
 
-          updatedCount++;
-        }
-      });
+    this.saveDatabase();
 
-      this.saveDatabase();
+    // Create portfolio snapshot for price updates (this affects portfolio value)
+    await this.createPortfolioSnapshot(today, "price_update", "Price update");
 
-      // ✅ CREATE evolution snapshot for price updates (this affects portfolio value)
-      await this.createPortfolioSnapshot(today, "price_update", "Price update");
-
-      return Promise.resolve({ updatedCount });
-    } catch (error) {
-      return Promise.reject(error);
-    }
+    return Promise.resolve({ updatedCount });
+  } catch (error) {
+    return Promise.reject(error);
   }
+}
 
   // FIXED: Enhanced portfolio snapshot creation with duplicate handling
   async createPortfolioSnapshot(date, triggerType = "auto", notes = "") {
@@ -2473,98 +2375,89 @@ ORDER BY st.sale_date DESC
     }
   }
   // Database export functionality
-  async exportDatabase() {
-    try {
-      const exportData = {
-        metadata: {
-          exportDate: new Date().toISOString(),
-          schemaVersion: 2,
-          appVersion: "0.1",
-        },
-        portfolioEntries: await this.getAllTableData("portfolio_entries"),
-        priceHistory: await this.getAllTableData("price_history"),
-        salesTransactions: await this.getAllTableData("sales_transactions"),
-        portfolioEvolution: await this.getAllTableData("portfolio_evolution"),
-        optionPriceHistory: await this.getAllTableData("option_price_history"),
-        settings: await this.getAllTableData("settings"),
-      };
+async exportDatabase() {
+  try {
+    const exportData = {
+      metadata: {
+        exportDate: new Date().toISOString(),
+        schemaVersion: 3, // Updated version number
+        appVersion: "0.1",
+      },
+      portfolioEntries: await this.getAllTableData("portfolio_entries"),
+      priceHistory: await this.getAllTableData("price_history"),
+      salesTransactions: await this.getAllTableData("sales_transactions"),
+      portfolioEvolution: await this.getAllTableData("portfolio_evolution"),
+      settings: await this.getAllTableData("settings"),
+    };
 
-      return Promise.resolve(exportData);
-    } catch (error) {
-      return Promise.reject(error);
-    }
+    return Promise.resolve(exportData);
+  } catch (error) {
+    return Promise.reject(error);
   }
+}
 
   // Database import functionality (with validation)
-  async importDatabase(importData, mergeMode = false) {
-    try {
-      // Validate import data structure
-      if (!importData.metadata || !importData.portfolioEntries) {
-        throw new Error("Invalid import data format");
-      }
-
-      // Create backup before import
-      const backup = await this.exportDatabase();
-
-      if (!mergeMode) {
-        // Clear existing data
-        const tables = [
-          "sales_transactions",
-          "portfolio_evolution",
-          "option_price_history",
-          "portfolio_entries",
-          "price_history",
-        ];
-        tables.forEach((table) => {
-          const stmt = this.db.prepare(`DELETE FROM ${table}`);
-          stmt.run();
-          stmt.free();
-        });
-      }
-
-      // Import each table's data
-      await this.importTableData(
-        "portfolio_entries",
-        importData.portfolioEntries
-      );
-      await this.importTableData("price_history", importData.priceHistory);
-      await this.importTableData(
-        "sales_transactions",
-        importData.salesTransactions
-      );
-      await this.importTableData(
-        "portfolio_evolution",
-        importData.portfolioEvolution
-      );
-      await this.importTableData(
-        "option_price_history",
-        importData.optionPriceHistory
-      );
-
-      // Import settings (selective merge)
-      if (importData.settings) {
-        importData.settings.forEach((setting) => {
-          if (setting.setting_key !== "last_backup_date") {
-            // Don't overwrite backup date
-            const stmt = this.db.prepare(`
-              INSERT OR REPLACE INTO settings (setting_key, setting_value) VALUES (?, ?)
-            `);
-            stmt.run([setting.setting_key, setting.setting_value]);
-            stmt.free();
-          }
-        });
-      }
-
-      this.saveDatabase();
-      return Promise.resolve({
-        success: true,
-        importedEntries: importData.portfolioEntries.length,
-        backup: backup,
-      });
-    } catch (error) {
-      return Promise.reject(error);
+async importDatabase(importData, mergeMode = false) {
+  try {
+    // Validate import data structure
+    if (!importData.metadata || !importData.portfolioEntries) {
+      throw new Error("Invalid import data format");
     }
+
+    // Create backup before import
+    const backup = await this.exportDatabase();
+
+    if (!mergeMode) {
+      // Clear existing data - only the tables that exist
+      const tables = [
+        "sales_transactions",
+        "portfolio_evolution",
+        "portfolio_entries",
+        "price_history",
+      ];
+      tables.forEach((table) => {
+        const stmt = this.db.prepare(`DELETE FROM ${table}`);
+        stmt.run();
+        stmt.free();
+      });
+    }
+
+    // Import each table's data
+    await this.importTableData("portfolio_entries", importData.portfolioEntries);
+    await this.importTableData("price_history", importData.priceHistory);
+    await this.importTableData("sales_transactions", importData.salesTransactions);
+    await this.importTableData("portfolio_evolution", importData.portfolioEvolution);
+
+    // Handle legacy imports that might have separate optionPriceHistory data
+    if (importData.optionPriceHistory && importData.optionPriceHistory.length > 0) {
+      console.log("📥 Found legacy optionPriceHistory data, importing to price_history...");
+      await this.importTableData("price_history", importData.optionPriceHistory);
+    }
+
+    // Import settings (selective merge)
+    if (importData.settings) {
+      importData.settings.forEach((setting) => {
+        if (setting.setting_key !== "last_backup_date") {
+          // Don't overwrite backup date
+          const stmt = this.db.prepare(`
+            INSERT OR REPLACE INTO settings (setting_key, setting_value) VALUES (?, ?)
+          `);
+          stmt.run([setting.setting_key, setting.setting_value]);
+          stmt.free();
+        }
+      });
+    }
+
+    this.saveDatabase();
+    return Promise.resolve({
+      success: true,
+      importedEntries: importData.portfolioEntries.length,
+      backup: backup,
+    });
+  } catch (error) {
+    return Promise.reject(error);
   }
+}
 
   // Helper method to get all data from a table
   async getAllTableData(tableName) {
@@ -2578,25 +2471,71 @@ ORDER BY st.sale_date DESC
   }
 
   // Helper method to import data into a table
-  async importTableData(tableName, data) {
-    if (!data || data.length === 0) return;
+async importTableData(tableName, data) {
+  if (!data || data.length === 0) return;
 
+  try {
+    // Get the actual table schema
+    const schemaStmt = this.db.prepare(`PRAGMA table_info(${tableName})`);
+    const tableColumns = [];
+    while (schemaStmt.step()) {
+      const row = schemaStmt.getAsObject();
+      tableColumns.push(row.name);
+    }
+    schemaStmt.free();
+
+    console.log(`📋 Table ${tableName} columns:`, tableColumns);
+
+    // Get columns from import data
     const sampleRow = data[0];
-    const columns = Object.keys(sampleRow);
-    const placeholders = columns.map(() => "?").join(",");
+    const dataColumns = Object.keys(sampleRow);
+    
+    console.log(`📥 Import data columns:`, dataColumns);
 
-    const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO ${tableName} (${columns.join(
-        ","
-      )}) VALUES (${placeholders})
-    `);
+    // Find columns that exist in both the table and the data
+    const validColumns = dataColumns.filter(col => tableColumns.includes(col));
+    
+    console.log(`✅ Valid columns for import:`, validColumns);
 
+    // Skip columns that don't exist in the table
+    const skippedColumns = dataColumns.filter(col => !tableColumns.includes(col));
+    if (skippedColumns.length > 0) {
+      console.warn(`⚠️ Skipping columns not in ${tableName} table:`, skippedColumns);
+    }
+
+    if (validColumns.length === 0) {
+      console.warn(`⚠️ No valid columns found for ${tableName}, skipping import`);
+      return;
+    }
+
+    // Create insert statement with only valid columns
+    const placeholders = validColumns.map(() => "?").join(", ");
+    const insertSQL = `INSERT OR REPLACE INTO ${tableName} (${validColumns.join(", ")}) VALUES (${placeholders})`;
+    
+    console.log(`📝 Insert SQL: ${insertSQL}`);
+
+    const stmt = this.db.prepare(insertSQL);
+
+    // Import each row with only valid columns
+    let importedCount = 0;
     data.forEach((row) => {
-      const values = columns.map((col) => row[col]);
-      stmt.run(values);
+      try {
+        const values = validColumns.map(col => row[col]);
+        stmt.run(values);
+        importedCount++;
+      } catch (rowError) {
+        console.error(`❌ Error importing row to ${tableName}:`, rowError, row);
+      }
     });
+
     stmt.free();
+    console.log(`✅ Imported ${importedCount}/${data.length} rows to ${tableName}`);
+    
+  } catch (error) {
+    console.error(`❌ Error importing data to ${tableName}:`, error);
+    throw error;
   }
+}
 
   // Existing methods (unchanged for backward compatibility)
   async updateTaxAmount(entryId, taxAmount) {
@@ -2840,35 +2779,36 @@ ORDER BY st.sale_date DESC
     }
   }
 
-  async getAvailableExercisePrices() {
-    try {
-      const stmt = this.db.prepare(`
-        SELECT DISTINCT 
-          exercise_price, 
-          current_value, 
-          grant_date,
-          fund_name,
-          price_date as last_update_date
-        FROM price_history
-        WHERE price_date = (
-          SELECT MAX(price_date) FROM price_history ph2 
-          WHERE ph2.exercise_price = price_history.exercise_price
-        )
-        ORDER BY grant_date DESC, exercise_price ASC
-      `);
+async getAvailableExercisePrices() {
+  try {
+    const stmt = this.db.prepare(`
+      SELECT DISTINCT 
+        exercise_price, 
+        current_value, 
+        grant_date,
+        fund_name,
+        price_date as last_update_date
+      FROM price_history
+      WHERE price_date = (
+        SELECT MAX(price_date) FROM price_history ph2 
+        WHERE ph2.exercise_price = price_history.exercise_price
+          AND ph2.grant_date = price_history.grant_date
+      )
+      ORDER BY grant_date DESC, exercise_price ASC
+    `);
 
-      const rows = [];
-      while (stmt.step()) {
-        const row = stmt.getAsObject();
-        rows.push(row);
-      }
-      stmt.free();
-
-      return Promise.resolve(rows);
-    } catch (error) {
-      return Promise.reject(error);
+    const rows = [];
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      rows.push(row);
     }
+    stmt.free();
+
+    return Promise.resolve(rows);
+  } catch (error) {
+    return Promise.reject(error);
   }
+}
 
   async getSetting(key) {
     try {
