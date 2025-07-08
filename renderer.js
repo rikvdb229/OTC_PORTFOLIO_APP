@@ -257,27 +257,6 @@ class EnhancedPortfolioApp {
     window.UIStateManager.Modals.showDeleteDatabaseModal(this);
   }
 
-  async confirmDelete() {
-    try {
-      const result = await ipcRenderer.invoke(
-        "delete-portfolio-entry",
-        this.currentDeletingEntryId
-      );
-
-      if (result.error) {
-        alert("Error deleting entry: " + result.error);
-        return;
-      }
-
-      this.closeModals();
-      await this.loadPortfolioData();
-      console.log(`✅ Deleted portfolio entry`);
-    } catch (error) {
-      console.error("Error deleting portfolio entry:", error);
-      alert("Error deleting entry");
-    }
-  }
-
   // ===== Add GrantS FUNCTIONALITY =====
   async handleGrantDateSelection() {
     await window.UIStateManager.Forms.handleGrantDateSelection(this);
@@ -334,12 +313,7 @@ class EnhancedPortfolioApp {
     window.ChartVisualization.createSimpleChartLegend();
   }
 
-  // UPDATED: Switch tab method to handle renamed chart tab
-  switchTab(tabName) {
-    window.UIStateManager.switchTab(tabName);
-  }
-
-  // ===== GRANT HISTORY TAB =====
+   // ===== GRANT HISTORY TAB =====
   async loadSalesHistory() {
     return await window.IPCCommunication.Portfolio.loadSalesHistory(this);
   }
@@ -366,105 +340,10 @@ class EnhancedPortfolioApp {
   updateGrantFilterCounts(activeFilters) {
     window.UIStateManager.Tables.updateGrantFilterCounts(this, activeFilters);
   }
-  // ===== UPDATE GRANT FILTER SUMMARY =====
-  // ===== MODERN GRANT FILTERING =====
-  // ===== UPDATE GRANT FILTER SUMMARY =====
-  updateGrantFilterSummary(activeFilters, visibleCount, totalCount) {
-    const filterCount = activeFilters.size;
-
-    if (filterCount === 3 || filterCount === 0) {
-      console.log(`📊 All filters active: ${totalCount} grants shown`);
-    } else {
-      const filterNames = Array.from(activeFilters).join(", ");
-      console.log(
-        `📊 Filtered by: ${filterNames} (${visibleCount}/${totalCount} grants shown)`
-      );
-    }
-  }
-
   // ===== INITIALIZE GRANT FILTERS =====
   initializeGrantFilters() {
     window.UIStateManager.Tables.initializeGrantFilters(this);
   }
-  /**
-   * Show the delete database confirmation modal
-   */
-  showDeleteDatabaseModal() {
-    console.log("🗑️ Showing delete database modal");
-
-    // Show modal using your existing modal system
-    if (this.deleteDatabaseModal) {
-      this.deleteDatabaseModal.classList.add("active");
-      console.log("✅ Modal shown");
-    }
-
-    // Reset and setup input field
-    const input = document.getElementById("deleteDatabaseConfirmText");
-    const button = document.getElementById("confirmDeleteDatabase");
-
-    if (input) {
-      input.value = "";
-      input.classList.remove("valid", "invalid");
-      console.log("✅ Input field reset");
-    }
-
-    if (button) {
-      button.disabled = true;
-      console.log("✅ Button disabled");
-    }
-
-    // Set up validation with direct event listener
-    setTimeout(() => {
-      if (input && button) {
-        console.log("🔧 Setting up validation listener...");
-
-        // Remove existing event listeners by cloning the node
-        const newInput = input.cloneNode(true);
-        input.parentNode.replaceChild(newInput, input);
-
-        // Add fresh event listener
-        newInput.addEventListener("input", function (e) {
-          console.log("📝 Input event fired, value:", this.value);
-
-          const requiredText = "delete database";
-          const userInput = this.value.toLowerCase().trim();
-          const isValid = userInput === requiredText;
-
-          console.log(
-            `🔍 Checking: "${userInput}" vs "${requiredText}" = ${isValid}`
-          );
-
-          // Update button
-          const currentButton = document.getElementById(
-            "confirmDeleteDatabase"
-          );
-          if (currentButton) {
-            currentButton.disabled = !isValid;
-            console.log(`Button is now: ${isValid ? "ENABLED" : "DISABLED"}`);
-          }
-
-          // Update input styling
-          this.classList.remove("valid", "invalid");
-          if (userInput.length > 0) {
-            this.classList.add(isValid ? "valid" : "invalid");
-          }
-        });
-
-        // Add other event types for completeness
-        ["keyup", "paste", "change"].forEach((eventType) => {
-          newInput.addEventListener(eventType, function (e) {
-            console.log(`📝 ${eventType} event fired`);
-            this.dispatchEvent(new Event("input"));
-          });
-        });
-
-        console.log("✅ Validation listeners attached");
-      } else {
-        console.error("❌ Input or button not found during setup");
-      }
-    }, 200);
-  }
-
   /**
    * Validate the confirmation text input
    */
