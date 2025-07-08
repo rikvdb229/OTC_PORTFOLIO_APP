@@ -3533,28 +3533,3 @@ body {
   border-bottom: 2px solid #e9ecef; /* Slightly thicker bottom border */
   padding: 12px var(--spacing-lg); /* Slightly more padding */
 }
-.header-filter-dropdown {
-  display: block;
-  width: 100%;
-  max-width: 120px;
-  margin-top: 4px;
-  padding: 2px 6px;
-  border: 1px solid #ccc;
-  border-radius: 3px;
-  background: white;
-  font-size: 11px;
-  color: #333;
-  cursor: pointer;
-}
-
-.header-filter-dropdown:focus {
-  outline: none;
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 2px rgba(30, 136, 229, 0.1);
-}
-
-/* Ensure table header has enough height */
-.grant-table th {
-  vertical-align: top;
-  padding: 8px 4px;
-}

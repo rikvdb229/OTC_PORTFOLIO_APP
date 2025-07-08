@@ -10,7 +10,7 @@ const DatabaseUndoRedoExtension = {
    * Export database for undo/redo snapshots
    * Returns data directly instead of saving to file
    */
-  async exportDatabase() {
+  async exportDatabaseData() {
     try {
       console.log("📤 Exporting database for snapshot...");
       const result = await ipcRenderer.invoke("export-database-data");

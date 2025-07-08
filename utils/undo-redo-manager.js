@@ -45,7 +45,7 @@ class UndoRedoManager {
    */
   async takeInitialSnapshot() {
     try {
-      const snapshot = await window.IPCCommunication.Database.exportDatabase();
+      const snapshot = await window.IPCCommunication.Database.exportDatabaseData();
       if (snapshot.success) {
         this.currentSnapshot = snapshot.data;
         console.log("📸 Initial snapshot captured");
@@ -69,7 +69,7 @@ class UndoRedoManager {
     try {
       console.log(`📸 Taking snapshot for: ${operationName}`);
       
-      const exportResult = await window.IPCCommunication.Database.exportDatabase();
+      const exportResult = await window.IPCCommunication.Database.exportDatabaseData();
       
       if (!exportResult.success) {
         console.error("❌ Failed to export database for snapshot");
@@ -134,7 +134,7 @@ async undo() {
     
     // CRITICAL FIX: Store current state BEFORE doing the undo
     console.log("📸 Taking snapshot of CURRENT state for redo...");
-    const currentStateExport = await window.IPCCommunication.Database.exportDatabase();
+    const currentStateExport = await window.IPCCommunication.Database.exportDatabaseData();
     
     if (!currentStateExport.success) {
       throw new Error("Failed to capture current state for redo");
@@ -220,7 +220,7 @@ async redo() {
     
     // CRITICAL FIX: Store current state BEFORE doing the redo
     console.log("📸 Taking snapshot of CURRENT state for undo...");
-    const currentStateExport = await window.IPCCommunication.Database.exportDatabase();
+    const currentStateExport = await window.IPCCommunication.Database.exportDatabaseData();
     
     if (!currentStateExport.success) {
       throw new Error("Failed to capture current state for undo");
