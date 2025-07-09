@@ -471,7 +471,7 @@ const PriceOperations = {
       }
 
       // Get current time and date info
-      const today = new Date().toISOString().split("T")[0]; // YYYY-MM-DD format
+      const today = new Date().toLocaleDateString('en-CA'); // Returns YYYY-MM-DD format
       const latestPrice = new Date(latestPriceDate).toISOString().split("T")[0];
       const now = new Date();
       const currentHour = now.getHours();
