@@ -10,8 +10,8 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build-portable": "set BUILD_MODE=portable && rimraf dist && npx electron-builder --win portable --config.win.target=portable",
-    "build-installer": "set BUILD_MODE=installer && rimraf dist && npx electron-builder --win nsis --config.win.target=nsis",
+    "build-portable": "rimraf dist && npx electron-builder --win portable --config.win.target=portable",
+    "build-installer": "rimraf dist && npx electron-builder --win nsis --config.win.target=nsis",
     "build-all": "npm run build-portable && npm run build-installer",
     "rebuild": "electron-rebuild",
     "postinstall": "electron-rebuild",
@@ -32,7 +32,7 @@
   "dependencies": {
     "csv-parser": "^3.2.0",
     "papaparse": "^5.5.3",
-    "puppeteer": "^24.12.1",
+    "puppeteer-core": "^24.12.1",
     "sql.js": "^1.13.0"
   },
   "engines": {
@@ -43,10 +43,22 @@
     "appId": "com.portfoliotracker.app",
     "productName": "Portfolio Tracker",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
     "files": [
-      "**/*",
+      "main.js",
+      "portfolio-db.js",
+      "scraper.js",
+      "index.html",
+      "renderer.js",
+      "utils/**/*",
+      "assets/icon.png",
+      "package.json",
+      "node_modules/sql.js/**/*",
+      "node_modules/csv-parser/**/*",
+      "node_modules/papaparse/**/*",
+      "node_modules/puppeteer-core/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
       "!**/node_modules/*.d.ts",
@@ -60,8 +72,20 @@
       "!package-lock.json",
       "!*.backup.*",
       "!test-portable-*/",
-      "!.cache/**/*"
+      "!.cache/**/*",
+      "!chrome-portable/**/*",
+      "!build/**/*",
+      "!dist/**/*"
     ],
+    "compression": "normal",
+    "includeSubNodeModules": false,
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/sql.js/dist/sql-wasm.wasm"
+    ],
+    "electronDownload": {
+      "cache": ".cache/electron"
+    },
     "win": {
       "icon": "assets/icon.ico",
       "target": [
@@ -80,13 +104,17 @@
       ]
     },
     "portable": {
-      "artifactName": "Portfolio Tracker Portable-${version}.exe"
+      "artifactName": "Portfolio Tracker Portable-${version}.exe",
+      "unicode": true,
+      "useZip": false
     },
     "nsis": {
       "artifactName": "Portfolio Tracker Setup-${version}.exe",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Portfolio Tracker"
+      "shortcutName": "Portfolio Tracker",
+      "installerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
     }
   }
 }

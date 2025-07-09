@@ -1,4 +1,4 @@
-const puppeteer = require("puppeteer");
+const puppeteer = require("puppeteer-core"); // Changed from "puppeteer"
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
@@ -270,6 +270,39 @@ class KBCScraper {
   findChromeExecutable() {
     const possiblePaths = [];
 
+    // First priority: Use Electron's Chromium if we're in a packaged app
+    if (app && app.isPackaged) {
+      console.log(
+        "🔍 Detected packaged Electron app - using Electron's Chromium"
+      );
+
+      if (process.platform === "win32") {
+        // On Windows, Electron's executable contains Chromium
+        possiblePaths.push(process.execPath);
+      } else if (process.platform === "darwin") {
+        // On macOS, find Chromium inside the app bundle
+        const appPath = process.execPath;
+        possiblePaths.push(
+          path.join(
+            path.dirname(appPath),
+            "Electron Framework.framework",
+            "Versions",
+            "A",
+            "Electron Framework"
+          )
+        );
+      } else {
+        // Linux
+        possiblePaths.push(process.execPath);
+      }
+
+      console.log("🎯 Using Electron Chromium path:", possiblePaths[0]);
+      return possiblePaths[0];
+    }
+
+    // Development mode: Use system Chrome
+    console.log("🔍 Development mode - looking for system Chrome");
+
     if (process.platform === "win32") {
       // Windows Chrome paths
       possiblePaths.push(
@@ -277,35 +310,23 @@ class KBCScraper {
         "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
       );
 
-      // Bundled with app (if we include it)
-      if (process.resourcesPath) {
+      // Add user-specific paths
+      if (process.env.LOCALAPPDATA) {
         possiblePaths.push(
-          path.join(process.resourcesPath, "chrome", "chrome.exe"),
-          path.join(process.resourcesPath, "chromium", "chrome.exe")
+          path.join(
+            process.env.LOCALAPPDATA,
+            "Google",
+            "Chrome",
+            "Application",
+            "chrome.exe"
+          )
         );
       }
-
-      possiblePaths.push(
-        path.join(__dirname, "chrome", "chrome.exe"),
-        path.join(__dirname, "chrome-win", "chrome.exe")
-      );
     } else if (process.platform === "darwin") {
       // macOS paths
       possiblePaths.push(
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
       );
-      if (process.resourcesPath) {
-        possiblePaths.push(
-          path.join(
-            process.resourcesPath,
-            "chrome",
-            "Chrome.app",
-            "Contents",
-            "MacOS",
-            "Chrome"
-          )
-        );
-      }
     } else {
       // Linux paths
       possiblePaths.push(
@@ -313,16 +334,6 @@ class KBCScraper {
         "/usr/bin/chromium-browser",
         "/snap/bin/chromium"
       );
-    }
-
-    // Check Puppeteer's bundled Chromium
-    try {
-      const puppeteerChrome = puppeteer.executablePath();
-      if (puppeteerChrome) {
-        possiblePaths.unshift(puppeteerChrome); // Prefer bundled version
-      }
-    } catch (e) {
-      console.warn("Puppeteer bundled Chrome not available");
     }
 
     // Find first existing executable
@@ -353,7 +364,7 @@ class KBCScraper {
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
 
-        // Performance (keep minimal)
+        // Performance optimizations
         "--disable-gpu",
         "--disable-software-rasterizer",
 
@@ -368,19 +379,25 @@ class KBCScraper {
         "--disable-features=VizDisplayCompositor",
       ],
 
-      // IMPROVED: More human-like default arguments
+      // More human-like default arguments
       ignoreDefaultArgs: ["--enable-automation"],
 
-      // IMPROVED: Set realistic window size
+      // Set realistic window size
       defaultViewport: null,
     };
 
     // Add Chrome executable if found
     if (chromeExecutable) {
       config.executablePath = chromeExecutable;
+      console.log(`🚀 Using Chrome executable: ${chromeExecutable}`);
+    } else {
+      // This should not happen in packaged app, but just in case
+      throw new Error(
+        "No Chrome executable found. Please install Google Chrome."
+      );
     }
 
-    // Platform-specific optimizations (simplified)
+    // Platform-specific optimizations
     if (process.platform === "win32") {
       config.args.push("--disable-gpu-sandbox");
     }

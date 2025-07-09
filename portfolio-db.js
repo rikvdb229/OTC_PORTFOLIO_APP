@@ -2,18 +2,6 @@ const initSqlJs = require("sql.js");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
-const os = require("os");
-const PORTFOLIO_BUILD_MODE = process.env.BUILD_MODE || "installer";
-// ============= DEBUG BUILD MODE =============
-console.log("🔧 BUILD MODE DEBUG:");
-console.log("   process.env.BUILD_MODE:", process.env.BUILD_MODE);
-console.log("   PORTFOLIO_BUILD_MODE constant:", PORTFOLIO_BUILD_MODE);
-console.log("   typeof PORTFOLIO_BUILD_MODE:", typeof PORTFOLIO_BUILD_MODE);
-console.log(
-  '   PORTFOLIO_BUILD_MODE === "portable":',
-  PORTFOLIO_BUILD_MODE === "portable"
-);
-// ===========================================
 class PortfolioDatabase {
   constructor() {
     this.db = null;
@@ -33,147 +21,108 @@ class PortfolioDatabase {
   // Initialize database path with Windows permission-friendly locations
   initializeDatabasePath() {
     this.logDebug(`🚀 Starting database path initialization...`);
-    this.logDebug(`🏗️ Build mode: ${PORTFOLIO_BUILD_MODE}`);
     this.logDebug(`🖥️ Platform: ${process.platform}`);
     this.logDebug(`📍 Process executable path: ${process.execPath}`);
     this.logDebug(`📂 Current working directory: ${process.cwd()}`);
+
+    // ✨ OFFICIAL: Check electron-builder portable environment variables
+    const portableExecutableDir = process.env.PORTABLE_EXECUTABLE_DIR;
+    const portableExecutableFile = process.env.PORTABLE_EXECUTABLE_FILE;
+    const portableAppFilename = process.env.PORTABLE_EXECUTABLE_APP_FILENAME;
+
+    this.logDebug(`🔍 ELECTRON-BUILDER PORTABLE DETECTION:`);
     this.logDebug(
-      `🔧 PORTABLE_EXECUTABLE_DIR: ${process.env.PORTABLE_EXECUTABLE_DIR}`
+      `   PORTABLE_EXECUTABLE_DIR: ${portableExecutableDir || "undefined"}`
+    );
+    this.logDebug(
+      `   PORTABLE_EXECUTABLE_FILE: ${portableExecutableFile || "undefined"}`
+    );
+    this.logDebug(
+      `   PORTABLE_EXECUTABLE_APP_FILENAME: ${portableAppFilename || "undefined"}`
     );
 
     let dbDirectory;
     let dbPath;
-    let strategy = "unknown";
+    let strategy;
 
-    // Use build-time configuration instead of runtime detection
-    if (PORTFOLIO_BUILD_MODE === "portable") {
+    if (!app) {
+      throw new Error(
+        "Electron app not available - this should only run in main process"
+      );
+    }
+
+    // Check if we're in development mode
+    if (!app.isPackaged) {
+      strategy = "development";
+      dbDirectory = process.cwd();
+      dbPath = path.join(dbDirectory, "portfolio.db");
+      this.logDebug(`🔧 DEVELOPMENT: Using project directory: ${dbDirectory}`);
+    }
+    // Check if we're in portable mode (OFFICIAL electron-builder way)
+    else if (portableExecutableDir) {
       strategy = "portable";
-      this.logDebug(`📱 Using PORTABLE strategy (build-time configured)...`);
+      this.logDebug(`📱 PORTABLE MODE DETECTED (official electron-builder)`);
 
-      // SOLUTION: Use PORTABLE_EXECUTABLE_DIR environment variable set by electron-builder
-      let portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
+      // For TRUE PORTABILITY: Try to store database next to executable
+      try {
+        // First try: Store database in the same directory as the original portable executable
+        // This is what you want for USB stick portability
+        const originalExeDir = path.dirname(
+          portableExecutableFile || process.execPath
+        );
+        this.logDebug(
+          `📁 Trying original executable directory: ${originalExeDir}`
+        );
 
-      if (portableDir && fs.existsSync(portableDir)) {
-        this.logDebug(`✅ Found PORTABLE_EXECUTABLE_DIR: ${portableDir}`);
+        if (this.testWritePermissions(originalExeDir)) {
+          dbDirectory = originalExeDir;
+          dbPath = path.join(dbDirectory, "portfolio.db");
+          this.logDebug(
+            `✅ PORTABLE: Using executable directory: ${dbDirectory}`
+          );
+        } else {
+          throw new Error("Original executable directory not writable");
+        }
+      } catch (execDirError) {
+        this.logDebug(
+          `⚠️ Original executable directory failed: ${execDirError.message}`
+        );
 
+        // Fallback: Use portable executable directory (temp location)
         try {
-          if (this.testWritePermissions(portableDir)) {
-            dbDirectory = portableDir;
+          if (this.testWritePermissions(portableExecutableDir)) {
+            dbDirectory = portableExecutableDir;
             dbPath = path.join(dbDirectory, "portfolio.db");
             this.logDebug(
-              `✅ PORTABLE: Using executable directory: ${dbDirectory}`
+              `📱 PORTABLE FALLBACK: Using temp portable dir: ${dbDirectory}`
             );
           } else {
-            throw new Error("Portable directory not writable");
+            throw new Error("Portable executable directory not writable");
           }
         } catch (portableDirError) {
           this.logDebug(
             `⚠️ Portable directory failed: ${portableDirError.message}`
           );
-          portableDir = null; // Fall through to Documents strategy
-        }
-      } else {
-        this.logDebug(`⚠️ PORTABLE_EXECUTABLE_DIR not found or doesn't exist`);
-      }
 
-      // Fallback strategies if PORTABLE_EXECUTABLE_DIR fails
-      if (!portableDir || !dbDirectory) {
-        // Strategy 2: Try Documents/PortfolioTracker-Portable
-        try {
-          const documentsDir = path.join(os.homedir(), "Documents");
-          dbDirectory = path.join(documentsDir, "PortfolioTracker-Portable");
+          // Final fallback for portable: Documents folder
+          dbDirectory = path.join(
+            require("os").homedir(),
+            "Documents",
+            "PortfolioTracker-Portable"
+          );
           dbPath = path.join(dbDirectory, "portfolio.db");
-
           this.logDebug(
-            `📁 Fallback: Using Documents portable folder: ${dbDirectory}`
+            `📁 PORTABLE FINAL FALLBACK: Using Documents: ${dbDirectory}`
           );
-
-          if (this.testWritePermissions(documentsDir)) {
-            this.logDebug(
-              `✅ PORTABLE: Using Documents folder: ${dbDirectory}`
-            );
-          } else {
-            throw new Error("Documents directory not accessible");
-          }
-        } catch (documentsError) {
-          this.logDebug(
-            `⚠️ Documents directory failed: ${documentsError.message}`
-          );
-
-          // Strategy 3: Final fallback - use current working directory
-          try {
-            const workingDir = process.cwd();
-            if (this.testWritePermissions(workingDir)) {
-              dbDirectory = workingDir;
-              dbPath = path.join(dbDirectory, "portfolio.db");
-              this.logDebug(
-                `✅ PORTABLE: Using working directory: ${dbDirectory}`
-              );
-            } else {
-              throw new Error("Working directory not writable");
-            }
-          } catch (cwdError) {
-            this.logDebug(`⚠️ Working directory failed: ${cwdError.message}`);
-
-            // Final emergency fallback
-            this.logDebug(
-              `🆘 Using EMERGENCY TEMP directory for portable mode...`
-            );
-            dbDirectory = path.join(
-              os.tmpdir(),
-              `PortfolioTracker-Portable-${Date.now()}`
-            );
-            dbPath = path.join(dbDirectory, "portfolio.db");
-            this.logDebug(
-              `⚠️ EMERGENCY PORTABLE: Using temp directory: ${dbDirectory}`
-            );
-          }
         }
       }
-    } else {
-      // Installer mode - use standard AppData locations
+    }
+    // Regular installer mode
+    else {
       strategy = "installer";
-      this.logDebug(`📦 Using INSTALLER strategy (build-time configured)...`);
-
-      try {
-        if (app && app.getPath) {
-          dbDirectory = app.getPath("userData");
-          dbPath = path.join(dbDirectory, "portfolio.db");
-          this.logDebug(
-            `📁 INSTALLER: Using Electron userData directory: ${dbDirectory}`
-          );
-        } else {
-          throw new Error(
-            "Electron app not available, trying user directories"
-          );
-        }
-      } catch (error) {
-        this.logDebug(`⚠️ Electron userData failed: ${error.message}`);
-
-        // Fallback to manual user directories
-        try {
-          if (process.platform === "win32") {
-            dbDirectory = path.join(
-              os.homedir(),
-              "AppData",
-              "Local",
-              "PortfolioTracker"
-            );
-          } else {
-            dbDirectory = path.join(os.homedir(), ".portfolio-tracker");
-          }
-          dbPath = path.join(dbDirectory, "portfolio.db");
-          this.logDebug(`📁 INSTALLER: Using user directory: ${dbDirectory}`);
-        } catch (error) {
-          // Final fallback: temp directory
-          this.logDebug(
-            `⚠️ Could not access user directories, using temp folder`
-          );
-          dbDirectory = path.join(os.tmpdir(), "PortfolioTracker");
-          dbPath = path.join(dbDirectory, "portfolio.db");
-          this.logDebug(`📁 INSTALLER: Using temp directory: ${dbDirectory}`);
-        }
-      }
+      dbDirectory = app.getPath("userData");
+      dbPath = path.join(dbDirectory, "portfolio.db");
+      this.logDebug(`📦 INSTALLER: Using Electron userData: ${dbDirectory}`);
     }
 
     this.dbDirectory = dbDirectory;
@@ -181,13 +130,36 @@ class PortfolioDatabase {
 
     this.logDebug(`🎯 FINAL RESULT:`);
     this.logDebug(`   Strategy: ${strategy}`);
-    this.logDebug(`   Build Mode: ${PORTFOLIO_BUILD_MODE}`);
+    this.logDebug(`   Is Packaged: ${app.isPackaged}`);
     this.logDebug(`   Directory: ${this.dbDirectory}`);
     this.logDebug(`   Database Path: ${this.dbPath}`);
     this.logDebug(`   Directory Exists: ${fs.existsSync(this.dbDirectory)}`);
 
-    // Ensure directory exists with proper permissions
+    // Ensure directory exists
     this.ensureDatabaseDirectory();
+  }
+
+  // Test write permissions helper
+  testWritePermissions(dirPath) {
+    try {
+      // Ensure directory exists first
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
+      }
+
+      // Test write permissions with a temporary file
+      const testFile = path.join(dirPath, `write-test-${Date.now()}.tmp`);
+      fs.writeFileSync(testFile, "test");
+      fs.unlinkSync(testFile);
+
+      this.logDebug(`✅ Write permissions confirmed for: ${dirPath}`);
+      return true;
+    } catch (error) {
+      this.logDebug(
+        `❌ Write permission test failed for ${dirPath}: ${error.message}`
+      );
+      return false;
+    }
   }
 
   // Detect if we're running in development mode
@@ -255,6 +227,9 @@ class PortfolioDatabase {
       platform: process.platform,
       execPath: process.execPath,
       cwd: process.cwd(),
+      isPackaged: app ? app.isPackaged : false,
+      portableExecutableDir: process.env.PORTABLE_EXECUTABLE_DIR,
+      portableExecutableFile: process.env.PORTABLE_EXECUTABLE_FILE,
     };
   }
   outputDebugLog() {
@@ -265,7 +240,10 @@ class PortfolioDatabase {
     this.debugLog.forEach((entry) => console.log(entry));
 
     console.log("=".repeat(80));
-    console.log("🐛 END DEBUG LOG");
+    console.log(
+      "🔍 Database Info:",
+      JSON.stringify(this.getDatabaseInfo(), null, 2)
+    );
     console.log("=".repeat(80) + "\n");
   }
   exportDebugLog() {
@@ -329,73 +307,29 @@ class PortfolioDatabase {
 
   // Initialize database connection with error handling
   async initialize() {
-    this.logDebug(`🔄 Starting database initialization...`);
+    this.logDebug("🔧 Initializing SQL.js database...");
 
     try {
-      this.logDebug(`📦 Loading SQL.js library...`);
       const SQL = await initSqlJs();
-      this.logDebug(`✅ SQL.js loaded successfully`);
-
-      let fileBuffer = null;
 
       // Try to load existing database
       if (fs.existsSync(this.dbPath)) {
-        try {
-          this.logDebug(`📖 Loading existing database file: ${this.dbPath}`);
-          fileBuffer = fs.readFileSync(this.dbPath);
-          this.logDebug(
-            `✅ Database file loaded successfully (${fileBuffer.length} bytes)`
-          );
-        } catch (readError) {
-          this.logDebug(
-            `❌ Failed to read existing database: ${readError.message}`
-          );
-
-          // Try to backup corrupted file
-          const backupPath = `${this.dbPath}.backup.${Date.now()}`;
-          try {
-            fs.copyFileSync(this.dbPath, backupPath);
-            this.logDebug(`📦 Backed up corrupted database to: ${backupPath}`);
-          } catch (backupError) {
-            this.logDebug(
-              `⚠️ Could not backup corrupted database: ${backupError.message}`
-            );
-          }
-
-          fileBuffer = null;
-        }
+        this.logDebug(`📂 Loading existing database from: ${this.dbPath}`);
+        const filebuffer = fs.readFileSync(this.dbPath);
+        this.db = new SQL.Database(filebuffer);
+        this.logDebug("✅ Existing database loaded successfully");
       } else {
-        this.logDebug(`🆕 No existing database found, will create new one`);
+        this.logDebug("🆕 Creating new database");
+        this.db = new SQL.Database();
+        await this.createTables();
+        await this.saveDatabase();
+        this.logDebug("✅ New database created and saved");
       }
 
-      // Initialize database
-      this.logDebug(`🔧 Creating database instance...`);
-      this.db = new SQL.Database(fileBuffer);
-      this.logDebug(`✅ Database instance created successfully`);
-
-      // Create tables
-      this.logDebug(`🏗️ Creating database tables...`);
-      this.createTables();
-      this.logDebug(`✅ Database tables created/verified`);
-
-      // Save database if it's new
-      if (!fileBuffer) {
-        this.logDebug(`💾 Saving new database file...`);
-        this.saveDatabase();
-        this.logDebug(`✅ New database file saved successfully`);
-      }
-
-      // Run diagnostics
-      await this.runDiagnostics();
-
-      this.logDebug(`🎉 Database initialization completed successfully!`);
-      return true;
+      this.logDebug("✅ Database initialization completed successfully");
+      return this.db;
     } catch (error) {
-      this.logDebug(`💥 Database initialization FAILED: ${error.message}`);
-      this.logDebug(`📋 Error stack: ${error.stack}`);
-
-      // Output debug log for troubleshooting
-      this.outputDebugLog();
+      this.logDebug(`💥 Database initialization failed: ${error.message}`);
       throw error;
     }
   }
@@ -424,25 +358,11 @@ class PortfolioDatabase {
   }
 
   // Save database to file with error handling
-  saveDatabase() {
+  async saveDatabase() {
     try {
-      this.logDebug(`💾 Exporting database to memory buffer...`);
       const data = this.db.export();
-      const buffer = Buffer.from(data);
-      this.logDebug(`📊 Database buffer size: ${buffer.length} bytes`);
-
-      this.logDebug(`💾 Writing database to file: ${this.dbPath}`);
-      fs.writeFileSync(this.dbPath, buffer);
-
-      // Verify the file was written
-      if (fs.existsSync(this.dbPath)) {
-        const stats = fs.statSync(this.dbPath);
-        this.logDebug(
-          `✅ Database saved successfully (${stats.size} bytes on disk)`
-        );
-      } else {
-        throw new Error("Database file was not created");
-      }
+      fs.writeFileSync(this.dbPath, data);
+      this.logDebug(`✅ Database saved successfully to: ${this.dbPath}`);
     } catch (error) {
       this.logDebug(`❌ Failed to save database: ${error.message}`);
       throw error;
