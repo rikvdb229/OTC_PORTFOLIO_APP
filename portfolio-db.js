@@ -3,7 +3,17 @@ const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
 const os = require("os");
-
+const PORTFOLIO_BUILD_MODE = process.env.BUILD_MODE || "installer";
+// ============= DEBUG BUILD MODE =============
+console.log("🔧 BUILD MODE DEBUG:");
+console.log("   process.env.BUILD_MODE:", process.env.BUILD_MODE);
+console.log("   PORTFOLIO_BUILD_MODE constant:", PORTFOLIO_BUILD_MODE);
+console.log("   typeof PORTFOLIO_BUILD_MODE:", typeof PORTFOLIO_BUILD_MODE);
+console.log(
+  '   PORTFOLIO_BUILD_MODE === "portable":',
+  PORTFOLIO_BUILD_MODE === "portable"
+);
+// ===========================================
 class PortfolioDatabase {
   constructor() {
     this.db = null;
@@ -23,112 +33,125 @@ class PortfolioDatabase {
   // Initialize database path with Windows permission-friendly locations
   initializeDatabasePath() {
     this.logDebug(`🚀 Starting database path initialization...`);
+    this.logDebug(`🏗️ Build mode: ${PORTFOLIO_BUILD_MODE}`);
     this.logDebug(`🖥️ Platform: ${process.platform}`);
     this.logDebug(`📍 Process executable path: ${process.execPath}`);
     this.logDebug(`📂 Current working directory: ${process.cwd()}`);
+    this.logDebug(
+      `🔧 PORTABLE_EXECUTABLE_DIR: ${process.env.PORTABLE_EXECUTABLE_DIR}`
+    );
 
     let dbDirectory;
     let dbPath;
     let strategy = "unknown";
 
-    const isPortable = this.isPortableVersion();
-    const isDevelopment = this.isInDevelopmentMode();
-
-    this.logDebug(
-      `🎯 Mode determination: Portable=${isPortable}, Development=${isDevelopment}`
-    );
-
-    if (isPortable) {
+    // Use build-time configuration instead of runtime detection
+    if (PORTFOLIO_BUILD_MODE === "portable") {
       strategy = "portable";
-      this.logDebug(`📱 Using PORTABLE strategy...`);
+      this.logDebug(`📱 Using PORTABLE strategy (build-time configured)...`);
 
-      // Strategy 1: Try executable directory
-      try {
-        const execDir = path.dirname(process.execPath);
-        this.logDebug(`📁 Trying executable directory: ${execDir}`);
+      // SOLUTION: Use PORTABLE_EXECUTABLE_DIR environment variable set by electron-builder
+      let portableDir = process.env.PORTABLE_EXECUTABLE_DIR;
 
-        if (this.testWritePermissions(execDir)) {
-          dbDirectory = execDir;
-          dbPath = path.join(dbDirectory, "portfolio.db");
+      if (portableDir && fs.existsSync(portableDir)) {
+        this.logDebug(`✅ Found PORTABLE_EXECUTABLE_DIR: ${portableDir}`);
+
+        try {
+          if (this.testWritePermissions(portableDir)) {
+            dbDirectory = portableDir;
+            dbPath = path.join(dbDirectory, "portfolio.db");
+            this.logDebug(
+              `✅ PORTABLE: Using executable directory: ${dbDirectory}`
+            );
+          } else {
+            throw new Error("Portable directory not writable");
+          }
+        } catch (portableDirError) {
           this.logDebug(
-            `✅ PORTABLE: Using executable directory: ${dbDirectory}`
+            `⚠️ Portable directory failed: ${portableDirError.message}`
           );
-        } else {
-          throw new Error("Executable directory not writable");
+          portableDir = null; // Fall through to Documents strategy
         }
-      } catch (execDirError) {
-        this.logDebug(
-          `⚠️ Executable directory failed: ${execDirError.message}`
-        );
+      } else {
+        this.logDebug(`⚠️ PORTABLE_EXECUTABLE_DIR not found or doesn't exist`);
+      }
 
+      // Fallback strategies if PORTABLE_EXECUTABLE_DIR fails
+      if (!portableDir || !dbDirectory) {
         // Strategy 2: Try Documents/PortfolioTracker-Portable
         try {
-          const documentsDir = path.join(
-            os.homedir(),
-            "Documents",
-            "PortfolioTracker-Portable"
-          );
+          const documentsDir = path.join(os.homedir(), "Documents");
+          dbDirectory = path.join(documentsDir, "PortfolioTracker-Portable");
+          dbPath = path.join(dbDirectory, "portfolio.db");
+
           this.logDebug(
-            `📁 Trying Documents portable directory: ${documentsDir}`
+            `📁 Fallback: Using Documents portable folder: ${dbDirectory}`
           );
 
           if (this.testWritePermissions(documentsDir)) {
-            dbDirectory = documentsDir;
-            dbPath = path.join(dbDirectory, "portfolio.db");
             this.logDebug(
-              `✅ PORTABLE FALLBACK: Using Documents directory: ${dbDirectory}`
+              `✅ PORTABLE: Using Documents folder: ${dbDirectory}`
             );
           } else {
-            throw new Error("Documents directory not writable");
+            throw new Error("Documents directory not accessible");
           }
-        } catch (docError) {
+        } catch (documentsError) {
           this.logDebug(
-            `❌ Documents directory also failed: ${docError.message}`
+            `⚠️ Documents directory failed: ${documentsError.message}`
           );
-          // Will fall through to development/production logic
-          strategy = "fallback-from-portable";
+
+          // Strategy 3: Final fallback - use current working directory
+          try {
+            const workingDir = process.cwd();
+            if (this.testWritePermissions(workingDir)) {
+              dbDirectory = workingDir;
+              dbPath = path.join(dbDirectory, "portfolio.db");
+              this.logDebug(
+                `✅ PORTABLE: Using working directory: ${dbDirectory}`
+              );
+            } else {
+              throw new Error("Working directory not writable");
+            }
+          } catch (cwdError) {
+            this.logDebug(`⚠️ Working directory failed: ${cwdError.message}`);
+
+            // Final emergency fallback
+            this.logDebug(
+              `🆘 Using EMERGENCY TEMP directory for portable mode...`
+            );
+            dbDirectory = path.join(
+              os.tmpdir(),
+              `PortfolioTracker-Portable-${Date.now()}`
+            );
+            dbPath = path.join(dbDirectory, "portfolio.db");
+            this.logDebug(
+              `⚠️ EMERGENCY PORTABLE: Using temp directory: ${dbDirectory}`
+            );
+          }
         }
       }
-    }
+    } else {
+      // Installer mode - use standard AppData locations
+      strategy = "installer";
+      this.logDebug(`📦 Using INSTALLER strategy (build-time configured)...`);
 
-    if (
-      (isDevelopment && !isPortable) ||
-      strategy === "fallback-from-portable"
-    ) {
-      strategy =
-        strategy === "fallback-from-portable"
-          ? "fallback-development"
-          : "development";
-      this.logDebug(`🔧 Using ${strategy.toUpperCase()} strategy...`);
-
-      const currentDir = process.cwd();
-      if (this.testWritePermissions(currentDir)) {
-        dbDirectory = currentDir;
-        dbPath = path.join(dbDirectory, "portfolio.db");
-        this.logDebug(
-          `✅ DEVELOPMENT: Using current directory: ${dbDirectory}`
-        );
-      } else {
-        strategy = "fallback-from-development";
-        this.logDebug(`❌ Current directory not writable, falling back...`);
-      }
-    }
-
-    if ((!isDevelopment && !isPortable) || strategy.includes("fallback")) {
-      strategy = strategy.includes("fallback")
-        ? "ultimate-fallback"
-        : "production";
-      this.logDebug(`📁 Using ${strategy.toUpperCase()} strategy...`);
-
-      // Strategy: Use user data directories
       try {
         if (app && app.getPath) {
           dbDirectory = app.getPath("userData");
+          dbPath = path.join(dbDirectory, "portfolio.db");
           this.logDebug(
-            `📁 Trying Electron userData directory: ${dbDirectory}`
+            `📁 INSTALLER: Using Electron userData directory: ${dbDirectory}`
           );
         } else {
-          // Manual user directory construction
+          throw new Error(
+            "Electron app not available, trying user directories"
+          );
+        }
+      } catch (error) {
+        this.logDebug(`⚠️ Electron userData failed: ${error.message}`);
+
+        // Fallback to manual user directories
+        try {
           if (process.platform === "win32") {
             dbDirectory = path.join(
               os.homedir(),
@@ -139,31 +162,16 @@ class PortfolioDatabase {
           } else {
             dbDirectory = path.join(os.homedir(), ".portfolio-tracker");
           }
-          this.logDebug(`📁 Trying manual user directory: ${dbDirectory}`);
-        }
-
-        if (this.testWritePermissions(dbDirectory)) {
           dbPath = path.join(dbDirectory, "portfolio.db");
-          this.logDebug(`✅ PRODUCTION: Using user directory: ${dbDirectory}`);
-        } else {
-          throw new Error("User directory not writable");
-        }
-      } catch (userDirError) {
-        this.logDebug(`❌ User directory failed: ${userDirError.message}`);
-
-        // Final fallback: temp directory
-        this.logDebug(`🆘 Using EMERGENCY TEMP directory...`);
-        dbDirectory = path.join(os.tmpdir(), `PortfolioTracker-${Date.now()}`);
-
-        if (this.testWritePermissions(dbDirectory)) {
-          dbPath = path.join(dbDirectory, "portfolio.db");
-          this.logDebug(`⚠️ EMERGENCY: Using temp directory: ${dbDirectory}`);
+          this.logDebug(`📁 INSTALLER: Using user directory: ${dbDirectory}`);
+        } catch (error) {
+          // Final fallback: temp directory
           this.logDebug(
-            `⚠️ WARNING: Database in temp folder may be deleted on system restart!`
+            `⚠️ Could not access user directories, using temp folder`
           );
-        } else {
-          this.logDebug(`💥 FATAL: Even temp directory failed!`);
-          throw new Error(`Cannot create writable directory anywhere!`);
+          dbDirectory = path.join(os.tmpdir(), "PortfolioTracker");
+          dbPath = path.join(dbDirectory, "portfolio.db");
+          this.logDebug(`📁 INSTALLER: Using temp directory: ${dbDirectory}`);
         }
       }
     }
@@ -173,133 +181,36 @@ class PortfolioDatabase {
 
     this.logDebug(`🎯 FINAL RESULT:`);
     this.logDebug(`   Strategy: ${strategy}`);
+    this.logDebug(`   Build Mode: ${PORTFOLIO_BUILD_MODE}`);
     this.logDebug(`   Directory: ${this.dbDirectory}`);
     this.logDebug(`   Database Path: ${this.dbPath}`);
     this.logDebug(`   Directory Exists: ${fs.existsSync(this.dbDirectory)}`);
-    this.logDebug(`   Database Exists: ${fs.existsSync(this.dbPath)}`);
 
-    // Final verification
+    // Ensure directory exists with proper permissions
     this.ensureDatabaseDirectory();
   }
 
   // Detect if we're running in development mode
   // Detect if running as portable version
   // IMPROVED: More robust portable version detection with detailed logging
-  isPortableVersion() {
-    try {
-      const execPath = process.execPath;
-      this.logDebug(`🔍 Checking portable mode for executable: ${execPath}`);
-
-      // Multiple criteria for portable detection
-      const criteria = {
-        hasPortableInName: execPath.toLowerCase().includes("portable"),
-        hasPortfolioTracker: execPath.includes("Portfolio Tracker"),
-        notInProgramFiles: !execPath.includes("Program Files"),
-        notInAppData: !execPath.includes("AppData"),
-        notInSystem32: !execPath.includes("System32"),
-      };
-
-      this.logDebug(
-        `📊 Portable detection criteria: ${JSON.stringify(criteria, null, 2)}`
-      );
-
-      // Consider it portable if it meets most criteria
-      const isPortable =
-        criteria.hasPortableInName ||
-        (criteria.hasPortfolioTracker &&
-          criteria.notInProgramFiles &&
-          criteria.notInAppData);
-
-      this.logDebug(
-        `🎯 Portable detection result: ${isPortable ? "PORTABLE" : "NOT PORTABLE"}`
-      );
-
-      return isPortable;
-    } catch (error) {
-      this.logDebug(`❌ Portable detection failed: ${error.message}`);
-      return false;
-    }
-  }
-
   // IMPROVED: Development mode detection with detailed logging
-  isInDevelopmentMode() {
+  testWritePermissions(dirPath) {
     try {
-      const currentDir = process.cwd();
-      this.logDebug(`🔍 Checking development mode in directory: ${currentDir}`);
-
-      // Test write permissions first
-      const testFile = path.join(currentDir, `dev-test-${Date.now()}.tmp`);
-      try {
-        fs.writeFileSync(testFile, "dev-test");
-        fs.unlinkSync(testFile);
-        this.logDebug(`✅ Current directory is writable: ${currentDir}`);
-      } catch (writeError) {
-        this.logDebug(
-          `❌ Current directory not writable: ${writeError.message}`
-        );
-        return false;
+      // Ensure directory exists first
+      if (!fs.existsSync(dirPath)) {
+        fs.mkdirSync(dirPath, { recursive: true });
       }
 
-      // Check development indicators
-      const devIndicators = {
-        hasPackageJson: fs.existsSync(path.join(currentDir, "package.json")),
-        hasGitFolder: fs.existsSync(path.join(currentDir, ".git")),
-        hasNodeModules: fs.existsSync(path.join(currentDir, "node_modules")),
-        inDevPath:
-          currentDir.includes("dev") ||
-          currentDir.includes("development") ||
-          currentDir.includes("CodeProjects"),
-        notInProgramFiles: !currentDir.toLowerCase().includes("program files"),
-      };
-
-      this.logDebug(
-        `📊 Development indicators: ${JSON.stringify(devIndicators, null, 2)}`
-      );
-
-      const isDev =
-        devIndicators.hasPackageJson ||
-        devIndicators.hasGitFolder ||
-        devIndicators.hasNodeModules ||
-        devIndicators.inDevPath;
-
-      this.logDebug(
-        `🎯 Development mode result: ${isDev ? "DEVELOPMENT" : "PRODUCTION"}`
-      );
-      return isDev;
-    } catch (error) {
-      this.logDebug(`❌ Development mode detection failed: ${error.message}`);
-      return false;
-    }
-  }
-  testWritePermissions(directory) {
-    try {
-      if (!fs.existsSync(directory)) {
-        this.logDebug(
-          `📁 Directory doesn't exist, attempting to create: ${directory}`
-        );
-        fs.mkdirSync(directory, { recursive: true });
-        this.logDebug(`✅ Successfully created directory: ${directory}`);
-      }
-
-      const testFile = path.join(directory, `write-test-${Date.now()}.tmp`);
-      this.logDebug(`🧪 Testing write permissions with file: ${testFile}`);
-
-      fs.writeFileSync(testFile, "write-test");
-      const readBack = fs.readFileSync(testFile, "utf8");
+      // Test write permissions with a temporary file
+      const testFile = path.join(dirPath, `write-test-${Date.now()}.tmp`);
+      fs.writeFileSync(testFile, "test");
       fs.unlinkSync(testFile);
 
-      if (readBack === "write-test") {
-        this.logDebug(`✅ Write permissions confirmed for: ${directory}`);
-        return true;
-      } else {
-        this.logDebug(
-          `❌ Write test failed - content mismatch in: ${directory}`
-        );
-        return false;
-      }
+      this.logDebug(`✅ Write permissions confirmed for: ${dirPath}`);
+      return true;
     } catch (error) {
       this.logDebug(
-        `❌ Write permission test failed for ${directory}: ${error.message}`
+        `❌ Write permission test failed for ${dirPath}: ${error.message}`
       );
       return false;
     }
@@ -344,8 +255,6 @@ class PortfolioDatabase {
       platform: process.platform,
       execPath: process.execPath,
       cwd: process.cwd(),
-      isPortable: this.isPortableVersion(),
-      isDevelopment: this.isInDevelopmentMode(),
     };
   }
   outputDebugLog() {

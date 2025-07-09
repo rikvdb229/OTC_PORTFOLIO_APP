@@ -10,21 +10,13 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "setup-chrome": "node setup-chrome.js",
-    "build": "node setup-chrome.js && electron-builder",
-    "build-win": "node setup-chrome.js && electron-builder --win",
-    "build-portable": "node setup-chrome.js && electron-builder --win portable",
-    "build-installer": "node setup-chrome.js && electron-builder --win nsis",
+    "build-portable": "set BUILD_MODE=portable && rimraf dist && npx electron-builder --win portable --config.win.target=portable",
+    "build-installer": "set BUILD_MODE=installer && rimraf dist && npx electron-builder --win nsis --config.win.target=nsis",
     "build-all": "npm run build-portable && npm run build-installer",
     "rebuild": "electron-rebuild",
     "postinstall": "electron-rebuild",
     "clean": "rimraf node_modules package-lock.json && npm install",
-    "check-db": "node migrate-database.js",
-    "migrate-db": "node migrate-database.js migrate",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
-    "check": "npm run lint && npm run format"
+    "clean-dist": "rimraf dist"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.0",
@@ -40,7 +32,7 @@
   "dependencies": {
     "csv-parser": "^3.2.0",
     "papaparse": "^5.5.3",
-    "puppeteer": "^23.11.1",
+    "puppeteer": "^24.12.1",
     "sql.js": "^1.13.0"
   },
   "engines": {
@@ -55,8 +47,6 @@
     },
     "files": [
       "**/*",
-      "node_modules/puppeteer/.local-chromium/**/*",
-      "node_modules/puppeteer/.cache/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
       "!**/node_modules/*.d.ts",
@@ -67,53 +57,36 @@
       "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
       "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}",
-      "!build-prep.js",
-      "!css-migration.js",
-      "!simple-chrome-setup.js",
-      "!test-chrome-simple.js",
-      "!download-chrome.js",
-      "!Todo.txt",
-      "!Archive/**/*"
-    ],
-    "extraResources": [
-      {
-        "from": "node_modules/puppeteer/.local-chromium",
-        "to": "chromium",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "node_modules/puppeteer/.cache",
-        "to": "chromium-cache",
-        "filter": ["**/*"]
-      }
+      "!package-lock.json",
+      "!*.backup.*",
+      "!test-portable-*/",
+      "!.cache/**/*"
     ],
     "win": {
+      "icon": "assets/icon.ico",
       "target": [
         {
-          "target": "nsis",
-          "arch": ["x64"]
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
         },
         {
-          "target": "portable",
-          "arch": ["x64"]
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
         }
-      ],
-      "icon": "assets/icon.ico"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true,
-      "perMachine": false,
-      "runAfterFinish": false,
-      "shortcutName": "Portfolio Tracker",
-      "installerLanguages": ["en_US"],
-      "language": "1033"
+      ]
     },
     "portable": {
-      "artifactName": "${productName}-${version}-portable.${ext}"
+      "artifactName": "Portfolio Tracker Portable-${version}.exe"
+    },
+    "nsis": {
+      "artifactName": "Portfolio Tracker Setup-${version}.exe",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Portfolio Tracker"
     }
   }
 }
