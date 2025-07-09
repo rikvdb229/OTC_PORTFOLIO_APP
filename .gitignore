@@ -11,3 +11,4 @@ chrome-portable/
 DATA/
 test-portable-1752092258755/Portfolio Tracker-0.1.0-portable.exe
 portfolio-db.js
+.cache/electron/electron-v32.3.3-win32-x64.zip
