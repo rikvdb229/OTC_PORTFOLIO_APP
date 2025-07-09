@@ -527,6 +527,30 @@ class UndoRedoManager {
       operationInProgress: this.isOperationInProgress,
     };
   }
+  /**
+   * Reset undo/redo state after file import and take new initial snapshot
+   * Call this method after any file import operation
+   * @param {string} operationName - Description of the import operation
+   */
+  async resetAfterImport(operationName = "File Import") {
+    try {
+      console.log(`🔄 Resetting undo/redo state after: ${operationName}`);
+
+      // Clear all existing undo/redo history
+      this.clearHistory();
+
+      // Take a new initial snapshot to establish baseline
+      await this.takeInitialSnapshot();
+
+      console.log(
+        `✅ Undo/redo state reset successfully after: ${operationName}`
+      );
+      return true;
+    } catch (error) {
+      console.error("❌ Error resetting undo/redo state after import:", error);
+      return false;
+    }
+  }
 }
 
 // Export to global scope

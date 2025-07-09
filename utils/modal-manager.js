@@ -1998,36 +1998,46 @@ const ModalManager = {
           mergeMode
         );
 
-if (result.success) {
-  const successMessage = `Database ${mergeMode ? "merged" : "imported"} successfully! Imported ${result.importedEntries} entries.`;
+      if (result.success) {
+        const successMessage = `Database ${mergeMode ? "merged" : "imported"} successfully! Imported ${result.importedEntries} entries.`;
 
-  // Use notification manager
-  window.UIStateManager.showSuccess(successMessage, 5000);
+        // Use notification manager
+        window.UIStateManager.showSuccess(successMessage, 5000);
+        console.log("✅ Database import completed successfully");
 
-  console.log("✅ Database import completed successfully");
+        // 🆕 CRITICAL: Reset undo/redo state after import
+        if (window.UndoRedoManager) {
+          const importType = mergeMode ? "Database Merge" : "Database Import";
+          await window.UndoRedoManager.resetAfterImport(importType);
+          console.log("✅ Undo/redo state reset after import");
+        } else {
+          console.warn(
+            "⚠️ UndoRedoManager not found - undo/redo state not reset"
+          );
+        }
 
-  // Reload data and switch to portfolio tab
-  if (app && app.loadPortfolioData) {
-    await app.loadPortfolioData();
-  }
-  
-  // 🔧 ADD THIS LINE - Update button states after import
-  if (app && app.checkDataAvailability) {
-    await app.checkDataAvailability();
-  }
-  
-  // 🔧 ADD THIS LINE - Check price update status after import  
-  if (app) {
-    await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
-  }
-  
-  if (app) {
-    window.UIStateManager.Tabs.switchTab(app, "portfolio");
-  }
-} else {
-  window.UIStateManager.showError("Import cancelled or failed");
-  console.log("❌ Database import cancelled or failed");
-}
+        // Reload data and switch to portfolio tab
+        if (app && app.loadPortfolioData) {
+          await app.loadPortfolioData();
+        }
+
+        // Update button states after import
+        if (app && app.checkDataAvailability) {
+          await app.checkDataAvailability();
+        }
+
+        // Check price update status after import
+        if (app) {
+          await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
+        }
+
+        if (app) {
+          window.UIStateManager.Tabs.switchTab(app, "portfolio");
+        }
+      } else {
+        window.UIStateManager.showError("Import cancelled or failed");
+        console.log("❌ Database import cancelled or failed");
+      }
     } catch (error) {
       console.error("❌ Error importing database:", error);
       window.UIStateManager.showError(
