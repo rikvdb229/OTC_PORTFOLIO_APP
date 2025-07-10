@@ -1199,87 +1199,45 @@ const ModalManager = {
    * @param {Object} app - Application instance
    * @param {string} progressText - Progress text to display
    */
-  updateProgress(app, progressText) {
-    console.log(`📊 Progress update: ${progressText}`);
+updateProgress(app, progressData) {
+  console.log(`📊 Progress update:`, progressData);
 
-    if (!progressText) return;
+  if (!progressData) return;
 
-    // SAFE: Get elements fresh from DOM if not in app object
-    const progressTextEl =
-      app.updateProgressText || document.getElementById("updateProgressText");
-    const statusOutput =
-      app.updateStatusOutput || document.getElementById("updateStatusOutput");
-    const progressBar =
-      app.updateProgressBar || document.getElementById("updateProgressBar");
+  // Handle both old string format and new object format
+  let progressText, percentage;
+  
+  if (typeof progressData === 'string') {
+    // Legacy string format - fallback
+    progressText = progressData;
+    percentage = 50; // Default percentage for legacy
+  } else {
+    // New object format with exact percentage control
+    progressText = progressData.text;
+    percentage = progressData.percentage;
+  }
 
-    // Update progress text
-    if (progressTextEl) {
-      progressTextEl.textContent = progressText;
-    }
+  // SAFE: Get elements fresh from DOM if not in app object
+  const progressTextEl = app.updateProgressText || document.getElementById("updateProgressText");
+  const statusOutput = app.updateStatusOutput || document.getElementById("updateStatusOutput");
+  const progressBar = app.updateProgressBar || document.getElementById("updateProgressBar");
 
-    // Update status output
-    if (statusOutput) {
-      statusOutput.textContent = progressText;
-    }
+  // Update progress text
+  if (progressTextEl) {
+    progressTextEl.textContent = progressText;
+  }
 
-    // IMPROVED: Calculate progress percentage based on actual scraper stages
-    let percentage = 10; // Default progress
+  // Update status output
+  if (statusOutput) {
+    statusOutput.textContent = progressText;
+  }
 
-    // Map actual scraper progress to percentages
-    if (
-      progressText.includes("Starting") ||
-      progressText.includes("Launching")
-    ) {
-      percentage = 15;
-    } else if (progressText.includes("Loading KBC page")) {
-      percentage = 25;
-    } else if (
-      progressText.includes("cookie") ||
-      progressText.includes("Handling")
-    ) {
-      percentage = 35;
-    } else if (
-      progressText.includes("Setting date") ||
-      progressText.includes("Submitting")
-    ) {
-      percentage = 45;
-    } else if (
-      progressText.includes("Looking for") ||
-      progressText.includes("export")
-    ) {
-      percentage = 65;
-    } else if (progressText.includes("Download started")) {
-      percentage = 75;
-    } else if (progressText.includes("Verifying")) {
-      percentage = 85;
-    } else if (
-      progressText.includes("complete") ||
-      progressText.includes("success")
-    ) {
-      percentage = 100;
-    } else if (
-      progressText.includes("Processing") ||
-      progressText.includes("Loading data")
-    ) {
-      percentage = 55;
-    } else if (
-      progressText.includes("Connecting") ||
-      progressText.includes("browser")
-    ) {
-      percentage = 20;
-    } else if (
-      progressText.includes("Found") ||
-      progressText.includes("Downloading")
-    ) {
-      percentage = 80;
-    }
-
-    // Update progress bar
-    if (progressBar) {
-      progressBar.style.width = percentage + "%";
-      console.log(`📊 Progress bar updated to ${percentage}%`);
-    }
-  },
+  // Update progress bar with exact percentage from scraper
+  if (progressBar) {
+    progressBar.style.width = percentage + "%";
+    console.log(`📊 Progress bar updated to ${percentage}%`);
+  }
+},
   // Add to ModalManager section in ui-state-management.js
   /**
    * Enhanced showSellModal with dynamic price lookup
