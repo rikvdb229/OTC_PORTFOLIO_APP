@@ -1136,7 +1136,7 @@ const ModalManager = {
               },
               scales: {
                 y: {
-                  beginAtZero: true,
+                  beginAtZero: false,
                   ticks: {
                     callback: function (value) {
                       return "€" + value.toFixed(2);

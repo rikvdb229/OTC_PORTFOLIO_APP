@@ -94,10 +94,11 @@ const PortfolioOperations = {
         return;
       }
 
-      const result = await window.ipcRenderer.invoke("update-portfolio-entry", {
-        id: app.currentEditingTaxId,
-        tax_amount: newTaxAmount,
-      });
+      const result = await window.ipcRenderer.invoke(
+        "update-tax-amount",
+        app.currentEditingTaxId,
+        newTaxAmount
+      );
 
       if (result.error) {
         alert("Error updating tax: " + result.error);
@@ -121,21 +122,6 @@ const PortfolioOperations = {
     } catch (error) {
       console.error("❌ Error updating tax:", error);
       alert("Error updating tax: " + error.message);
-    }
-  },
-
-  async updateEntry(id, quantity, taxAmount, notes) {
-    try {
-      return await window.ipcRenderer.invoke(
-        "update-portfolio-entry",
-        id,
-        quantity,
-        taxAmount,
-        notes
-      );
-    } catch (error) {
-      console.error("❌ Error updating portfolio entry:", error);
-      throw error;
     }
   },
 
@@ -471,7 +457,7 @@ const PriceOperations = {
       }
 
       // Get current time and date info
-      const today = new Date().toLocaleDateString('en-CA'); // Returns YYYY-MM-DD format
+      const today = new Date().toLocaleDateString("en-CA"); // Returns YYYY-MM-DD format
       const latestPrice = new Date(latestPriceDate).toISOString().split("T")[0];
       const now = new Date();
       const currentHour = now.getHours();
@@ -509,18 +495,30 @@ const PriceOperations = {
         if (isWeekend) {
           notificationMessage = "Weekend: Friday's prices";
           notificationIcon = "📅";
-          buttonTooltip = `Latest available: ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
-          notificationTooltip = `Markets closed on weekends. Latest prices from ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
+          buttonTooltip = `Latest available: ${new Date(
+            latestPriceDate
+          ).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
+          notificationTooltip = `Markets closed on weekends. Latest prices from ${new Date(
+            latestPriceDate
+          ).toLocaleDateString()}. KBC updates weekdays at 09:00.`;
         } else if (currentHour < 9) {
           notificationMessage = "Before 09:00: Yesterday's prices";
           notificationIcon = "🕒";
-          buttonTooltip = `Current: ${new Date(latestPriceDate).toLocaleDateString()}. KBC updates at 09:00 today.`;
-          notificationTooltip = `Too early for today's update. KBC publishes new prices at 09:00 on weekdays. Current prices from ${new Date(latestPriceDate).toLocaleDateString()}.`;
+          buttonTooltip = `Current: ${new Date(
+            latestPriceDate
+          ).toLocaleDateString()}. KBC updates at 09:00 today.`;
+          notificationTooltip = `Too early for today's update. KBC publishes new prices at 09:00 on weekdays. Current prices from ${new Date(
+            latestPriceDate
+          ).toLocaleDateString()}.`;
         } else if (daysDiff === 1) {
           notificationMessage = "Yesterday's prices - Check for update";
           notificationIcon = "📊";
-          buttonTooltip = `Prices from ${new Date(latestPriceDate).toLocaleDateString()}. Click to check for today's update.`;
-          notificationTooltip = `Prices are from yesterday (${new Date(latestPriceDate).toLocaleDateString()}). Click 'Update Prices' to check for today's data.
+          buttonTooltip = `Prices from ${new Date(
+            latestPriceDate
+          ).toLocaleDateString()}. Click to check for today's update.`;
+          notificationTooltip = `Prices are from yesterday (${new Date(
+            latestPriceDate
+          ).toLocaleDateString()}). Click 'Update Prices' to check for today's data.
 Note: KBC doesn't update on bank holidays.`;
         } else {
           // Same day but something's off

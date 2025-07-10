@@ -94,20 +94,20 @@ window.ChartUtils = {
    */
   calculateYAxisRange(portfolioValues) {
     if (!portfolioValues || portfolioValues.length === 0) {
-      return { yAxisMax: 10000, buffer: 1000 };
+      return { yAxisMin: 0, yAxisMax: 10000, buffer: 1000 };
     }
 
-    const maxValue = Math.max(...portfolioValues);
     const minValue = Math.min(...portfolioValues);
-    const range = maxValue - Math.min(minValue, 0);
-    const buffer = Math.max(range * 0.1, 1000);
-    const yAxisMax = maxValue + buffer;
+    const maxValue = Math.max(...portfolioValues);
 
-    console.log(`📊 Y-axis range: 0 to €${yAxisMax.toLocaleString()}`);
+    // Smart minimum: round down to nearest 5000, with 5000 buffer
+    const yAxisMin = Math.max(0, Math.floor((minValue - 5000) / 5000) * 5000);
 
-    return { yAxisMax, buffer, maxValue, minValue };
+    // Smart maximum: ensure data fits, round up to nearest 5000
+    const yAxisMax = Math.ceil(maxValue / 5000) * 5000;
+
+    return { yAxisMin, yAxisMax, buffer: 1000 }; // Keep buffer for compatibility
   },
-
   /**
    * Process portfolio events and group by date for annotations
    * @param {Array} evolutionData - Evolution data
@@ -294,7 +294,9 @@ window.ChartUtils = {
     });
 
     console.log(
-      `📍 Chart annotations created: ${Object.keys(annotations).length} annotations`
+      `📍 Chart annotations created: ${
+        Object.keys(annotations).length
+      } annotations`
     );
     console.log("📍 Annotations detail:", annotations);
 
@@ -449,8 +451,8 @@ window.ChartUtils = {
               text: "Portfolio Value (€)",
               font: { size: 14, weight: "bold" },
             },
-            min: 0,
-            max: yAxisMax,
+            min: yAxisConfig.yAxisMin, // ← ADD this line
+            max: yAxisConfig.yAxisMax, // ← CHANGE from just yAxisMax
             grid: {
               display: true,
               color: "rgba(0, 0, 0, 0.1)",
