@@ -9,18 +9,18 @@
   "status": "Beta Version",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev",
-    "build": "rimraf dist && npx electron-builder --win portable",
-    "rebuild": "electron-rebuild",
-    "postinstall": "electron-rebuild",
-    "clean": "rimraf node_modules package-lock.json && npm install",
-    "clean-dist": "rimraf dist"
+    "dev": "electron . --dev", 
+    "build": "rimraf dist && electron-builder --win portable",
+    "build:win": "rimraf dist && electron-builder --win portable",
+    "build:mac": "rimraf dist && electron-builder --mac dmg", 
+    "build:linux": "rimraf dist && electron-builder --linux AppImage",
+    "build:all": "rimraf dist && electron-builder --win --mac --linux",
+    "postinstall": "electron-builder install-app-deps"
   },
-  "devDependencies": {
-    "@electron/rebuild": "^3.7.2",
+   "devDependencies": {
+    "rimraf": "^5.0.1",
     "electron": "^33.2.0",
-    "electron-builder": "^25.1.8",
-    "rimraf": "^6.0.1"
+    "electron-builder": "^25.1.8"
   },
   "dependencies": {
     "csv-parser": "^3.2.0",
@@ -31,44 +31,38 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-  "build": {
+"build": {
     "appId": "com.portfoliotracker.app",
     "productName": "Portfolio Tracker",
     "directories": {
       "output": "dist"
     },
+    "win": {
+      "target": "portable",
+      "sign": false
+    },
+    "mac": {
+      "target": "dmg",
+      "sign": false
+    },
+    "linux": {
+      "target": "AppImage"
+    },
     "files": [
       "main.js",
-      "portfolio-db.js",
+      "portfolio-db.js", 
       "scraper.js",
       "index.html",
       "renderer.js",
       "utils/**/*",
       "ui/**/*",
-      "libs/**/*",
+      "libs/**/*", 
       "styles/**/*",
       "assets/**/*",
       "package.json",
       "node_modules/sql.js/**/*",
       "node_modules/csv-parser/**/*",
-      "node_modules/papaparse/**/*",
-      "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,readme}",
-      "!**/node_modules/*/{test,__tests__,tests,example,examples}",
-      "!**/node_modules/*.d.ts",
-      "!**/node_modules/.bin",
-      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
-      "!.editorconfig",
-      "!**/._*",
-      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
-      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
-      "!**/{appveyor.yml,.travis.yml,circle.yml}",
-      "!package-lock.json"
-    ],
-    "portable": {
-      "artifactName": "${productName}-${version}.${ext}"
-    },
-    "win": {
-      "target": "portable"
-    }
+      "node_modules/papaparse/**/*"
+    ]
   }
 }
