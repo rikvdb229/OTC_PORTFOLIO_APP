@@ -9,15 +9,15 @@
   "status": "Beta Version",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev", 
+    "dev": "electron . --dev",
     "build": "rimraf dist && electron-builder --win portable",
     "build:win": "rimraf dist && electron-builder --win portable",
-    "build:mac": "rimraf dist && electron-builder --mac dmg", 
+    "build:mac": "rimraf dist && electron-builder --mac dmg",
     "build:linux": "rimraf dist && electron-builder --linux AppImage",
     "build:all": "rimraf dist && electron-builder --win --mac --linux",
     "postinstall": "electron-builder install-app-deps"
   },
-   "devDependencies": {
+  "devDependencies": {
     "rimraf": "^5.0.1",
     "electron": "^33.2.0",
     "electron-builder": "^25.1.8"
@@ -31,32 +31,47 @@
     "node": ">=18.0.0",
     "npm": ">=8.0.0"
   },
-"build": {
+  "build": {
     "appId": "com.portfoliotracker.app",
     "productName": "Portfolio Tracker",
     "directories": {
-      "output": "dist"
+      "output": "dist",
+      "buildResources": "assets"
     },
+    "icon": "assets/icons/png/512x512.png",
     "win": {
       "target": "portable",
+      "icon": "assets/icons/win/icon.ico",
       "sign": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icons/win/icon.ico",
+      "uninstallerIcon": "assets/icons/win/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Portfolio Tracker"
     },
     "mac": {
       "target": "dmg",
+      "icon": "assets/icons/mac/icon.icns",
       "sign": false
     },
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "icon": "assets/icons/png/512x512.png"
     },
     "files": [
       "main.js",
-      "portfolio-db.js", 
+      "portfolio-db.js",
       "scraper.js",
       "index.html",
       "renderer.js",
       "utils/**/*",
       "ui/**/*",
-      "libs/**/*", 
+      "libs/**/*",
       "styles/**/*",
       "assets/**/*",
       "package.json",

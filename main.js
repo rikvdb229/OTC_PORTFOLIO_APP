@@ -9,14 +9,14 @@ const packageInfo = require("./package.json");
 // ADD HERE: App configuration that matches renderer.js
 const pkg = require("./package.json");
 const APP_CONFIG = {
-  VERSION: pkg.version || '0.1.0',
-  APP_NAME: (pkg.build && pkg.build.productName) || 'Portfolio Tracker',
-  STATUS: pkg.status || "Beta Version", 
-  BUILD_DATE: pkg.buildDate || '2025-07-09',
-  
+  VERSION: pkg.version || "0.1.0",
+  APP_NAME: (pkg.build && pkg.build.productName) || "Portfolio Tracker",
+  STATUS: pkg.status || "Beta Version",
+  BUILD_DATE: pkg.buildDate || "2025-07-09",
+
   getFullVersion() {
     return `${this.APP_NAME} v${this.VERSION}`;
-  }
+  },
 };
 
 let mainWindow;
@@ -35,6 +35,30 @@ process.on("unhandledRejection", (reason, _promise) => {
 function createWindow() {
   console.log("Creating main window...");
 
+  // Better icon path handling for different environments
+  let iconPath;
+  if (app.isPackaged) {
+    // In production, use path relative to resources
+    iconPath = path.join(
+      process.resourcesPath,
+      "assets",
+      "icons",
+      "png",
+      "256x256.png"
+    );
+  } else {
+    // In development, use path relative to __dirname
+    iconPath = path.join(__dirname, "assets", "icons", "png", "256x256.png");
+  }
+
+  // Verify icon exists
+  if (!fs.existsSync(iconPath)) {
+    console.warn(`Icon not found at ${iconPath}, using default`);
+    iconPath = undefined; // Let Electron use default
+  } else {
+    console.log(`Using icon: ${iconPath}`);
+  }
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
@@ -42,18 +66,13 @@ function createWindow() {
       nodeIntegration: true,
       contextIsolation: false,
     },
-    // CHANGED: Use native window controls
-    frame: true, // Enable native frame
-    titleBarStyle: "default", // Use default OS title bar
-    // REMOVED: titleBarStyle: "hidden"
+    frame: true,
+    titleBarStyle: "default",
     webSecurity: false,
-    icon: path.join(__dirname, "assets/icon.png"),
+    icon: iconPath, // Use the determined icon path
     show: false,
-    title: APP_CONFIG.getFullVersion(), // Set window title with version
-    // OPTIONAL: Remove menu bar (Windows/Linux only)
-    autoHideMenuBar: true, // Hide menu bar, can be toggled with Alt
-    // OR completely remove menu:
-    // menu: null,                  // Completely remove menu bar
+    title: APP_CONFIG.getFullVersion(),
+    autoHideMenuBar: true,
   });
 
   // Start maximized as requested
