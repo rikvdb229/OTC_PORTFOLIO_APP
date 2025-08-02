@@ -1,6 +1,6 @@
 # Portfolio Tracker
 
-A comprehensive desktop application for managing stock options portfolios, built with Electron and designed for tracking employee stock option plans and investment portfolios.
+A comprehensive desktop application for **tracking and analyzing** stock options portfolios, built with Electron and designed for monitoring employee stock option plans and investment performance. **This is a tracking tool only - all transactions must be executed through your official brokerage platform.**
 
 ![Portfolio Tracker](assets/logo.svg)
 
@@ -9,6 +9,18 @@ A comprehensive desktop application for managing stock options portfolios, built
 **Status**: Beta Version  
 **Build Date**: July 9, 2025  
 **License**: MIT  
+
+## ⚠️ Important Disclaimer
+
+**Portfolio Tracker is a TRACKING TOOL ONLY** - it does not execute any financial transactions.
+
+- **📊 For Tracking Only**: Monitor and analyze your portfolio performance
+- **🚫 No Trading**: Cannot buy, sell, or execute any transactions
+- **💼 Official Platform Required**: All sales and transactions must be done through your official brokerage/stock option platform
+- **📈 Analysis Tool**: Provides insights and calculations for informed decision-making
+- **⚖️ No Financial Advice**: This tool does not provide investment or financial advice
+
+**Always use your official stock option platform for actual transactions and consult with financial advisors for investment decisions.**
 
 ## Features
 
@@ -121,11 +133,14 @@ npm run build:all
 
 ### Getting Started
 
+**Remember: This app is for tracking only. Use your official platform for actual transactions.**
+
 1. **Launch the Application**: Double-click `Portfolio Tracker 0.2.0.exe`
 2. **First Run**: The app creates a `portfolio.db` file next to the .exe
-3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information
+3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information for tracking
 4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
 5. **Monitor Evolution**: Use the Evolution tab to see how your portfolio changes over time
+6. **Execute Transactions**: Use your official brokerage/stock option platform for actual sales
 
 ### 📁 File Management
 - **Database**: `portfolio.db` - Contains all your portfolio data
