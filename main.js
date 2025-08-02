@@ -9,7 +9,7 @@ const packageInfo = require("./package.json");
 // ADD HERE: App configuration that matches renderer.js
 const pkg = require("./package.json");
 const APP_CONFIG = {
-  VERSION: pkg.version || "0.1.0",
+  VERSION: pkg.version || "0.2.0",
   APP_NAME: (pkg.build && pkg.build.productName) || "Portfolio Tracker",
   STATUS: pkg.status || "Beta Version",
   BUILD_DATE: pkg.buildDate || "2025-07-09",

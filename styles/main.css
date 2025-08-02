@@ -515,6 +515,51 @@ textarea {
   gap: var(--spacing-sm);
   background: var(--color-white);
 }
+
+#evolution-tab-header.active {
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  align-items: center !important;
+  gap: var(--spacing-lg) !important;
+}
+
+.evolution-period-stats {
+  display: none;
+  align-items: center;
+  gap: var(--spacing-md);
+  grid-column: 1;
+}
+
+#evolution-tab-header.active .evolution-period-stats {
+  display: flex;
+}
+
+.evolution-stat-label {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-normal);
+  color: var(--text-primary);
+}
+
+.evolution-stat-value {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-primary);
+}
+
+.evolution-stat-value.positive {
+  color: var(--color-success);
+}
+
+.evolution-stat-value.negative {
+  color: var(--color-danger);
+}
+
+.evolution-filter-buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  grid-column: 2;
+}
 .summary-tab-header {
   padding: var(--spacing-md) var(--spacing-lg);
   background: var(--color-white);

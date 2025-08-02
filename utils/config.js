@@ -3,7 +3,7 @@
  * Shared configuration for both main and renderer processes
  */
 const APP_CONFIG = {
-  VERSION: "0.1.0", // Default values
+  VERSION: "0.2.0", // Default values
   APP_NAME: "Portfolio Tracker",
   STATUS: "Development Version",
   BUILD_DATE: "2025-07-08",

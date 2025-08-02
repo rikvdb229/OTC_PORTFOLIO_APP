@@ -140,18 +140,25 @@
           id="evolution-tab-header"
           class="controls-tab-header tab-header-content"
         >
-          <button class="btn btn-small btn-secondary" data-days="30">
-            30 Days
-          </button>
-          <button class="btn btn-small btn-secondary" data-days="90">
-            90 Days
-          </button>
-          <button class="btn btn-small btn-secondary" data-days="365">
-            1 Year
-          </button>
-          <button class="btn btn-small btn-primary" data-days="all">
-            All Time
-          </button>
+          <div class="evolution-period-stats">
+            <span class="evolution-stat-label">Change since <span id="evolution-oldest-date">---</span>:</span>
+            <span id="evolution-gain-loss" class="evolution-stat-value">---</span>
+            <span id="evolution-change-percent" class="evolution-stat-value">---</span>
+          </div>
+          <div class="evolution-filter-buttons">
+            <button class="btn btn-small btn-secondary" data-days="30">
+              30 Days
+            </button>
+            <button class="btn btn-small btn-secondary" data-days="90">
+              90 Days
+            </button>
+            <button class="btn btn-small btn-secondary" data-days="365">
+              1 Year
+            </button>
+            <button class="btn btn-small btn-primary" data-days="all">
+              All Time
+            </button>
+          </div>
         </div>
 
         <!-- Chart Tab Header - Period Controls -->

@@ -58,6 +58,9 @@ async function loadEvolutionData(days = "all") {
     // Use HTML generator to render table
     this.app.htmlGen.renderEvolutionTable(evolutionData);
 
+    // Calculate and display period stats
+    updateEvolutionPeriodStats(evolutionData);
+
     console.log("✅ Evolution data loaded successfully");
   } catch (error) {
     console.error("❌ Error loading evolution data:", error);
@@ -65,6 +68,71 @@ async function loadEvolutionData(days = "all") {
     this.app.evolutionData = [];
   }
 }
+
+function updateEvolutionPeriodStats(evolutionData) {
+  const gainLossEl = document.getElementById("evolution-gain-loss");
+  const changePercentEl = document.getElementById("evolution-change-percent");
+  const oldestDateEl = document.getElementById("evolution-oldest-date");
+  
+  if (!gainLossEl || !changePercentEl || !oldestDateEl) return;
+  
+  // Reset to default state
+  gainLossEl.textContent = "---";
+  changePercentEl.textContent = "---";
+  oldestDateEl.textContent = "---";
+  gainLossEl.className = "evolution-stat-value";
+  changePercentEl.className = "evolution-stat-value";
+  
+  if (!evolutionData || evolutionData.length < 2) {
+    return; // Need at least 2 data points
+  }
+  
+  // Sort by date (newest first - evolutionData is already sorted DESC)
+  const sortedData = [...evolutionData].sort((a, b) => 
+    new Date(b.snapshot_date) - new Date(a.snapshot_date)
+  );
+  
+  const newestEntry = sortedData[0];
+  const oldestEntry = sortedData[sortedData.length - 1];
+  
+  const newestValue = parseFloat(newestEntry.total_portfolio_value) || 0;
+  const oldestValue = parseFloat(oldestEntry.total_portfolio_value) || 0;
+  
+  if (oldestValue === 0) return; // Prevent division by zero
+  
+  // Calculate gain/loss and percentage change
+  const gainLoss = newestValue - oldestValue;
+  const changePercent = ((newestValue - oldestValue) / oldestValue) * 100;
+  
+  // Format currency using window formatters
+  const formattedGainLoss = window.FormatHelpers?.formatCurrencyValue 
+    ? window.FormatHelpers.formatCurrencyValue(Math.abs(gainLoss), "€")
+    : `€${Math.abs(gainLoss).toFixed(2)}`;
+  
+  // Format percentage
+  const formattedPercent = `${changePercent >= 0 ? "+" : ""}${changePercent.toFixed(2)}%`;
+  
+  // Apply formatting and colors
+  const isPositive = gainLoss >= 0;
+  const colorClass = isPositive ? "positive" : "negative";
+  const sign = gainLoss >= 0 ? "+" : "-";
+  
+  // Format oldest date
+  const oldestDate = new Date(oldestEntry.snapshot_date);
+  const formattedOldestDate = oldestDate.toLocaleDateString('en-GB', { 
+    day: '2-digit', 
+    month: '2-digit', 
+    year: 'numeric' 
+  });
+  
+  gainLossEl.textContent = `${sign}${formattedGainLoss}`;
+  changePercentEl.textContent = `(${formattedPercent})`;
+  oldestDateEl.textContent = formattedOldestDate;
+  
+  gainLossEl.className = `evolution-stat-value ${colorClass}`;
+  changePercentEl.className = `evolution-stat-value ${colorClass}`;
+}
+
 async function loadChartData(period = "all") {
   try {
     console.log(`📊 Loading chart data for period: ${period}`);
@@ -191,4 +259,5 @@ window.DataLoader = {
   loadChartData,
   confirmEditSale,
   updateTax,
+  updateEvolutionPeriodStats,
 };
