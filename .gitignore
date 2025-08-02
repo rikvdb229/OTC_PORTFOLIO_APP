@@ -17,3 +17,6 @@ portfolio-db.js
 *.zip
 *.msi
 gh.zip
+
+# Claude Code local settings
+.claude/settings.local.json
