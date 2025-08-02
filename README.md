@@ -47,10 +47,11 @@ A comprehensive desktop application for managing stock options portfolios, built
 
 #### ✨ Portable Features
 - **🗂️ Fully Self-Contained**: All dependencies bundled in single .exe file
-- **💾 Local Data Storage**: Database stored next to .exe file - completely offline
-- **🔒 Privacy First**: No internet connection required, no data sent online
+- **💾 Local Data Storage**: Database stored next to .exe file - your data stays local
+- **🔒 Privacy First**: Your portfolio data never leaves your computer
 - **📁 Run Anywhere**: Desktop, Documents, USB stick, network drive - your choice
 - **⚡ Instant Start**: No installation, no admin rights needed
+- **🌐 Optional Internet**: Only needed for fetching current stock prices
 
 ### 🛠️ Development Setup (For Developers)
 
@@ -98,15 +99,21 @@ npm run build:all
 - **Backup**: Manual backup by copying the .db file
 
 ### Complete Privacy
-- **🔒 100% Offline**: No internet connection required for operation
-- **🚫 No Data Transmission**: Your data never leaves your computer
-- **🏠 Local Only**: Database stored locally on your machine
-- **👤 Full Control**: You own and control all your data
-- **🔐 Secure**: No cloud storage, no external servers, no data collection
+- **🔒 Local Data Storage**: All portfolio data stored locally on your machine
+- **🚫 No Data Transmission**: Your personal portfolio data never leaves your computer
+- **🏠 Local Database**: Database stored locally in `portfolio.db` file
+- **👤 Full Control**: You own and control all your portfolio data
+- **🔐 Privacy First**: No cloud storage or external data collection for your portfolio
+
+### Internet Connection
+- **📈 Price Updates**: Internet connection required to fetch current stock prices from online platforms
+- **🔄 Optional Updates**: Price fetching can be disabled - app works offline with existing data
+- **⚡ Quick Fetches**: Only fetches price data when you request updates
+- **🔒 Secure**: Only connects to fetch publicly available stock price information
 
 ### Portability
 - **📁 Run from anywhere**: Desktop, USB stick, network drive
-- **💼 Business Use**: Perfect for corporate environments with restricted internet
+- **💼 Business Use**: Works in corporate environments (requires internet for price updates)
 - **🏃‍♂️ Mobile**: Take your portfolio data with you on USB stick
 - **🔄 Easy Backup**: Just copy the .exe and .db files
 
