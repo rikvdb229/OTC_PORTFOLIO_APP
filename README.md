@@ -37,17 +37,36 @@ A comprehensive desktop application for managing stock options portfolios, built
 
 ## Installation
 
-### Prerequisites
+### 🚀 Standalone Portable Version (Recommended)
+
+**No installation required!** Download and run the portable executable:
+
+1. **Download**: Get the latest `Portfolio Tracker 0.2.0.exe` from the [Releases](../../releases) page
+2. **Run**: Double-click the .exe file to start the application
+3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
+
+#### ✨ Portable Features
+- **🗂️ Fully Self-Contained**: All dependencies bundled in single .exe file
+- **💾 Local Data Storage**: Database stored next to .exe file - completely offline
+- **🔒 Privacy First**: No internet connection required, no data sent online
+- **📁 Run Anywhere**: Desktop, Documents, USB stick, network drive - your choice
+- **⚡ Instant Start**: No installation, no admin rights needed
+
+### 🛠️ Development Setup (For Developers)
+
+Only needed if you want to modify the application:
+
+#### Prerequisites
 - **Node.js**: Version 18.0.0 or higher
 - **npm**: Version 8.0.0 or higher
 - **Operating System**: Windows, macOS, or Linux
 
-### Quick Start
+#### Setup Steps
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/your-username/portfolio-tracker.git
-   cd portfolio-tracker
+   git clone https://github.com/rikvdb229/OTC_PORTFOLIO_APP.git
+   cd OTC_PORTFOLIO_APP
    ```
 
 2. **Install dependencies**:
@@ -55,35 +74,57 @@ A comprehensive desktop application for managing stock options portfolios, built
    npm install
    ```
 
-3. **Start the application**:
+3. **Start development version**:
    ```bash
    npm start
    ```
 
-### Build for Distribution
+#### Build for Distribution
 
 ```bash
-# Build for Windows
-npm run build:win
+# Build portable .exe for Windows
+npm run build
 
-# Build for macOS  
-npm run build:mac
-
-# Build for Linux
-npm run build:linux
-
-# Build for all platforms
+# Build for all platforms (development)
 npm run build:all
 ```
+
+## 💾 Data Storage & Privacy
+
+### Local Database Storage
+- **Location**: `portfolio.db` file created next to the .exe
+- **Format**: SQLite database (industry standard)
+- **Size**: Typically under 1MB for normal usage
+- **Backup**: Manual backup by copying the .db file
+
+### Complete Privacy
+- **🔒 100% Offline**: No internet connection required for operation
+- **🚫 No Data Transmission**: Your data never leaves your computer
+- **🏠 Local Only**: Database stored locally on your machine
+- **👤 Full Control**: You own and control all your data
+- **🔐 Secure**: No cloud storage, no external servers, no data collection
+
+### Portability
+- **📁 Run from anywhere**: Desktop, USB stick, network drive
+- **💼 Business Use**: Perfect for corporate environments with restricted internet
+- **🏃‍♂️ Mobile**: Take your portfolio data with you on USB stick
+- **🔄 Easy Backup**: Just copy the .exe and .db files
 
 ## Usage
 
 ### Getting Started
 
-1. **Launch the Application**: Run `npm start` or use the built executable
-2. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information
-3. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
-4. **Monitor Evolution**: Use the Evolution tab to see how your portfolio changes over time
+1. **Launch the Application**: Double-click `Portfolio Tracker 0.2.0.exe`
+2. **First Run**: The app creates a `portfolio.db` file next to the .exe
+3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information
+4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
+5. **Monitor Evolution**: Use the Evolution tab to see how your portfolio changes over time
+
+### 📁 File Management
+- **Database**: `portfolio.db` - Contains all your portfolio data
+- **Backup**: Copy both `.exe` and `.db` files to backup location
+- **Move**: Copy both files to new location and run from there
+- **Share**: Never share the `.db` file (contains your private financial data)
 
 ### Navigation
 
@@ -192,20 +233,30 @@ npm run clean && npm install
 
 ### Common Issues
 
-**Application won't start**:
+**Portable .exe won't start**:
+- Run from a writable location (not Program Files)
+- Check Windows Defender/antivirus isn't blocking the file
+- Ensure you have sufficient disk space (100MB+ recommended)
+- Try running from Desktop or Documents folder
+
+**Database errors**:
+- Ensure the folder containing the .exe is writable
+- Check that `portfolio.db` file isn't opened by another program
+- Verify antivirus isn't blocking database file creation
+- Try running from a different location (Desktop, Documents)
+
+**Performance issues**:
+- Close other applications to free up memory
+- Reduce chart data range for large datasets
+- Ensure adequate disk space for database operations
+- Try running from local drive instead of network drive
+
+### Development Issues (npm/Node.js)
+
+**Development version won't start**:
 - Delete `node_modules` folder and run `npm install`
 - Check that Node.js and npm versions meet requirements
 - Verify no other instances are running
-
-**Database errors**:
-- Check write permissions in application directory
-- Ensure `portfolio.db` file is not corrupted
-- Use backup restoration if needed
-
-**Performance issues**:
-- Clear application cache
-- Reduce chart data range for large datasets
-- Update to latest version
 
 ### Support
 For issues and feature requests, please:

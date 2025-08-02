@@ -73,8 +73,18 @@ function updateEvolutionPeriodStats(evolutionData) {
   const gainLossEl = document.getElementById("evolution-gain-loss");
   const changePercentEl = document.getElementById("evolution-change-percent");
   const oldestDateEl = document.getElementById("evolution-oldest-date");
+  const statsContainer = document.querySelector(".evolution-period-stats");
   
-  if (!gainLossEl || !changePercentEl || !oldestDateEl) return;
+  if (!gainLossEl || !changePercentEl || !oldestDateEl || !statsContainer) return;
+  
+  // If no data available, hide the entire stats section
+  if (!evolutionData || evolutionData.length < 2) {
+    statsContainer.style.display = "none";
+    return; // Need at least 2 data points
+  }
+  
+  // Show stats container when data is available
+  statsContainer.style.display = "flex";
   
   // Reset to default state
   gainLossEl.textContent = "---";
@@ -82,10 +92,6 @@ function updateEvolutionPeriodStats(evolutionData) {
   oldestDateEl.textContent = "---";
   gainLossEl.className = "evolution-stat-value";
   changePercentEl.className = "evolution-stat-value";
-  
-  if (!evolutionData || evolutionData.length < 2) {
-    return; // Need at least 2 data points
-  }
   
   // Sort by date (newest first - evolutionData is already sorted DESC)
   const sortedData = [...evolutionData].sort((a, b) => 
