@@ -1658,6 +1658,12 @@ class PortfolioDatabase {
         );
       }
 
+      // CRITICAL FIX: Recalculate all evolution entries from the grant date forward
+      // This ensures that all evolution snapshots after the grant date reflect the newly added grant
+      console.log(`🔄 Recalculating evolution timeline from grant date (${grantDate}) forward...`);
+      await this.recalculateEvolutionFromDate(grantDate);
+      console.log("✅ Evolution timeline recalculated after adding grant");
+
       return Promise.resolve({ id: insertId });
     } catch (error) {
       console.error("Error adding portfolio entry:", error);
@@ -1674,8 +1680,9 @@ class PortfolioDatabase {
         fundName,
       });
 
-      // FIXED: Use today's date for evolution since we're adding the grant today
-      const todayDate = new Date().toISOString().split("T")[0];
+      // FIXED: Use the GRANT DATE for evolution entry (when the grant actually happened)
+      // This is a portfolio tracker, so we record events when they actually occurred
+      const evolutionDate = grantDate; // Use grant date, not today
 
       // Get current total portfolio value
       const portfolioOverview = await this.getPortfolioOverview();
@@ -1687,18 +1694,16 @@ class PortfolioDatabase {
       // Use the fund name that was already looked up in addPortfolioEntry
       const displayFundName = fundName || "Unknown Fund";
 
-      const evolutionNote = `Grant added: ${quantity} options (${displayFundName}) - Grant Date: ${new Date(
-        grantDate
-      ).toLocaleDateString()}`;
+      const evolutionNote = `Grant received: ${quantity} options (${displayFundName})`;
 
-      // FIXED: Check if entry already exists for TODAY'S date (not grant date)
+      // FIXED: Check if entry already exists for the GRANT DATE
       const existingStmt = this.db.prepare(`
       SELECT notes FROM portfolio_evolution 
       WHERE snapshot_date = ?
     `);
 
       let existingEntry = null;
-      existingStmt.bind([todayDate]);
+      existingStmt.bind([evolutionDate]);
       if (existingStmt.step()) {
         existingEntry = existingStmt.getAsObject();
       }
@@ -1721,10 +1726,10 @@ class PortfolioDatabase {
       }
 
       console.log(
-        `📝 Grant evolution note for TODAY (${todayDate}): ${finalNotes}`
+        `📝 Grant evolution note for grant date (${evolutionDate}): ${finalNotes}`
       );
 
-      // FIXED: Use TODAY'S date for evolution entry, not grant date
+      // FIXED: Use GRANT DATE for evolution entry to track when the grant actually occurred
       const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO portfolio_evolution 
       (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
@@ -1732,7 +1737,7 @@ class PortfolioDatabase {
     `);
 
       stmt.run([
-        todayDate, // Use today's date, not grant date
+        evolutionDate, // Use grant date to record when the grant actually happened
         currentTotalValue || 0,
         0, // unrealized gain
         0, // realized gain
@@ -1745,7 +1750,7 @@ class PortfolioDatabase {
       this.saveDatabase();
 
       console.log(
-        `✅ Created/updated evolution entry for TODAY: ${finalNotes}`
+        `✅ Created/updated evolution entry for grant date: ${evolutionDate}`
       );
     } catch (error) {
       console.error("❌ Error creating evolution entry for grant:", error);
@@ -2824,6 +2829,12 @@ ORDER BY st.sale_date DESC
         ).toLocaleDateString()}`
       );
 
+      // CRITICAL FIX: Recalculate evolution from the GRANT DATE forward preserving events
+      // When deleting a grant, we need to recalculate from when it was originally added
+      console.log(`🔄 Recalculating evolution after grant deletion from grant date ${entryToDelete.grant_date}...`);
+      await this.recalculateEvolutionPreservingEvents(entryToDelete.grant_date);
+      console.log("✅ Evolution timeline recalculated from grant date after deletion");
+
       console.log("✅ Portfolio entry deleted successfully");
       return Promise.resolve({
         success: true,
@@ -2977,6 +2988,591 @@ ORDER BY st.sale_date DESC
       this.saveDatabase();
       this.db.close();
       console.log("Database connection closed");
+    }
+  }
+
+  // Store historical prices in price_history table (INSERT OR REPLACE to avoid duplicates)
+  async storeHistoricalPrices(fundName, exercisePrice, grantDate, priceHistory) {
+    try {
+      console.log(`💾 Storing ${priceHistory.length} historical prices for ${fundName}`);
+      
+      const stmt = this.db.prepare(`
+        INSERT OR REPLACE INTO price_history 
+        (fund_name, exercise_price, grant_date, price_date, current_value) 
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      
+      let insertCount = 0;
+      
+      for (const priceEntry of priceHistory) {
+        stmt.run([
+          fundName,
+          exercisePrice,
+          grantDate,
+          priceEntry.date,
+          priceEntry.price
+        ]);
+        insertCount++;
+      }
+      
+      stmt.free();
+      this.saveDatabase();
+      
+      console.log(`✅ Successfully stored ${insertCount} historical prices`);
+      
+      return {
+        success: true,
+        stored: insertCount,
+        fundName: fundName,
+        exercisePrice: exercisePrice,
+        grantDate: grantDate
+      };
+      
+    } catch (error) {
+      console.error('❌ Error storing historical prices:', error);
+      throw error;
+    }
+  }
+
+  // Enhanced recalculateEvolutionFromDate that preserves sales and deletion events
+  async recalculateEvolutionPreservingEvents(fromDate) {
+    try {
+      console.log(`🔄 Recalculating evolution from ${fromDate} while preserving events...`);
+      
+      // Get all evolution entries from the date forward
+      const evolutionStmt = this.db.prepare(`
+        SELECT * FROM portfolio_evolution 
+        WHERE snapshot_date >= ? 
+        ORDER BY snapshot_date ASC
+      `);
+      
+      const evolutionEntries = [];
+      evolutionStmt.bind([fromDate]);
+      while (evolutionStmt.step()) {
+        evolutionEntries.push(evolutionStmt.getAsObject());
+      }
+      evolutionStmt.free();
+      
+      console.log(`📊 Found ${evolutionEntries.length} evolution entries to recalculate`);
+      
+      // For each entry, recalculate values but preserve event notes
+      for (const entry of evolutionEntries) {
+        await this.recalculateEvolutionEntryPreservingEvents(entry.snapshot_date, entry.notes);
+      }
+      
+      console.log(`✅ Evolution recalculated from ${fromDate} with events preserved`);
+      
+    } catch (error) {
+      console.error('❌ Error recalculating evolution while preserving events:', error);
+      throw error;
+    }
+  }
+
+  // Recalculate a specific evolution entry while preserving event notes
+  async recalculateEvolutionEntryPreservingEvents(date, existingNotes) {
+    try {
+      console.log(`🧮 Recalculating evolution entry for ${date} (preserving events)`);
+      
+      // Get portfolio state as of this date using historical prices where available
+      const portfolioState = await this.getPortfolioStateAsOfDateWithHistoricalPrices(date);
+      
+      // Update the evolution entry with recalculated values but preserve notes
+      const updateStmt = this.db.prepare(`
+        UPDATE portfolio_evolution 
+        SET 
+          total_portfolio_value = ?,
+          total_unrealized_gain = ?,
+          total_realized_gain = ?,
+          total_options_count = ?,
+          active_options_count = ?
+        WHERE snapshot_date = ?
+      `);
+      
+      updateStmt.run([
+        portfolioState.totalCurrentValue || 0,
+        portfolioState.totalUnrealizedGain || 0,
+        portfolioState.totalRealizedGain || 0,
+        portfolioState.totalOptionsCount || 0,
+        portfolioState.activeOptionsCount || 0,
+        date
+      ]);
+      
+      updateStmt.free();
+      
+    } catch (error) {
+      console.error(`❌ Error recalculating evolution entry for ${date}:`, error);
+      throw error;
+    }
+  }
+
+  // Get portfolio state as of date using historical prices when available
+  async getPortfolioStateAsOfDateWithHistoricalPrices(date) {
+    try {
+      // Get all portfolio entries that existed on or before this date
+      const portfolioStmt = this.db.prepare(`
+        SELECT pe.*, 
+               COALESCE(hist_price.current_value, pe.current_value) as historical_price
+        FROM portfolio_entries pe
+        LEFT JOIN (
+          SELECT fund_name, exercise_price, grant_date, current_value
+          FROM price_history 
+          WHERE price_date <= ?
+          GROUP BY fund_name, exercise_price, grant_date
+          HAVING price_date = MAX(price_date)
+        ) hist_price ON (
+          pe.fund_name = hist_price.fund_name AND 
+          pe.exercise_price = hist_price.exercise_price AND 
+          pe.grant_date = hist_price.grant_date
+        )
+        WHERE pe.grant_date <= ?
+      `);
+      
+      const portfolioEntries = [];
+      portfolioStmt.bind([date, date]);
+      while (portfolioStmt.step()) {
+        portfolioEntries.push(portfolioStmt.getAsObject());
+      }
+      portfolioStmt.free();
+      
+      // Get sales that happened on or before this date
+      const salesStmt = this.db.prepare(`
+        SELECT * FROM sales_transactions 
+        WHERE sale_date <= ?
+        ORDER BY sale_date ASC
+      `);
+      
+      const sales = [];
+      salesStmt.bind([date]);
+      while (salesStmt.step()) {
+        sales.push(salesStmt.getAsObject());
+      }
+      salesStmt.free();
+      
+      // Calculate portfolio state
+      let totalCurrentValue = 0;
+      let totalUnrealizedGain = 0;
+      let totalRealizedGain = 0;
+      let totalOptionsCount = 0;
+      let activeOptionsCount = 0;
+      
+      // Calculate realized gains from sales
+      totalRealizedGain = sales.reduce((sum, sale) => {
+        const saleValue = sale.quantity_sold * sale.sale_price;
+        const costBasis = sale.quantity_sold * sale.exercise_price; 
+        return sum + (saleValue - costBasis);
+      }, 0);
+      
+      // Calculate current portfolio values
+      for (const entry of portfolioEntries) {
+        // Calculate remaining quantity after sales
+        const soldQuantity = sales
+          .filter(s => s.portfolio_entry_id === entry.id)
+          .reduce((sum, s) => sum + s.quantity_sold, 0);
+        
+        const remainingQuantity = entry.quantity - soldQuantity;
+        
+        if (remainingQuantity > 0) {
+          const historicalPrice = entry.historical_price || entry.current_value;
+          const currentValue = remainingQuantity * historicalPrice;
+          const unrealizedGain = remainingQuantity * (historicalPrice - entry.exercise_price);
+          
+          totalCurrentValue += currentValue;
+          totalUnrealizedGain += unrealizedGain;
+          activeOptionsCount += remainingQuantity;
+        }
+        
+        totalOptionsCount += entry.quantity;
+      }
+      
+      return {
+        totalCurrentValue,
+        totalUnrealizedGain,
+        totalRealizedGain,
+        totalOptionsCount,
+        activeOptionsCount
+      };
+      
+    } catch (error) {
+      console.error(`❌ Error getting portfolio state for ${date}:`, error);
+      throw error;
+    }
+  }
+
+  // Create evolution entries for all grant dates (ONLY if they don't exist)
+  async createEvolutionEntriesForAllGrants() {
+    try {
+      console.log('📊 Creating evolution entries for grant dates (if missing)...');
+      
+      // Get all unique grant dates from portfolio_entries
+      const grantStmt = this.db.prepare(`
+        SELECT grant_date, 
+               SUM(quantity) as total_quantity,
+               GROUP_CONCAT(fund_name || ' (' || quantity || ')') as grants_summary
+        FROM portfolio_entries 
+        GROUP BY grant_date 
+        ORDER BY grant_date ASC
+      `);
+      
+      const grantDates = [];
+      while (grantStmt.step()) {
+        grantDates.push(grantStmt.getAsObject());
+      }
+      grantStmt.free();
+      
+      console.log(`📅 Found ${grantDates.length} unique grant dates to check`);
+      
+      let createdCount = 0;
+      
+      for (const grantInfo of grantDates) {
+        const { grant_date, total_quantity, grants_summary } = grantInfo;
+        
+        // Check if evolution entry already exists for this grant date
+        const existingStmt = this.db.prepare(`
+          SELECT notes FROM portfolio_evolution 
+          WHERE snapshot_date = ?
+        `);
+        
+        let existingEntry = null;
+        existingStmt.bind([grant_date]);
+        if (existingStmt.step()) {
+          existingEntry = existingStmt.getAsObject();
+        }
+        existingStmt.free();
+        
+        // ONLY create entry if no evolution entry exists for this grant date
+        if (!existingEntry) {
+          // Create the grant event note
+          const grantNote = `• Grant received: ${total_quantity} options (${grants_summary})`;
+          
+          // Calculate portfolio state as of this grant date using historical prices
+          const portfolioState = await this.getPortfolioStateAsOfDateWithHistoricalPrices(grant_date);
+          
+          // Insert evolution entry for this grant date
+          const evolutionStmt = this.db.prepare(`
+            INSERT INTO portfolio_evolution 
+            (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `);
+          
+          evolutionStmt.run([
+            grant_date,
+            portfolioState.totalCurrentValue || 0,
+            portfolioState.totalUnrealizedGain || 0,
+            portfolioState.totalRealizedGain || 0,
+            portfolioState.totalOptionsCount || 0,
+            portfolioState.activeOptionsCount || 0,
+            grantNote
+          ]);
+          
+          evolutionStmt.free();
+          createdCount++;
+          
+          console.log(`✅ Created evolution entry for ${grant_date}: ${total_quantity} options`);
+        } else {
+          console.log(`⏭️ Evolution entry already exists for ${grant_date}, skipping...`);
+        }
+      }
+      
+      this.saveDatabase();
+      console.log(`✅ Created ${createdCount} new evolution entries for grant dates`);
+      
+    } catch (error) {
+      console.error('❌ Error creating evolution entries for grants:', error);
+      throw error;
+    }
+  }
+
+  // Completely rebuild the evolution table with historical data
+  async rebuildCompleteEvolutionTimeline() {
+    try {
+      console.log('🔥 Completely rebuilding daily evolution timeline with historical data...');
+      
+      // Step 1: Drop and recreate the evolution table
+      console.log('🗑️ Clearing existing evolution data...');
+      this.db.exec('DELETE FROM portfolio_evolution');
+      
+      // Step 2: Get the date range (first grant to today)
+      const dateRange = await this.getPortfolioDateRange();
+      if (!dateRange.firstGrantDate) {
+        console.log('ℹ️ No grants found, nothing to rebuild');
+        return;
+      }
+      
+      console.log(`📅 Building daily evolution from ${dateRange.firstGrantDate} to ${dateRange.endDate}`);
+      
+      // Step 3: Get all significant events for notes
+      const significantEvents = await this.getAllSignificantEvents();
+      
+      // Step 4: Generate all dates from first grant to today
+      const allDates = this.generateDateRange(dateRange.firstGrantDate, dateRange.endDate);
+      console.log(`📊 Processing ${allDates.length} daily entries...`);
+      
+      // Performance warning for large date ranges
+      if (allDates.length > 365) {
+        console.log(`⚠️ Large date range detected (${allDates.length} days). This may take several minutes...`);
+      }
+      
+      // Step 5: Create evolution entries only when portfolio value changes
+      let processedCount = 0;
+      let insertedCount = 0;
+      let previousPortfolioValue = null;
+      
+      const insertStmt = this.db.prepare(`
+        INSERT INTO portfolio_evolution 
+        (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `);
+      
+      for (const date of allDates) {
+        // Calculate portfolio state as of this date with historical prices
+        const portfolioState = await this.getPortfolioStateAsOfDateWithHistoricalPrices(date);
+        const currentValue = portfolioState.totalCurrentValue || 0;
+        
+        // Get events for this specific date
+        const dayEvents = significantEvents.get(date) || [];
+        const notes = dayEvents.length > 0 ? dayEvents.map(event => `• ${event}`).join('\n') : '';
+        const hasEvents = dayEvents.length > 0;
+        
+        // Check if we should insert this entry
+        const valueChanged = previousPortfolioValue === null || Math.abs(currentValue - previousPortfolioValue) > 0.01;
+        const shouldInsert = valueChanged || hasEvents;
+        
+        if (shouldInsert) {
+          // Insert evolution entry
+          insertStmt.run([
+            date,
+            currentValue,
+            portfolioState.totalUnrealizedGain || 0,
+            portfolioState.totalRealizedGain || 0,
+            portfolioState.totalOptionsCount || 0,
+            portfolioState.activeOptionsCount || 0,
+            notes
+          ]);
+          
+          insertedCount++;
+          previousPortfolioValue = currentValue;
+          
+          if (hasEvents) {
+            console.log(`📅 Added evolution entry for ${date}: ${dayEvents.length} events, value €${currentValue.toFixed(2)}`);
+          }
+        } else {
+          // Skip this entry - no change in value
+          if (processedCount % 50 === 0) {
+            console.log(`⏭️ Skipped ${date}: no value change (€${currentValue.toFixed(2)})`);
+          }
+        }
+        
+        processedCount++;
+        
+        // Log progress more frequently for large datasets
+        const progressInterval = allDates.length > 365 ? 30 : 50;
+        if (processedCount % progressInterval === 0 || processedCount === allDates.length) {
+          const percentage = Math.round((processedCount / allDates.length) * 100);
+          console.log(`📊 Processed ${processedCount}/${allDates.length} days (${percentage}%) - inserted ${insertedCount} entries`);
+        }
+      }
+      
+      insertStmt.free();
+      
+      this.saveDatabase();
+      console.log(`✅ Evolution timeline optimized: ${insertedCount} entries created from ${processedCount} days processed`);
+      console.log(`📊 Efficiency: ${Math.round((insertedCount / processedCount) * 100)}% of days had value changes`);
+      
+    } catch (error) {
+      console.error('❌ Error rebuilding evolution timeline:', error);
+      throw error;
+    }
+  }
+
+  // Get the portfolio date range (first grant to today)
+  async getPortfolioDateRange() {
+    try {
+      // Get first grant date
+      const firstGrantStmt = this.db.prepare(`
+        SELECT MIN(grant_date) as first_grant_date 
+        FROM portfolio_entries
+      `);
+      
+      let firstGrantDate = null;
+      if (firstGrantStmt.step()) {
+        const result = firstGrantStmt.getAsObject();
+        firstGrantDate = result.first_grant_date;
+      }
+      firstGrantStmt.free();
+      
+      // End date is today
+      const today = new Date().toISOString().split('T')[0];
+      
+      return {
+        firstGrantDate: firstGrantDate,
+        endDate: today
+      };
+      
+    } catch (error) {
+      console.error('❌ Error getting portfolio date range:', error);
+      throw error;
+    }
+  }
+
+  // Get all significant events mapped by date
+  async getAllSignificantEvents() {
+    try {
+      const eventsByDate = new Map();
+      
+      // Get all grant events
+      const grantStmt = this.db.prepare(`
+        SELECT grant_date, 
+               SUM(quantity) as total_quantity,
+               GROUP_CONCAT(fund_name || ' (' || quantity || ')') as grants_summary
+        FROM portfolio_entries 
+        GROUP BY grant_date 
+        ORDER BY grant_date ASC
+      `);
+      
+      while (grantStmt.step()) {
+        const grant = grantStmt.getAsObject();
+        const date = grant.grant_date;
+        
+        if (!eventsByDate.has(date)) {
+          eventsByDate.set(date, []);
+        }
+        
+        eventsByDate.get(date).push(
+          `Grant received: ${grant.total_quantity} options (${grant.grants_summary})`
+        );
+      }
+      grantStmt.free();
+      
+      // Get all sales events
+      const salesStmt = this.db.prepare(`
+        SELECT sale_date,
+               SUM(quantity_sold) as total_sold,
+               AVG(sale_price) as avg_price,
+               COUNT(*) as sale_count
+        FROM sales_transactions 
+        GROUP BY sale_date 
+        ORDER BY sale_date ASC
+      `);
+      
+      while (salesStmt.step()) {
+        const sale = salesStmt.getAsObject();
+        const date = sale.sale_date;
+        
+        if (!eventsByDate.has(date)) {
+          eventsByDate.set(date, []);
+        }
+        
+        if (sale.sale_count === 1) {
+          eventsByDate.get(date).push(
+            `Sale: ${sale.total_sold} options at €${sale.avg_price.toFixed(2)}`
+          );
+        } else {
+          eventsByDate.get(date).push(
+            `Sales: ${sale.total_sold} options (${sale.sale_count} transactions, avg €${sale.avg_price.toFixed(2)})`
+          );
+        }
+      }
+      salesStmt.free();
+      
+      return eventsByDate;
+      
+    } catch (error) {
+      console.error('❌ Error getting significant events:', error);
+      throw error;
+    }
+  }
+
+  // Generate array of all dates between start and end (inclusive)
+  generateDateRange(startDate, endDate) {
+    const dates = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Make sure we're working with valid dates
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      console.error('❌ Invalid date range:', { startDate, endDate });
+      return [];
+    }
+    
+    const currentDate = new Date(start);
+    
+    while (currentDate <= end) {
+      dates.push(currentDate.toISOString().split('T')[0]);
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
+  }
+
+  // Get all significant dates (grants, sales, deletions) in chronological order
+  async getAllSignificantDates() {
+    try {
+      const significantDates = new Map();
+      
+      // Get all grant dates with details
+      const grantStmt = this.db.prepare(`
+        SELECT grant_date, 
+               SUM(quantity) as total_quantity,
+               GROUP_CONCAT(fund_name || ' (' || quantity || ')') as grants_summary
+        FROM portfolio_entries 
+        GROUP BY grant_date 
+        ORDER BY grant_date ASC
+      `);
+      
+      while (grantStmt.step()) {
+        const grant = grantStmt.getAsObject();
+        const date = grant.grant_date;
+        
+        if (!significantDates.has(date)) {
+          significantDates.set(date, { date, events: [] });
+        }
+        
+        significantDates.get(date).events.push(
+          `Grant received: ${grant.total_quantity} options (${grant.grants_summary})`
+        );
+      }
+      grantStmt.free();
+      
+      // Get all sales dates with details
+      const salesStmt = this.db.prepare(`
+        SELECT sale_date,
+               SUM(quantity_sold) as total_sold,
+               AVG(sale_price) as avg_price,
+               COUNT(*) as sale_count
+        FROM sales_transactions 
+        GROUP BY sale_date 
+        ORDER BY sale_date ASC
+      `);
+      
+      while (salesStmt.step()) {
+        const sale = salesStmt.getAsObject();
+        const date = sale.sale_date;
+        
+        if (!significantDates.has(date)) {
+          significantDates.set(date, { date, events: [] });
+        }
+        
+        if (sale.sale_count === 1) {
+          significantDates.get(date).events.push(
+            `Sale: ${sale.total_sold} options at €${sale.avg_price.toFixed(2)}`
+          );
+        } else {
+          significantDates.get(date).events.push(
+            `Sales: ${sale.total_sold} options (${sale.sale_count} transactions, avg €${sale.avg_price.toFixed(2)})`
+          );
+        }
+      }
+      salesStmt.free();
+      
+      // Convert map to array and sort by date
+      const sortedDates = Array.from(significantDates.values())
+        .sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      return sortedDates;
+      
+    } catch (error) {
+      console.error('❌ Error getting significant dates:', error);
+      throw error;
     }
   }
 }

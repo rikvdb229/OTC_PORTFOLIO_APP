@@ -1137,35 +1137,36 @@ const GrantOperations = {
         );
       }
 
-      // No existing grant found, proceed with normal addition
+      // No existing grant found, check if we should fetch historical prices
       console.log("➕ Proceeding with normal grant addition...");
 
-      const result = await window.ipcRenderer.invoke(
-        "add-portfolio-entry",
-        grantDate,
-        exercisePrice,
-        quantity,
-        actualTaxAmount
-      );
-
-      if (result.error) {
-        console.error("❌ Error adding grant:", result.error);
-        alert("Error adding options: " + result.error);
+      // Check if we should fetch historical prices for this grant
+      const shouldFetchHistorical = await this.shouldFetchHistoricalPrices(grantDate, exercisePrice);
+      
+      if (shouldFetchHistorical) {
+        console.log("📊 Triggering historical price fetch before adding grant...");
+        
+        // Store grant data for later use
+        app.pendingGrantData = {
+          grantDate,
+          exercisePrice,
+          quantity,
+          actualTaxAmount
+        };
+        
+        // Show historical price fetch modal
+        await window.HistoricalPriceManager.showFetchModal(
+          `Option ${grantDate} €${exercisePrice}`,
+          exercisePrice,
+          grantDate
+        );
+        
+        // The actual grant addition will continue after historical prices are fetched
         return;
       }
 
-      console.log("✅ Grant added successfully:", result);
-      window.UIStateManager.Modals.closeAllModals(app);
-      // Refresh UI
-      await app.loadPortfolioData();
-      await app.loadEvolutionData("all");
-      await app.checkDataAvailability();
-
-      // Clear form using UI state manager
-      window.UIStateManager.Forms.clearaddGrantsForm(app);
-      app.currentFormData = null;
-
-      console.log(`🎉 Successfully added ${quantity} options`);
+      // Proceed with normal grant addition (no historical prices needed/wanted)
+      await this.completeGrantAddition(app, grantDate, exercisePrice, quantity, actualTaxAmount);
     } catch (error) {
       console.error("❌ Error in addGrants:", error);
       alert("Error adding options: " + error.message);
@@ -1388,6 +1389,85 @@ const GrantOperations = {
         console.error("❌ Could not close modal:", modalError);
       }
     }
+  },
+
+  /**
+   * Check if we should fetch historical prices for a grant
+   * @param {string} grantDate - Grant date
+   * @param {number} exercisePrice - Exercise price
+   * @returns {Promise<boolean>} True if historical prices should be fetched
+   */
+  async shouldFetchHistoricalPrices(grantDate, exercisePrice) {
+    try {
+      // For now, always return true to offer historical price fetching
+      // TODO: Add logic to check if historical prices already exist
+      return true;
+    } catch (error) {
+      console.warn('Error checking historical prices, defaulting to fetch:', error);
+      return true; // Default to fetching if check fails
+    }
+  },
+
+  /**
+   * Complete grant addition with the actual IPC call
+   * @param {Object} app - Application instance
+   * @param {string} grantDate - Grant date
+   * @param {number} exercisePrice - Exercise price
+   * @param {number} quantity - Quantity
+   * @param {number} actualTaxAmount - Tax amount
+   */
+  async completeGrantAddition(app, grantDate, exercisePrice, quantity, actualTaxAmount) {
+    try {
+      const result = await window.ipcRenderer.invoke(
+        "add-portfolio-entry",
+        grantDate,
+        exercisePrice,
+        quantity,
+        actualTaxAmount
+      );
+
+      if (result.error) {
+        console.error("❌ Error adding grant:", result.error);
+        alert("Error adding options: " + result.error);
+        return;
+      }
+
+      console.log("✅ Grant added successfully:", result);
+      window.UIStateManager.Modals.closeAllModals(app);
+      
+      // Refresh UI
+      await app.loadPortfolioData();
+      await app.loadEvolutionData("all");
+      await app.checkDataAvailability();
+
+      // Clear form using UI state manager
+      window.UIStateManager.Forms.clearaddGrantsForm(app);
+      app.currentFormData = null;
+      app.pendingGrantData = null; // Clear pending data
+
+      console.log(`🎉 Successfully added ${quantity} options`);
+    } catch (error) {
+      console.error("❌ Error in completeGrantAddition:", error);
+      alert("Error adding options: " + error.message);
+    }
+  },
+
+  /**
+   * Continue with grant addition after historical prices are fetched
+   * Called by HistoricalPriceManager after successful fetch
+   * @param {Object} app - Application instance
+   */
+  async continueGrantAdditionAfterHistoricalFetch(app) {
+    console.log("🔄 Continuing grant addition after historical price fetch...");
+    
+    if (!app.pendingGrantData) {
+      console.error("❌ No pending grant data found");
+      return;
+    }
+
+    const { grantDate, exercisePrice, quantity, actualTaxAmount } = app.pendingGrantData;
+    
+    await this.completeGrantAddition(app, grantDate, exercisePrice, quantity, actualTaxAmount);
   },
 };
 

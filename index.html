@@ -497,6 +497,18 @@
           </small>
         </div>
 
+        <div class="setting-item">
+          <label>Historical Price Data</label>
+          <div class="database-actions">
+            <button id="updateHistoricalPricesBtn" class="btn btn-primary btn-full">
+              📊 Update Historical Prices
+            </button>
+          </div>
+          <small class="form-help">
+            Download historical price data for all options in your portfolio. This improves accuracy of evolution tracking but may take several minutes.
+          </small>
+        </div>
+
         <button id="saveSettingsBtn" class="btn btn-primary btn-full">
           💾 Save Settings
         </button>
@@ -1154,6 +1166,127 @@
       </div>
     </div>
 
+    <!-- Historical Price Fetch Modal -->
+    <div id="historicalPriceFetchModal" class="modal">
+      <div class="modal-content modal-medium">
+        <div class="modal-header">
+          <h3>📊 Fetching Historical Prices</h3>
+        </div>
+        <div class="modal-body">
+          <div class="fetch-info">
+            <p>Downloading historical price data for:</p>
+            <div class="option-details">
+              <strong id="fetchOptionName">Option Name</strong><br>
+              <span id="fetchOptionDetails">Exercise Price: €0.00 | Grant Date: --</span>
+            </div>
+          </div>
+          
+          <div class="progress-container">
+            <div class="progress-bar-wrapper">
+              <div id="historicalFetchProgressBar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <div id="historicalFetchStatus" class="progress-status">Initializing...</div>
+          </div>
+          
+          <div id="fetchResults" class="fetch-results" style="display: none;">
+            <h4>✅ Historical Data Retrieved</h4>
+            <div class="result-summary">
+              <div class="result-item">
+                <span>Total price points:</span>
+                <strong id="totalPricePoints">0</strong>
+              </div>
+              <div class="result-item">
+                <span>Grant date price:</span>
+                <strong id="grantDatePrice">€0.00</strong>
+              </div>
+              <div class="result-item">
+                <span>Current price:</span>
+                <strong id="currentPriceResult">€0.00</strong>
+              </div>
+              <div class="result-item">
+                <span>Date range:</span>
+                <strong id="dateRange">--</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div id="fetchError" class="error-message" style="display: none;">
+            <span class="error-icon">❌</span>
+            <span id="fetchErrorMessage">Error fetching data</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelHistoricalFetch" class="btn btn-secondary" style="display: none;">Cancel</button>
+          <button id="confirmHistoricalFetch" class="btn btn-primary" disabled>
+            Continue with Grant
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bulk Historical Price Update Modal -->
+    <div id="bulkHistoricalUpdateModal" class="modal">
+      <div class="modal-content modal-large">
+        <div class="modal-header">
+          <h3>📊 Updating Historical Prices</h3>
+        </div>
+        <div class="modal-body">
+          <div class="bulk-update-info">
+            <p>Downloading historical price data for all options in your portfolio...</p>
+            <div class="bulk-progress-summary">
+              <div class="progress-item">
+                <span>Options processed:</span>
+                <strong id="bulkProcessedCount">0</strong> / <strong id="bulkTotalCount">0</strong>
+              </div>
+              <div class="progress-item">
+                <span>Current option:</span>
+                <strong id="bulkCurrentOption">--</strong>
+              </div>
+            </div>
+          </div>
+          
+          <div class="progress-container">
+            <div class="progress-bar-wrapper">
+              <div id="bulkHistoricalProgressBar" class="progress-bar" style="width: 0%"></div>
+            </div>
+            <div id="bulkHistoricalStatus" class="progress-status">Initializing...</div>
+          </div>
+          
+          <div id="bulkUpdateResults" class="bulk-results" style="display: none;">
+            <h4>✅ Historical Price Update Complete</h4>
+            <div class="result-summary">
+              <div class="result-item">
+                <span>Options updated:</span>
+                <strong id="bulkSuccessCount">0</strong>
+              </div>
+              <div class="result-item">
+                <span>Errors:</span>
+                <strong id="bulkErrorCount">0</strong>
+              </div>
+              <div class="result-item">
+                <span>Total price points:</span>
+                <strong id="bulkTotalPricePoints">0</strong>
+              </div>
+            </div>
+            <p class="recalculation-note">
+              ✅ Portfolio evolution has been recalculated with historical prices
+            </p>
+          </div>
+          
+          <div id="bulkUpdateError" class="error-message" style="display: none;">
+            <span class="error-icon">❌</span>
+            <span id="bulkUpdateErrorMessage">Error updating historical prices</span>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelBulkUpdate" class="btn btn-secondary" style="display: none;">Cancel</button>
+          <button id="closeBulkUpdate" class="btn btn-primary" style="display: none;">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- FOOTER - CENTERED STRUCTURE -->
     <!-- FOOTER - POSITIONED AS FLEX ITEM -->
    <footer class="app-footer">
@@ -1200,6 +1333,7 @@
     <script src="utils/ui-state-management.js"></script>
     <script src="utils/data-loader.js"></script>
     <script src="utils/app-helpers.js"></script>
+    <script src="utils/historical-price-manager.js"></script>
     <script src="utils/undo-redo-manager.js"></script>
     <script src="utils/ipc-undo-redo-extension.js"></script>
     <!-- LOAD MAIN APP LAST -->

@@ -87,7 +87,7 @@ class HTMLGenerators {
   }
 
   generatePortfolioActions(entry) {
-    const sellDisabled = entry.selling_status !== "SELLABLE" ? "disabled" : "";
+    const sellDisabled = (entry.selling_status !== "SELLABLE" && entry.selling_status !== "EXPIRING_SOON") ? "disabled" : "";
     const sellTooltip = this.app.helpers.getSellButtonTooltip(
       entry.selling_status,
       entry.can_sell_after,

@@ -15,7 +15,11 @@
     "build:mac": "rimraf dist && electron-builder --mac dmg",
     "build:linux": "rimraf dist && electron-builder --linux AppImage",
     "build:all": "rimraf dist && electron-builder --win --mac --linux",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "test:parse-table": "electron test-parse-options-table.js",
+    "test:historical": "electron test-historical-scraper.js",
+    "download:all-historical": "electron download-all-historical-data.js",
+    "analyze:portfolio-historical": "electron download-portfolio-historical-data.js"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",

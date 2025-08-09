@@ -38,6 +38,8 @@ class EnhancedPortfolioApp {
     this.helpers = new window.AppHelpers(this);
     // ADDED: Initialize UI state management
     window.UIStateManager.initialize(this);
+    // ADDED: Initialize historical price management
+    window.HistoricalPriceManager.init(this);
     // ADDED: Initialize footer with version info
     this.initializeFooter();
 

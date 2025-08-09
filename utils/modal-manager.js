@@ -77,7 +77,9 @@ const ModalManager = {
           input.value = "";
         }
       });
-      app.currentEditingSaleData = null;
+      if (app) {
+        app.currentEditingSaleData = null;
+      }
 
       // 🆕 Clear ONLY user-editable calculated displays (be very selective)
       const userEditableDisplays = modal.querySelectorAll(
@@ -1256,7 +1258,7 @@ updateProgress(app, progressData) {
       }
 
       // Check if entry is sellable
-      if (entry.selling_status !== "SELLABLE") {
+      if (entry.selling_status !== "SELLABLE" && entry.selling_status !== "EXPIRING_SOON") {
         const statusMessage = window.FormatHelpers.getSellButtonTooltip(
           entry.selling_status,
           entry.can_sell_after,

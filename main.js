@@ -143,7 +143,16 @@ app.whenReady().then(async () => {
   createWindow();
 });
 
-app.on("window-all-closed", () => {
+app.on("window-all-closed", async () => {
+  // Perform cleanup before closing
+  try {
+    const CleanupManager = require('./utils/cleanup-manager');
+    const cleanup = new CleanupManager();
+    await cleanup.performCleanup();
+  } catch (error) {
+    console.error('❌ Error during app cleanup:', error);
+  }
+  
   if (portfolioDb) {
     portfolioDb.close();
   }
@@ -156,6 +165,24 @@ app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
+});
+
+// Additional cleanup on quit
+app.on("before-quit", async (event) => {
+  event.preventDefault();
+  
+  // Perform cleanup
+  try {
+    const CleanupManager = require('./utils/cleanup-manager');
+    const cleanup = new CleanupManager();
+    await cleanup.performCleanup();
+    console.log('✅ App cleanup completed, quitting...');
+  } catch (error) {
+    console.error('❌ Error during app cleanup:', error);
+  }
+  
+  // Now actually quit
+  app.exit(0);
 });
 // File selection handler
 ipcMain.handle("select-import-file", async () => {
@@ -914,4 +941,155 @@ ipcMain.handle(
   }
 );
 
-console.log("🚀 KBC ESOP Portfolio Tracker v0.1 - Main process initialized");
+// Historical Price Fetching IPC Handler
+ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice, grantDate, onProgress) => {
+  try {
+    console.log(`📊 Fetching historical prices for: ${fundName} (€${exercisePrice}, ${grantDate})`);
+    
+    const EnhancedHistoricalScraper = require('./enhanced-historical-scraper');
+    const scraper = new EnhancedHistoricalScraper();
+    
+    // Progress callback to update frontend
+    const progressCallback = (progress) => {
+      event.sender.send('historical-fetch-progress', progress);
+    };
+    
+    const result = await scraper.fetchHistoricalPricesForOption(
+      fundName,
+      exercisePrice,
+      grantDate,
+      progressCallback
+    );
+    
+    console.log(`✅ Successfully fetched ${result.priceHistory.length} historical prices`);
+    
+    // Store in price_history table
+    if (result.priceHistory.length > 0) {
+      await portfolioDb.storeHistoricalPrices(
+        fundName,
+        exercisePrice,
+        grantDate,
+        result.priceHistory
+      );
+      console.log(`💾 Stored ${result.priceHistory.length} prices in database`);
+    }
+    
+    return {
+      success: true,
+      fundName: result.fundName,
+      exercisePrice: result.exercisePrice,
+      grantDate: result.grantDate,
+      grantDatePrice: result.grantDatePrice,
+      currentPrice: result.currentPrice,
+      priceCount: result.priceHistory.length,
+      dateRange: {
+        from: result.priceHistory[result.priceHistory.length - 1]?.date,
+        to: result.priceHistory[0]?.date
+      }
+    };
+    
+  } catch (error) {
+    console.error("❌ Error fetching historical prices:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+// Update Historical Prices for Existing Portfolio IPC Handler
+ipcMain.handle("update-portfolio-historical-prices", async (event) => {
+  try {
+    console.log("🔄 Updating historical prices for existing portfolio...");
+    
+    // Get unique options from portfolio
+    const portfolioOverview = await portfolioDb.getPortfolioOverview();
+    const uniqueOptions = new Map();
+    
+    portfolioOverview.forEach(entry => {
+      const key = `${entry.fund_name}-${entry.exercise_price}-${entry.grant_date}`;
+      if (!uniqueOptions.has(key)) {
+        uniqueOptions.set(key, {
+          fund_name: entry.fund_name,
+          exercise_price: entry.exercise_price,
+          grant_date: entry.grant_date
+        });
+      }
+    });
+    
+    const optionsToUpdate = Array.from(uniqueOptions.values());
+    console.log(`📊 Found ${optionsToUpdate.length} unique options to update`);
+    
+    const EnhancedHistoricalScraper = require('./enhanced-historical-scraper');
+    const scraper = new EnhancedHistoricalScraper();
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (let i = 0; i < optionsToUpdate.length; i++) {
+      const option = optionsToUpdate[i];
+      
+      try {
+        console.log(`📊 Processing option ${i+1}/${optionsToUpdate.length}: ${option.fund_name} (€${option.exercise_price}, ${option.grant_date})`);
+        
+        // Progress callback
+        const progressCallback = (progress) => {
+          event.sender.send('historical-batch-progress', {
+            optionIndex: i,
+            totalOptions: optionsToUpdate.length,
+            optionName: option.fund_name,
+            progress: progress
+          });
+        };
+        
+        const result = await scraper.fetchHistoricalPricesForOption(
+          option.fund_name,
+          option.exercise_price,
+          option.grant_date,
+          progressCallback
+        );
+        
+        // Store prices
+        if (result.priceHistory.length > 0) {
+          await portfolioDb.storeHistoricalPrices(
+            option.fund_name,
+            option.exercise_price,
+            option.grant_date,
+            result.priceHistory
+          );
+          successCount++;
+        }
+        
+        // Add delay between options
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+      } catch (error) {
+        console.error(`❌ Error updating ${option.fund_name} (€${option.exercise_price}, ${option.grant_date}):`, error.message);
+        console.error(`   Full error:`, error);
+        errorCount++;
+      }
+    }
+    
+    // After all historical prices are processed, completely rebuild the evolution timeline
+    console.log("🔥 Rebuilding complete evolution timeline with historical data...");
+    await portfolioDb.rebuildCompleteEvolutionTimeline();
+    
+    console.log("✅ Complete evolution timeline rebuilt with historical data");
+    
+    return {
+      success: true,
+      updated: successCount,
+      errors: errorCount,
+      total: optionsToUpdate.length
+    };
+    
+  } catch (error) {
+    console.error("❌ Error updating portfolio historical prices:", error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+});
+
+console.log("🚀 KBC ESOP Portfolio Tracker v0.2 - Main process initialized");

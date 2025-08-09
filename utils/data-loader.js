@@ -200,7 +200,7 @@ async function loadChartData(period = "all") {
       portfolioEvents,
       period
     );
-    const annotations = window.ChartUtils.createChartAnnotations(eventsByDate);
+    const annotations = window.ChartUtils.createChartAnnotations(eventsByDate, sortedEvolutionData);
 
     // Create and render chart
     const chartConfig = window.ChartUtils.createChartConfig(
@@ -219,7 +219,7 @@ async function loadChartData(period = "all") {
       );
 
       // Add simple custom legend below the chart
-      this.createSimpleChartLegend();
+      window.ChartUtils.createSimpleChartLegend();
     }
 
     console.log("✅ Chart data loaded successfully");
