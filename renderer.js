@@ -267,6 +267,141 @@ class EnhancedPortfolioApp {
 
   calculateEstimatedTax() {
     window.UIStateManager.Forms.calculateEstimatedTax(this);
+    
+    // Also update the total grant value display if the current value group is visible
+    const currentValueGroup = document.getElementById('currentValueGroup');
+    if (currentValueGroup && currentValueGroup.style.display !== 'none') {
+      const currentValuePerOptionElement = document.getElementById('currentValuePerOption');
+      if (currentValuePerOptionElement && currentValuePerOptionElement.textContent !== '€0.00') {
+        const pricePerOption = parseFloat(currentValuePerOptionElement.textContent.replace('€', ''));
+        if (!isNaN(pricePerOption)) {
+          this.updateCurrentValueDisplay(pricePerOption);
+        }
+      }
+    }
+  }
+
+  // Handle exercise price selection - calculate tax AND fetch historical prices
+  async handleExercisePriceSelection() {
+    console.log("🔍 handleExercisePriceSelection called");
+    
+    // First calculate the estimated tax
+    this.calculateEstimatedTax();
+    
+    // Then check if we should fetch historical prices
+    const exercisePriceElement = document.getElementById("exercisePrice");
+    const grantDateElement = document.getElementById("grantDate");
+    
+    console.log("📋 Form elements found:", {
+      exercisePrice: !!exercisePriceElement,
+      exercisePriceValue: exercisePriceElement?.value,
+      grantDate: !!grantDateElement,
+      grantDateValue: grantDateElement?.value
+    });
+    
+    if (exercisePriceElement && exercisePriceElement.value && grantDateElement && grantDateElement.value) {
+      const exercisePrice = parseFloat(exercisePriceElement.value);
+      const grantDate = grantDateElement.value;
+      const selectedOption = exercisePriceElement.options[exercisePriceElement.selectedIndex];
+      const fundName = selectedOption.dataset.fundName || 'Unknown Fund';
+      
+      if (exercisePrice && grantDate) {
+        console.log(`🔍 Exercise price selected: €${exercisePrice} for grant date: ${grantDate}`);
+        
+        // Show the current value group
+        document.getElementById('currentValueGroup').style.display = 'block';
+        
+        // Check if historical prices already exist
+        try {
+          console.log(`🔍 Checking historical prices for: grantDate=${grantDate}, exercisePrice=${exercisePrice}`);
+          const shouldFetch = await window.IPCCommunication.Grants.shouldFetchHistoricalPrices(grantDate, exercisePrice);
+          console.log(`🔍 shouldFetch result: ${shouldFetch}`);
+          
+          if (shouldFetch) {
+            console.log('📊 No historical prices found, automatically fetching...');
+            
+            // Show default value while fetching
+            this.updateCurrentValueDisplay(10.00, 'Fetching historical prices from KBC...');
+            
+            // Automatically start historical price fetching (no user confirmation needed)
+            console.log(`🔗 Auto-starting historical price fetch for:`, {fundName, exercisePrice, grantDate});
+            await window.HistoricalPriceManager.showFetchModal(
+              fundName,
+              exercisePrice,
+              grantDate
+            );
+          } else {
+            console.log('✅ Historical prices already exist, updating current value...');
+            
+            // Get the historical price for the grant date and update the display
+            await this.updateCurrentValueFromHistoricalPrices(grantDate, exercisePrice, selectedOption);
+          }
+        } catch (error) {
+          console.error('❌ Error handling exercise price selection:', error);
+          // Show fallback value on error
+          this.updateCurrentValueDisplay(10.00, 'Using default value (€10 per option)');
+        }
+      }
+    }
+  }
+
+  // Update the current value display with price and help text
+  updateCurrentValueDisplay(pricePerOption, helpText = null) {
+    const quantityElement = document.getElementById('quantity');
+    const quantity = parseInt(quantityElement?.value) || 0;
+    const totalValue = quantity * pricePerOption;
+    
+    // Update the display elements
+    document.getElementById('currentValuePerOption').textContent = `€${pricePerOption.toFixed(2)}`;
+    document.getElementById('totalGrantValue').textContent = `€${totalValue.toFixed(2)}`;
+    
+    // Update help text if provided
+    if (helpText) {
+      document.getElementById('currentValueHelp').textContent = helpText;
+    }
+    
+    console.log(`💰 Updated value display: €${pricePerOption.toFixed(2)} per option, total: €${totalValue.toFixed(2)}`);
+  }
+
+  // Update the current value display from historical prices
+  async updateCurrentValueFromHistoricalPrices(grantDate, exercisePrice, optionElement) {
+    try {
+      const historicalPrices = await window.ipcRenderer.invoke(
+        'get-historical-prices-for-option',
+        grantDate,
+        exercisePrice
+      );
+      
+      if (historicalPrices && historicalPrices.length > 0) {
+        // Find the price for the grant date
+        const grantDatePrice = historicalPrices.find(p => p.price_date === grantDate);
+        
+        if (grantDatePrice) {
+          const priceValue = parseFloat(grantDatePrice.current_value);
+          
+          // Update the option element's current value data
+          optionElement.dataset.currentValue = priceValue.toFixed(2);
+          
+          // Update the display text to show the historical price
+          const fundName = this.helpers?.formatFundName(optionElement.dataset.fundName) || optionElement.dataset.fundName;
+          optionElement.textContent = `${fundName} - €${exercisePrice} (Grant Date Value: €${priceValue.toFixed(2)})`;
+          
+          // Update the current value display
+          this.updateCurrentValueDisplay(priceValue, `Historical price from grant date (${grantDate})`);
+          
+          console.log(`✅ Updated current value to grant date price: €${priceValue.toFixed(2)}`);
+        } else {
+          console.warn(`⚠️ No price found for exact grant date ${grantDate}, using fallback`);
+          this.updateCurrentValueDisplay(10.00, 'No exact grant date price found, using default €10');
+        }
+      } else {
+        console.warn(`⚠️ No historical prices found, using default value`);
+        this.updateCurrentValueDisplay(10.00, 'No historical prices available, using default €10');
+      }
+    } catch (error) {
+      console.error('❌ Error updating current value from historical prices:', error);
+      this.updateCurrentValueDisplay(10.00, 'Error loading prices, using default €10');
+    }
   }
 
   updateTaxDisplay() {

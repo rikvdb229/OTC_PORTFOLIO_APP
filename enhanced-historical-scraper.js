@@ -61,38 +61,63 @@ class EnhancedHistoricalScraper {
   async getOptionsList(forceRefresh = false) {
     const cacheFile = path.join(this.cacheDir, 'options-list-cache.json');
     
+    console.log(`🔍 getOptionsList called - forceRefresh: ${forceRefresh}, cacheFile exists: ${fs.existsSync(cacheFile)}`);
+    
     // Check cache first
     if (!forceRefresh && fs.existsSync(cacheFile)) {
       try {
         const cacheData = JSON.parse(fs.readFileSync(cacheFile, 'utf-8'));
         const cacheAge = Date.now() - new Date(cacheData.timestamp).getTime();
         
+        console.log(`📋 Cache found - age: ${Math.round(cacheAge / 1000 / 60)} minutes, expiry: ${Math.round(this.cacheExpiry / 1000 / 60)} minutes, options: ${cacheData.options?.length || 0}`);
+        
         if (cacheAge < this.cacheExpiry) {
           console.log('📋 Using cached options list');
           this.optionsListCache = cacheData.options;
           return cacheData.options;
+        } else {
+          console.log('📋 Cache expired, will fetch fresh data');
         }
       } catch (error) {
         console.warn('⚠️ Cache read error, will fetch fresh data:', error.message);
       }
+    } else {
+      console.log(`📋 No valid cache found (forceRefresh: ${forceRefresh}, exists: ${fs.existsSync(cacheFile)})`);
     }
     
     // Fetch fresh options list
-    console.log('🔄 Fetching fresh options list...');
-    const options = await this.fetchOptionsListFromKBC();
+    console.log('🔄 Fetching fresh options list from KBC...');
     
-    // Save to cache
-    const cacheData = {
-      timestamp: new Date().toISOString(),
-      count: options.length,
-      options: options
-    };
-    
-    fs.writeFileSync(cacheFile, JSON.stringify(cacheData, null, 2));
-    console.log(`💾 Cached ${options.length} options for future use`);
-    
-    this.optionsListCache = options;
-    return options;
+    try {
+      const options = await this.fetchOptionsListFromKBC();
+      console.log(`📋 Successfully fetched ${options?.length || 0} options from KBC`);
+      
+      if (!options || options.length === 0) {
+        console.warn('⚠️ No options returned from KBC - this might indicate a scraping issue');
+        throw new Error('No options found on KBC website - please check if the website structure has changed');
+      }
+      
+      // Save to cache
+      const cacheData = {
+        timestamp: new Date().toISOString(),
+        count: options.length,
+        options: options
+      };
+      
+      fs.writeFileSync(cacheFile, JSON.stringify(cacheData, null, 2));
+      console.log(`💾 Successfully cached ${options.length} options for future use`);
+      
+      this.optionsListCache = options;
+      return options;
+      
+    } catch (error) {
+      console.error('❌ Error fetching options list from KBC:', error);
+      console.log('🔍 This might be due to:');
+      console.log('  - Network connectivity issues');
+      console.log('  - Changes in KBC website structure');
+      console.log('  - Authentication requirements');
+      throw new Error(`Failed to fetch options list: ${error.message}`);
+    }
   }
 
   // Find option in cached list by matching criteria
@@ -184,13 +209,21 @@ class EnhancedHistoricalScraper {
               const detailLink = cells[0].querySelector('a');
               const detailUrl = detailLink ? detailLink.href : null;
               
+              const fundName = cells[2]?.textContent?.trim() || '';
+              
+              // Parse exercise price from 5th column (index 4) with better formatting handling
+              const exercisePriceText = cells[4]?.textContent?.trim() || '0';
+              let exercisePrice = parseFloat(exercisePriceText.replace(/,/g, '').replace(/\s/g, ''));
+              
+              console.log(\`🔍 Parsing exercise price: "\${exercisePriceText}" -> \${exercisePrice}\`);
+              
               const optionData = {
                 index: index + 1,
                 detailUrl: detailUrl,
                 type: cells[1]?.textContent?.trim() || '',
-                fundName: cells[2]?.textContent?.trim() || '',
+                fundName: fundName,
                 grantDate: cells[3]?.textContent?.trim() || '',
-                exercisePrice: parseFloat(cells[4]?.textContent?.trim() || '0'),
+                exercisePrice: exercisePrice,
                 currency: cells[5]?.textContent?.trim() || '',
                 currentPrice: parseFloat(cells[6]?.textContent?.trim().replace(',', '') || '0'),
                 lastUpdate: cells[7]?.textContent?.trim() || '',
@@ -217,14 +250,45 @@ class EnhancedHistoricalScraper {
   // Fetch historical prices for a specific option
   async fetchHistoricalPricesForOption(fundName, exercisePrice, grantDate, onProgress = null) {
     try {
-      // Get options list (cached or fresh)
+      console.log(`🔍 Starting historical price fetch for ${fundName} - €${exercisePrice} on ${grantDate}`);
+      
+      // Get options list (cached or fresh) and ensure cache is loaded
       const optionsList = await this.getOptionsList();
+      console.log(`📋 Options list loaded: ${optionsList?.length || 0} options available`);
+      
+      // Double-check that cache is properly set
+      if (!this.optionsListCache || this.optionsListCache.length === 0) {
+        console.log('⚠️ Options cache not properly loaded, setting from fetched list');
+        this.optionsListCache = optionsList;
+      }
       
       // Find the option using only exercise price and grant date
-      const option = this.findOptionInCache(exercisePrice, grantDate);
+      let option = this.findOptionInCache(exercisePrice, grantDate);
       
       if (!option || !option.detailUrl) {
-        throw new Error(`Option not found for €${exercisePrice} on ${grantDate}`);
+        console.error(`❌ Option not found in ${this.optionsListCache?.length || 0} cached options`);
+        console.log('Available options sample:', this.optionsListCache?.slice(0, 3).map(opt => ({
+          fundName: opt.fundName,
+          exercisePrice: opt.exercisePrice,
+          grantDate: opt.grantDate
+        })));
+        
+        // Try force-refreshing the options list from KBC
+        console.log('🔄 Option not found, force-refreshing options list from KBC...');
+        const freshOptionsList = await this.getOptionsList(true);
+        console.log(`📋 Force-refreshed options list: ${freshOptionsList?.length || 0} options`);
+        
+        // Try to find the option again in the fresh list
+        option = this.findOptionInCache(exercisePrice, grantDate);
+        
+        if (!option || !option.detailUrl) {
+          console.error(`❌ Option still not found after fresh fetch. Available dates:`, 
+            this.optionsListCache?.slice(0, 10).map(opt => opt.grantDate).filter((date, index, arr) => arr.indexOf(date) === index)
+          );
+          throw new Error(`Option not found for €${exercisePrice} on ${grantDate} even after refreshing options list. The option may not exist on the KBC website for this specific date and price combination.`);
+        } else {
+          console.log(`✅ Found option after force refresh: ${option.fundName} (€${option.exercisePrice})`);
+        }
       }
       
       console.log(`✅ Found option in cache: ${option.fundName} (€${option.exercisePrice})`);
@@ -330,16 +394,18 @@ class EnhancedHistoricalScraper {
       
       if (onProgress) onProgress({ text: `Completed!`, percentage: 100 });
       
-      // Find grant date price
-      const grantDatePrice = priceHistory.find(p => p.date === option.grantDate);
+      // Find grant date price with derivation fallback
+      const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, option.grantDate);
       
       return {
         fundName: option.fundName,
         exercisePrice: option.exercisePrice,
         grantDate: option.grantDate,
         currentPrice: option.currentPrice,
-        grantDatePrice: grantDatePrice ? grantDatePrice.price : null,
-        priceHistory: priceHistory,
+        grantDatePrice: grantDatePriceResult.price,
+        grantDatePriceDerived: grantDatePriceResult.derived,
+        grantDatePriceSource: grantDatePriceResult.source,
+        priceHistory: grantDatePriceResult.updatedHistory,
         downloadPath: downloadPath
       };
       
@@ -382,6 +448,77 @@ class EnhancedHistoricalScraper {
     }
     
     return priceHistory;
+  }
+
+  // Find grant date price or derive it from next available day
+  findOrDeriveGrantDatePrice(priceHistory, grantDate) {
+    console.log(`🔍 Looking for grant date price: ${grantDate} in ${priceHistory.length} price entries`);
+    
+    // Try to find exact grant date price first
+    const exactMatch = priceHistory.find(p => p.date === grantDate);
+    if (exactMatch) {
+      console.log(`✅ Found exact grant date price: €${exactMatch.price}`);
+      return {
+        price: exactMatch.price,
+        derived: false,
+        source: `Exact price from KBC (${grantDate})`,
+        updatedHistory: priceHistory
+      };
+    }
+    
+    console.log(`⚠️ No exact price for grant date ${grantDate}, looking for next day's price to derive...`);
+    
+    // Sort price history by date to find the next available day
+    const sortedPrices = priceHistory.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+    const grantDateTime = new Date(grantDate);
+    
+    // Find the next available price after the grant date
+    const nextDayPrice = sortedPrices.find(p => {
+      const priceDate = new Date(p.date);
+      return priceDate > grantDateTime;
+    });
+    
+    if (nextDayPrice) {
+      // Round to nearest 10 (as per user requirements: 50.41 → 50.00)
+      const derivedPrice = Math.round(nextDayPrice.price / 10) * 10;
+      
+      console.log(`📊 Deriving grant date price: ${nextDayPrice.date} price €${nextDayPrice.price} → rounded to €${derivedPrice}`);
+      
+      // Create a new price entry for the grant date
+      const derivedEntry = {
+        date: grantDate,
+        price: derivedPrice,
+        derived: true,
+        sourceDate: nextDayPrice.date,
+        sourcePrice: nextDayPrice.price
+      };
+      
+      // Add the derived entry to the price history and sort
+      const updatedHistory = [...priceHistory, derivedEntry].sort((a, b) => new Date(a.date) - new Date(b.date));
+      
+      console.log(`✅ Derived grant date price: €${derivedPrice} (from ${nextDayPrice.date}: €${nextDayPrice.price})`);
+      
+      return {
+        price: derivedPrice,
+        derived: true,
+        source: `Derived from ${nextDayPrice.date} price €${nextDayPrice.price} (rounded to nearest 10)`,
+        updatedHistory: updatedHistory,
+        derivationInfo: {
+          sourceDate: nextDayPrice.date,
+          sourcePrice: nextDayPrice.price,
+          roundedPrice: derivedPrice
+        }
+      };
+    }
+    
+    console.log(`❌ No price available after grant date ${grantDate} for derivation`);
+    
+    return {
+      price: null,
+      derived: false,
+      source: `No price available for ${grantDate} or following days`,
+      updatedHistory: priceHistory
+    };
   }
 
   // Clear cache

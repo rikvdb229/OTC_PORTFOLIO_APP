@@ -105,6 +105,12 @@ const FormManager = {
           "Options will appear after entering grant date";
       }
 
+      // Hide the current value group
+      const currentValueGroup = document.getElementById("currentValueGroup");
+      if (currentValueGroup) {
+        currentValueGroup.style.display = "none";
+      }
+
       // Clear stored form data
       app.currentFormData = null;
       window.UIStateManager.Validation.validateAddGrantsForm(app);
@@ -175,8 +181,11 @@ const FormManager = {
 
       if (options.length === 1) {
         exercisePriceSelect.selectedIndex = 1;
-        // Call the tax calculation through FormManager
-        this.calculateEstimatedTax(app);
+        // Trigger the full exercise price selection flow (includes tax calculation AND historical price fetching)
+        console.log("🔄 Auto-selected single option, triggering handleExercisePriceSelection");
+        if (app.handleExercisePriceSelection) {
+          await app.handleExercisePriceSelection();
+        }
       }
     } catch (error) {
       console.error("Error loading options for grant date:", error);
@@ -195,7 +204,19 @@ const FormManager = {
   calculateEstimatedTax(app) {
     const quantity = parseInt(document.getElementById("quantity").value) || 0;
     const taxRate = parseFloat(app.taxRate?.value) / 100 || 0.3;
-    const estimatedTax = quantity * 10 * taxRate;
+    
+    // Get the current value per option (from historical price fetch or fallback to 10)
+    let valuePerOption = 10; // Default fallback
+    const currentValueElement = document.getElementById("currentValuePerOption");
+    if (currentValueElement && currentValueElement.textContent !== "€0.00") {
+      const valueText = currentValueElement.textContent.replace("€", "");
+      const parsedValue = parseFloat(valueText);
+      if (!isNaN(parsedValue) && parsedValue > 0) {
+        valuePerOption = parsedValue;
+      }
+    }
+    
+    const estimatedTax = quantity * valuePerOption * taxRate;
 
     document.getElementById("estimatedTax").textContent =
       app.helpers.formatCurrency(estimatedTax);
@@ -206,6 +227,8 @@ const FormManager = {
         .formatCurrency(estimatedTax)
         .replace("€", "");
     }
+    
+    console.log(`💰 Tax calculation: ${quantity} options × €${valuePerOption} × ${(taxRate * 100)}% = ${app.helpers.formatCurrency(estimatedTax)}`);
   },
 
   /**

@@ -412,6 +412,23 @@ const ModalHandlers = {
       window.DOMHelpers.safeAddEventListener(modal, "click", (event) => {
         // Only close if clicking the backdrop (modal itself), not the content
         if (event.target === modal) {
+          // Special handling for historical price fetch modal
+          if (modal.id === 'historicalPriceFetchModal') {
+            // Check if historical price fetch is in progress
+            const confirmButton = document.getElementById('confirmHistoricalFetch');
+            const isInProgress = confirmButton && confirmButton.disabled && confirmButton.textContent === 'Please wait...';
+            
+            if (isInProgress) {
+              console.log('⚠️ Cannot close historical price modal during fetch');
+              return; // Don't close during fetch
+            }
+            
+            // If not in progress, just close this modal (not all modals)
+            modal.classList.remove('active');
+            return;
+          }
+          
+          // For all other modals, close all modals as usual
           app.closeModals();
         }
       });
@@ -522,7 +539,7 @@ const FormHandlers = {
       {
         id: "exercisePrice",
         event: "change",
-        handler: () => app.calculateEstimatedTax(),
+        handler: () => app.handleExercisePriceSelection(),
       },
       {
         id: "actualTaxAmount",
@@ -553,11 +570,14 @@ const FormHandlers = {
       const input = window.DOMHelpers.safeGetElementById(id);
       if (input) {
         window.DOMHelpers.safeAddEventListener(input, event, handler);
+        console.log(`✅ Added ${event} listener for ${id}`);
+      } else {
+        console.warn(`⚠️ Element not found: ${id} - will try to add listener later when modal opens`);
       }
     });
 
     console.log(
-      `✅ Form handlers initialized: ${formInputs.length} form inputs`
+      `✅ Form handlers initialized: ${formInputs.length} form inputs processed`
     );
   },
 };

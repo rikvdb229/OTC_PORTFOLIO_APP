@@ -96,3 +96,6 @@ npm run dev         # Run with dev flag
 - App works offline with existing data
 - Database automatically created on first run
 - All user data stored in portfolio.db file
+
+## Implementation Guidelines
+- Do not run app, ask user to test implementations

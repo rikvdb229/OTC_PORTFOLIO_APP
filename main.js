@@ -9,10 +9,10 @@ const packageInfo = require("./package.json");
 // ADD HERE: App configuration that matches renderer.js
 const pkg = require("./package.json");
 const APP_CONFIG = {
-  VERSION: pkg.version || "0.2.0",
+  VERSION: pkg.version || "0.3.0",
   APP_NAME: (pkg.build && pkg.build.productName) || "Portfolio Tracker",
   STATUS: pkg.status || "Beta Version",
-  BUILD_DATE: pkg.buildDate || "2025-07-09",
+  BUILD_DATE: pkg.buildDate || "2025-08-10",
 
   getFullVersion() {
     return `${this.APP_NAME} v${this.VERSION}`;
@@ -963,6 +963,11 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
     
     console.log(`✅ Successfully fetched ${result.priceHistory.length} historical prices`);
     
+    // Log derived price information if applicable
+    if (result.grantDatePriceDerived) {
+      console.log(`📊 Grant date price was derived: €${result.grantDatePrice} (${result.grantDatePriceSource})`);
+    }
+    
     // Store in price_history table
     if (result.priceHistory.length > 0) {
       await portfolioDb.storeHistoricalPrices(
@@ -980,6 +985,8 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
       exercisePrice: result.exercisePrice,
       grantDate: result.grantDate,
       grantDatePrice: result.grantDatePrice,
+      grantDatePriceDerived: result.grantDatePriceDerived,
+      grantDatePriceSource: result.grantDatePriceSource,
       currentPrice: result.currentPrice,
       priceCount: result.priceHistory.length,
       dateRange: {
@@ -1049,6 +1056,11 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
           progressCallback
         );
         
+        // Log derived price information if applicable
+        if (result.grantDatePriceDerived) {
+          console.log(`📊 [${option.fund_name}] Grant date price was derived: €${result.grantDatePrice} (${result.grantDatePriceSource})`);
+        }
+        
         // Store prices
         if (result.priceHistory.length > 0) {
           await portfolioDb.storeHistoricalPrices(
@@ -1070,9 +1082,36 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
       }
     }
     
+    // Send progress update for rebuild phase - use special format to avoid 18/17 display
+    event.sender.send('historical-batch-progress', {
+      optionIndex: 'rebuild',
+      totalOptions: 'phase',
+      optionName: 'Rebuilding Evolution Timeline',
+      progress: { text: 'Starting timeline rebuild...', percentage: 0 }
+    });
+    
     // After all historical prices are processed, completely rebuild the evolution timeline
     console.log("🔥 Rebuilding complete evolution timeline with historical data...");
-    await portfolioDb.rebuildCompleteEvolutionTimeline();
+    
+    // Create progress callback to send updates during rebuild
+    const rebuildProgressCallback = (progress) => {
+      event.sender.send('historical-batch-progress', {
+        optionIndex: 'rebuild',
+        totalOptions: 'phase',
+        optionName: 'Rebuilding Evolution Timeline',
+        progress: progress
+      });
+    };
+    
+    await portfolioDb.rebuildCompleteEvolutionTimeline(rebuildProgressCallback);
+    
+    // Send final completion progress
+    event.sender.send('historical-batch-progress', {
+      optionIndex: 'rebuild',
+      totalOptions: 'phase',
+      optionName: 'Rebuilding Evolution Timeline',
+      progress: { text: 'Evolution timeline rebuilt successfully!', percentage: 100 }
+    });
     
     console.log("✅ Complete evolution timeline rebuilt with historical data");
     
@@ -1089,6 +1128,22 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
       success: false,
       error: error.message
     };
+  }
+});
+
+// Get historical prices for a specific option IPC Handler
+ipcMain.handle("get-historical-prices-for-option", async (event, grantDate, exercisePrice) => {
+  try {
+    console.log(`🔍 Getting historical prices for option: grant date ${grantDate}, exercise price €${exercisePrice}`);
+    
+    const prices = await portfolioDb.getHistoricalPricesForOption(grantDate, exercisePrice);
+    
+    console.log(`✅ Found ${prices ? prices.length : 0} historical price entries`);
+    return prices || [];
+    
+  } catch (error) {
+    console.error("❌ Error getting historical prices for option:", error);
+    return [];
   }
 });
 

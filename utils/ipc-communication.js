@@ -1137,35 +1137,8 @@ const GrantOperations = {
         );
       }
 
-      // No existing grant found, check if we should fetch historical prices
-      console.log("➕ Proceeding with normal grant addition...");
-
-      // Check if we should fetch historical prices for this grant
-      const shouldFetchHistorical = await this.shouldFetchHistoricalPrices(grantDate, exercisePrice);
-      
-      if (shouldFetchHistorical) {
-        console.log("📊 Triggering historical price fetch before adding grant...");
-        
-        // Store grant data for later use
-        app.pendingGrantData = {
-          grantDate,
-          exercisePrice,
-          quantity,
-          actualTaxAmount
-        };
-        
-        // Show historical price fetch modal
-        await window.HistoricalPriceManager.showFetchModal(
-          `Option ${grantDate} €${exercisePrice}`,
-          exercisePrice,
-          grantDate
-        );
-        
-        // The actual grant addition will continue after historical prices are fetched
-        return;
-      }
-
-      // Proceed with normal grant addition (no historical prices needed/wanted)
+      // Proceed with grant addition (historical prices should already be fetched when option was selected)
+      console.log("➕ Proceeding with grant addition...");
       await this.completeGrantAddition(app, grantDate, exercisePrice, quantity, actualTaxAmount);
     } catch (error) {
       console.error("❌ Error in addGrants:", error);
@@ -1399,12 +1372,34 @@ const GrantOperations = {
    */
   async shouldFetchHistoricalPrices(grantDate, exercisePrice) {
     try {
-      // For now, always return true to offer historical price fetching
-      // TODO: Add logic to check if historical prices already exist
-      return true;
+      console.log(`🔍 Checking if historical prices exist for grant date: ${grantDate}, exercise price: €${exercisePrice}`);
+      
+      // Check if historical prices already exist for this grant
+      const existingPrices = await window.ipcRenderer.invoke(
+        "get-historical-prices-for-option",
+        grantDate,
+        exercisePrice
+      );
+      
+      if (existingPrices && existingPrices.length > 0) {
+        // Check if we have a price specifically for the grant date
+        const grantDatePrice = existingPrices.find(price => price.price_date === grantDate);
+        
+        if (grantDatePrice) {
+          console.log(`✅ Grant date price already exists (€${grantDatePrice.current_value}), skipping fetch`);
+          return false; // No need to fetch, we have the grant date price
+        } else {
+          console.log(`📊 Historical prices exist (${existingPrices.length} entries) but no price for grant date ${grantDate}, need to fetch`);
+          return true; // Need to fetch to get the grant date price
+        }
+      }
+      
+      console.log(`📊 No historical prices found, offering to fetch from KBC`);
+      return true; // Offer to fetch historical prices
+      
     } catch (error) {
-      console.warn('Error checking historical prices, defaulting to fetch:', error);
-      return true; // Default to fetching if check fails
+      console.warn('❌ Error checking existing historical prices, defaulting to fetch:', error);
+      return true; // Default to offering fetch if check fails
     }
   },
 

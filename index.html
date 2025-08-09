@@ -580,6 +580,23 @@
             <small class="form-help">Number must be a whole number</small>
           </div>
 
+          <div class="form-group" id="currentValueGroup" style="display: none;">
+            <label for="currentValue">Current Grant Value</label>
+            <div class="value-display">
+              <div class="value-info">
+                <span class="value-label">Value per option:</span>
+                <span id="currentValuePerOption" class="value-amount">€0.00</span>
+              </div>
+              <div class="value-info">
+                <span class="value-label">Total grant value:</span>
+                <span id="totalGrantValue" class="value-amount highlight">€0.00</span>
+              </div>
+            </div>
+            <small class="form-help" id="currentValueHelp">
+              This value will be used for portfolio calculations
+            </small>
+          </div>
+
           <div class="tax-section">
             <div class="tax-info">
               <div class="tax-calculation">

@@ -137,6 +137,7 @@ class AppHelpers {
   /**
    * Check for auto-update setting and trigger price update if enabled
    * MIGRATED FROM: renderer.js checkAutoUpdate() method
+   * UPDATED: Only auto-update if prices are not current to avoid annoying users
    * RISK LEVEL: LOW - Simple setting check and conditional action
    */
   async checkAutoUpdate() {
@@ -144,7 +145,17 @@ class AppHelpers {
       const autoUpdate =
         await window.IPCCommunication.Settings.getSetting("auto_update_prices");
       if (autoUpdate === "true") {
-        setTimeout(() => this.app.updatePrices(), 2000);
+        console.log('🔍 Auto-update enabled, checking if prices need updating...');
+        
+        // Check if prices are current before auto-updating
+        const priceStatus = await window.IPCCommunication.Price.getPriceUpdateStatus();
+        
+        if (priceStatus && !priceStatus.isCurrent) {
+          console.log('📊 Prices are not current, starting auto-update...');
+          setTimeout(() => this.app.updatePrices(), 2000);
+        } else {
+          console.log('✅ Prices are already current, skipping auto-update');
+        }
       }
     } catch (error) {
       console.error("Error checking auto-update setting:", error);

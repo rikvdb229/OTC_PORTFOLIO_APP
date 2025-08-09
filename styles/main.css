@@ -1228,6 +1228,47 @@ textarea {
   margin-top: 3px;
   display: block;
 }
+
+/* Value display for grants form */
+.value-display {
+  background: var(--color-light);
+  border: 1px solid var(--border-light);
+  border-radius: var(--border-radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-xs);
+}
+
+.value-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-xs);
+}
+
+.value-info:last-child {
+  margin-bottom: 0;
+  padding-top: var(--spacing-xs);
+  border-top: 1px solid var(--border-medium);
+}
+
+.value-label {
+  font-size: var(--font-size-md);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-normal);
+}
+
+.value-amount {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-dark);
+  font-family: var(--font-family-mono);
+}
+
+.value-amount.highlight {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
 .input-group {
   display: flex;
   align-items: center;
@@ -3577,4 +3618,22 @@ body {
   border-top: 1px solid #e9ecef;
   border-bottom: 2px solid #e9ecef; /* Slightly thicker bottom border */
   padding: 12px var(--spacing-lg); /* Slightly more padding */
+}
+
+/* Derived price styling */
+.derived-price {
+  color: var(--color-warning-dark) !important;
+  font-style: italic;
+  position: relative;
+  cursor: help;
+}
+
+.derived-price::after {
+  content: " *";
+  color: var(--color-warning);
+  font-weight: bold;
+}
+
+.derived-price:hover {
+  color: var(--color-warning) !important;
 }

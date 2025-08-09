@@ -318,6 +318,9 @@ class PortfolioDatabase {
         const filebuffer = fs.readFileSync(this.dbPath);
         this.db = new SQL.Database(filebuffer);
         this.logDebug("✅ Existing database loaded successfully");
+        
+        // Run database migrations for existing databases
+        await this.runMigrations();
       } else {
         this.logDebug("🆕 Creating new database");
         this.db = new SQL.Database();
@@ -384,6 +387,7 @@ class PortfolioDatabase {
       quantity INTEGER NOT NULL,
       amount_granted DECIMAL(10,2),
       current_value DECIMAL(10,2),
+      grant_date_price DECIMAL(10,2) DEFAULT 10.00,
       tax_amount DECIMAL(10,2) DEFAULT NULL,
       tax_auto_calculated DECIMAL(10,2),
       total_sold_quantity INTEGER DEFAULT 0,
@@ -503,6 +507,139 @@ class PortfolioDatabase {
       console.error(`❌ Schema creation failed: ${error.message}`);
       this.logDebug(`❌ Failed to create database schema: ${error.message}`);
       return Promise.reject(error);
+    }
+  }
+
+  // Database migration system
+  async runMigrations() {
+    this.logDebug("🔄 Running database migrations...");
+    
+    try {
+      // Check if grant_date_price column exists
+      await this.migrateAddGrantDatePriceColumn();
+      
+      // Populate grant_date_price for existing entries
+      await this.migratePopulateGrantDatePrices();
+      
+      this.logDebug("✅ All migrations completed successfully");
+    } catch (error) {
+      this.logDebug(`❌ Migration failed: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Migration: Add grant_date_price column if it doesn't exist
+  async migrateAddGrantDatePriceColumn() {
+    try {
+      // Check if column exists
+      const stmt = this.db.prepare("PRAGMA table_info(portfolio_entries)");
+      const columns = [];
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        columns.push(row.name);
+      }
+      stmt.free();
+
+      if (columns.includes('grant_date_price')) {
+        this.logDebug("✅ grant_date_price column already exists");
+        return;
+      }
+
+      this.logDebug("🔧 Adding grant_date_price column to portfolio_entries table...");
+      this.db.exec(`
+        ALTER TABLE portfolio_entries 
+        ADD COLUMN grant_date_price DECIMAL(10,2) DEFAULT 10.00;
+      `);
+      
+      this.logDebug("✅ grant_date_price column added successfully");
+    } catch (error) {
+      this.logDebug(`❌ Error adding grant_date_price column: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Migration: Populate grant_date_price for existing entries using historical data
+  async migratePopulateGrantDatePrices() {
+    try {
+      // Get all entries that need migration (grant_date_price is NULL or 10.00)
+      const selectStmt = this.db.prepare(`
+        SELECT id, grant_date, exercise_price, fund_name 
+        FROM portfolio_entries 
+        WHERE grant_date_price IS NULL OR grant_date_price = 10.00
+      `);
+      
+      const entriesToMigrate = [];
+      while (selectStmt.step()) {
+        entriesToMigrate.push(selectStmt.getAsObject());
+      }
+      selectStmt.free();
+
+      if (entriesToMigrate.length === 0) {
+        this.logDebug("✅ No entries need grant_date_price migration");
+        return;
+      }
+
+      this.logDebug(`🔧 Migrating grant_date_price for ${entriesToMigrate.length} entries...`);
+
+      let updatedCount = 0;
+      let fallbackCount = 0;
+
+      for (const entry of entriesToMigrate) {
+        try {
+          // Try to find historical price for this specific grant date and exercise price
+          const priceStmt = this.db.prepare(`
+            SELECT current_value 
+            FROM price_history 
+            WHERE price_date = ? AND exercise_price = ?
+            ORDER BY scraped_at DESC 
+            LIMIT 1
+          `);
+          
+          let grantDatePrice = null;
+          priceStmt.bind([entry.grant_date, entry.exercise_price]);
+          if (priceStmt.step()) {
+            const priceData = priceStmt.getAsObject();
+            grantDatePrice = priceData.current_value;
+          }
+          priceStmt.free();
+
+          // Only use exact matches - no fallback to closest prices
+          // This preserves the original user experience where they had no historical data
+
+          // Update the entry with the found price or keep 10.00 as fallback
+          const finalPrice = grantDatePrice || 10.00;
+          const updateStmt = this.db.prepare(`
+            UPDATE portfolio_entries 
+            SET grant_date_price = ? 
+            WHERE id = ?
+          `);
+          updateStmt.run([finalPrice, entry.id]);
+          updateStmt.free();
+
+          if (grantDatePrice) {
+            updatedCount++;
+            this.logDebug(`✅ Updated entry ${entry.id} with exact grant date price: €${finalPrice}`);
+          } else {
+            fallbackCount++;
+            this.logDebug(`⚠️ Entry ${entry.id} kept fallback price: €${finalPrice} (no exact historical data)`);
+          }
+
+        } catch (entryError) {
+          this.logDebug(`❌ Error migrating entry ${entry.id}: ${entryError.message}`);
+          // Continue with other entries
+        }
+      }
+
+      this.logDebug(`✅ Grant date price migration completed:`);
+      this.logDebug(`   - ${updatedCount} entries updated with exact grant date prices`);
+      this.logDebug(`   - ${fallbackCount} entries kept fallback price (€10.00 - no exact historical data available)`);
+
+      // Save the database after migration
+      await this.saveDatabase();
+
+    } catch (error) {
+      this.logDebug(`❌ Error populating grant_date_price: ${error.message}`);
+      throw error;
     }
   }
 
@@ -774,7 +911,7 @@ class PortfolioDatabase {
       pe.fund_name,
       
       -- ADDED: Calculate current profit_loss_vs_target
-      ((st.total_sale_value - st.tax_deducted) - (st.quantity_sold * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)) as profit_loss_vs_target
+      ((st.total_sale_value - st.tax_deducted) - (st.quantity_sold * COALESCE(pe.grant_date_price, 10) * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)) as profit_loss_vs_target
       
     FROM sales_transactions st
     JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
@@ -837,14 +974,25 @@ class PortfolioDatabase {
       const newTotalSaleValue =
         updatedSale.sale_price * currentSale.quantity_sold;
 
-      // Calculate new profit/loss vs target (using stored tax_deducted)
+      // Calculate new profit/loss vs target (using stored tax_deducted and grant_date_price)
       const taxDeducted = currentSale.tax_deducted || 0;
       const targetPercentageQuery = await this.getSetting("target_percentage");
       const targetPercentage = parseFloat(targetPercentageQuery || "65");
-      const targetValue =
-        currentSale.quantity_sold * 10 * (targetPercentage / 100);
-      const newProfitLossVsTarget =
-        newTotalSaleValue - taxDeducted - targetValue;
+      
+      // Get grant_date_price from portfolio entry
+      const portfolioStmt = this.db.prepare(`
+        SELECT grant_date_price FROM portfolio_entries WHERE id = ?
+      `);
+      portfolioStmt.bind([currentSale.portfolio_entry_id]);
+      let grantDatePrice = 10; // fallback
+      if (portfolioStmt.step()) {
+        const portfolioData = portfolioStmt.getAsObject();
+        grantDatePrice = portfolioData.grant_date_price || 10;
+      }
+      portfolioStmt.free();
+      
+      const targetValue = currentSale.quantity_sold * grantDatePrice * (targetPercentage / 100);
+      const newProfitLossVsTarget = newTotalSaleValue - taxDeducted - targetValue;
 
       // Update the sale record
       const stmt = this.db.prepare(`
@@ -1280,7 +1428,8 @@ class PortfolioDatabase {
         const targetPercentageQuery =
           await this.getSetting("target_percentage");
         const targetPercentage = parseFloat(targetPercentageQuery || "65");
-        const targetValue = remainingQuantity * 10 * (targetPercentage / 100);
+        const grantDatePrice = entry.grant_date_price || 10;
+        const targetValue = remainingQuantity * grantDatePrice * (targetPercentage / 100);
 
         // Tax calculation (proportional to remaining quantity)
         const taxRatio = remainingQuantity / entry.quantity;
@@ -1384,7 +1533,8 @@ class PortfolioDatabase {
       const currentQuantity = existing.quantity || 0;
       const additionalQty = additionalQuantity || 0;
       const newQuantity = currentQuantity + additionalQty;
-      const newAmountGranted = newQuantity * 10;
+      const grantDatePrice = existing.grant_date_price || 10;
+      const newAmountGranted = newQuantity * grantDatePrice;
 
       console.log("3. Quantity calculations:", {
         currentQuantity,
@@ -1420,7 +1570,7 @@ class PortfolioDatabase {
         // Calculate auto tax for additional quantity
         const taxRateSetting = await this.getSetting("tax_auto_rate");
         const taxRate = parseFloat(taxRateSetting || "30");
-        const additionalAutoTax = additionalQty * 10 * (taxRate / 100);
+        const additionalAutoTax = additionalQty * grantDatePrice * (taxRate / 100);
 
         if (existing.tax_amount && existing.tax_amount > 0) {
           // Existing has manual tax, add auto tax for new portion
@@ -1590,7 +1740,9 @@ class PortfolioDatabase {
         }
       }
 
-      const amountGranted = quantity * 10; // €10 per option
+      // Store the grant date price (historical price for the grant date)
+      const grantDatePrice = currentValue || 10; // Use historical price if available, fallback to €10
+      const amountGranted = quantity * grantDatePrice;
 
       // Calculate auto tax - ensure we have a valid tax rate
       let taxRateSetting;
@@ -1607,17 +1759,18 @@ class PortfolioDatabase {
       console.log("Calculated values:", {
         fundName,
         currentValue,
+        grantDatePrice,
         amountGranted,
         taxRate,
         autoTax,
         taxAmount,
       });
 
-      // Insert the portfolio entry with proper null handling
+      // Insert the portfolio entry with grant_date_price
       const stmt = this.db.prepare(`
       INSERT INTO portfolio_entries 
-      (grant_date, fund_name, exercise_price, quantity, amount_granted, current_value, tax_amount, tax_auto_calculated)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      (grant_date, fund_name, exercise_price, quantity, amount_granted, current_value, grant_date_price, tax_amount, tax_auto_calculated)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
       stmt.run([
@@ -1627,6 +1780,7 @@ class PortfolioDatabase {
         quantity || 0,
         amountGranted || 0,
         currentValue || 0,
+        grantDatePrice || 10,
         taxAmount || null,
         autoTax || 0,
       ]);
@@ -1800,7 +1954,8 @@ class PortfolioDatabase {
       // Calculate realized gain/loss vs target
       const targetPercentageQuery = await this.getSetting("target_percentage");
       const targetPercentage = parseFloat(targetPercentageQuery || "65");
-      const targetValue = quantitySold * 10 * (targetPercentage / 100);
+      const grantDatePrice = portfolioEntry.grant_date_price || 10;
+      const targetValue = quantitySold * grantDatePrice * (targetPercentage / 100);
       const realizedGainLoss =
         totalSaleValue - taxAllocatedToSold - targetValue;
 
@@ -1894,8 +2049,8 @@ SELECT
   pe.fund_name,
   pe.exercise_price,
   pe.quantity,
-  -- Amount granted = remaining options × €10
-  ((pe.quantity - pe.total_sold_quantity) * 10) as amount_granted,
+  -- Amount granted = remaining options × grant date price
+  ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10)) as amount_granted,
   pe.current_value,
   pe.total_sold_quantity,
   (pe.quantity - pe.total_sold_quantity) as quantity_remaining,
@@ -1915,15 +2070,15 @@ SELECT
       -- (Current total value - stored tax) - (target value for remaining options)
       (((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) - 
        COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) -
-      ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
+      ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10) * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
     ELSE 
       -- When no current value, P&L = (0 - stored tax) - target value
       (0 - COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) -
-      ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
+      ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10) * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)
   END as profit_loss_vs_target,
   
-  -- Target value = remaining options × €10 × target percentage
-  ((pe.quantity - pe.total_sold_quantity) * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100) as target_total_value,
+  -- Target value = remaining options × grant date price × target percentage
+  ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10) * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100) as target_total_value,
   
   -- FIXED: Return % = (Current Value - Tax) / Amount Granted × 100
   -- Tax is already proportionally reduced in database, don't apply proportional calculation again
@@ -1932,13 +2087,13 @@ SELECT
       -- (Current total value - stored tax) / amount granted × 100
       ((((pe.quantity - pe.total_sold_quantity) * COALESCE(ph.current_value, pe.current_value, 0)) - 
         COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) /
-       ((pe.quantity - pe.total_sold_quantity) * 10)) * 100
+       ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10))) * 100
     ELSE 
       CASE 
         WHEN (pe.quantity - pe.total_sold_quantity) > 0 THEN
           -- (0 - stored tax) / amount granted × 100
           (((0 - COALESCE(pe.tax_amount, pe.tax_auto_calculated, 0)) /
-            ((pe.quantity - pe.total_sold_quantity) * 10)) * 100)
+            ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10))) * 100)
         ELSE 0
       END
   END as current_return_percentage,
@@ -2001,8 +2156,8 @@ SELECT
   pe.fund_name,
   
   -- FIXED: Calculate Profit/Loss vs Target (same formula as portfolio overview)
-  -- Profit/Loss vs Target = (Total Sale Value - Tax Deducted) - (Quantity × €10 × Target %)
-  ((st.total_sale_value - st.tax_deducted) - (st.quantity_sold * 10 * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)) as profit_loss_vs_target
+  -- Profit/Loss vs Target = (Total Sale Value - Tax Deducted) - (Quantity × Grant Date Price × Target %)
+  ((st.total_sale_value - st.tax_deducted) - (st.quantity_sold * COALESCE(pe.grant_date_price, 10) * (SELECT CAST(setting_value AS REAL) FROM settings WHERE setting_key = 'target_percentage')/100)) as profit_loss_vs_target
   
 FROM sales_transactions st
 JOIN portfolio_entries pe ON st.portfolio_entry_id = pe.id
@@ -3283,8 +3438,11 @@ ORDER BY st.sale_date DESC
   }
 
   // Completely rebuild the evolution table with historical data
-  async rebuildCompleteEvolutionTimeline() {
+  async rebuildCompleteEvolutionTimeline(onProgress = null) {
     try {
+      // Reset progress tracking
+      this._lastReportedPercentage = 0;
+      
       console.log('🔥 Completely rebuilding daily evolution timeline with historical data...');
       
       // Step 1: Drop and recreate the evolution table
@@ -3369,6 +3527,18 @@ ORDER BY st.sale_date DESC
         if (processedCount % progressInterval === 0 || processedCount === allDates.length) {
           const percentage = Math.round((processedCount / allDates.length) * 100);
           console.log(`📊 Processed ${processedCount}/${allDates.length} days (${percentage}%) - inserted ${insertedCount} entries`);
+          
+          // Send progress update to UI only every 10% to avoid overwhelming the UI
+          if (onProgress) {
+            const lastPercentage = this._lastReportedPercentage || 0;
+            if (percentage >= lastPercentage + 10 || processedCount === allDates.length) {
+              onProgress({
+                text: `Processing evolution data: ${processedCount}/${allDates.length} days`,
+                percentage: percentage
+              });
+              this._lastReportedPercentage = percentage;
+            }
+          }
         }
       }
       
@@ -3572,6 +3742,36 @@ ORDER BY st.sale_date DESC
       
     } catch (error) {
       console.error('❌ Error getting significant dates:', error);
+      throw error;
+    }
+  }
+
+  // Get historical prices for a specific option (grant date + exercise price)
+  async getHistoricalPricesForOption(grantDate, exercisePrice) {
+    try {
+      console.log(`🔍 Querying historical prices for grant date: ${grantDate}, exercise price: €${exercisePrice}`);
+      
+      const stmt = this.db.prepare(`
+        SELECT price_date, current_value 
+        FROM price_history 
+        WHERE grant_date = ? AND ABS(exercise_price - ?) < 0.01
+        ORDER BY price_date DESC
+      `);
+      
+      const prices = [];
+      stmt.bind([grantDate, exercisePrice]);
+      
+      while (stmt.step()) {
+        prices.push(stmt.getAsObject());
+      }
+      
+      stmt.free();
+      
+      console.log(`✅ Found ${prices.length} historical price entries for this option`);
+      return prices;
+      
+    } catch (error) {
+      console.error('❌ Error getting historical prices for option:', error);
       throw error;
     }
   }

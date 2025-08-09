@@ -4,10 +4,10 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 ![Portfolio Tracker](assets/logo.svg)
 
-## Version 0.2.0
+## Version 0.3.0
 
 **Status**: Beta Version  
-**Build Date**: July 9, 2025  
+**Build Date**: August 10, 2025  
 **License**: MIT  
 
 ## ⚠️ Important Disclaimer
@@ -47,13 +47,23 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 - **Sales Tracking**: Complete sales history with profit/loss calculations
 - **Target Monitoring**: Track progress against portfolio targets
 
+### 🕐 Historical Price Management *(New in v0.3.0)*
+- **Automatic Historical Price Fetching**: Fetches real grant date prices when adding new grants
+- **Smart Price Derivation**: When exact grant date prices are unavailable, derives accurate prices from next available trading day
+- **Bulk Historical Updates**: Update historical prices for entire portfolio with progress tracking
+- **Data Quality Handling**: Intelligently rounds derived prices to nearest 10 for consistency
+- **Visual Progress Feedback**: Real-time progress bars during historical data processing
+- **Portfolio Recalculation**: Automatically rebuilds evolution timeline with historical data
+
+⚠️ **Performance Note**: Historical price updates can take significant time depending on portfolio size. Large portfolios with many grant dates may require several minutes to complete the full historical data rebuild.
+
 ## Installation
 
 ### 🚀 Standalone Portable Version (Recommended)
 
 **No installation required!** Download and run the portable executable:
 
-1. **Download**: Get the latest `Portfolio Tracker 0.2.0.exe` from the [Releases](../../releases) page
+1. **Download**: Get the latest `Portfolio Tracker 0.3.0.exe` from the [Releases](../../releases) page
 2. **Run**: Double-click the .exe file to start the application
 3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
 
@@ -135,7 +145,7 @@ npm run build:all
 
 **Remember: This app is for tracking only. Use your official platform for actual transactions.**
 
-1. **Launch the Application**: Double-click `Portfolio Tracker 0.2.0.exe`
+1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.0.exe`
 2. **First Run**: The app creates a `portfolio.db` file next to the .exe
 3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information for tracking
 4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
@@ -172,6 +182,20 @@ npm run build:all
 - Add new grants with exercise prices and quantities
 - Track vesting schedules and sellable quantities
 - Monitor status changes (Active, Partially Sold, Sold)
+- Automatic historical price fetching for accurate grant date valuations
+
+#### Historical Price Management *(New in v0.3.0)*
+- **Settings → Update Historical Prices**: Rebuild historical data for entire portfolio
+- **Automatic Price Derivation**: System intelligently derives missing grant date prices
+- **Progress Tracking**: Visual feedback during historical data processing phases:
+  1. **Fetching Phase**: Downloads historical prices from external sources
+  2. **Processing Phase**: Rebuilds portfolio evolution timeline with new data
+- **Time Requirements**: Processing time varies by portfolio size:
+  - Small portfolios (1-5 grants): 30 seconds - 2 minutes
+  - Medium portfolios (6-15 grants): 2-5 minutes  
+  - Large portfolios (15+ grants): 5-15 minutes
+- **Internet Required**: Historical price fetching requires active internet connection
+- **Data Quality**: System handles missing data points by deriving from nearest available prices
 
 ## Configuration
 
@@ -303,4 +327,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Portfolio Tracker v0.2.0** - Professional stock options portfolio management made simple.
+**Portfolio Tracker v0.3.0** - Professional stock options portfolio management with intelligent historical price management.

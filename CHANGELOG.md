@@ -5,6 +5,49 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-08-10
+
+### Added
+- **🕐 Historical Price Management System**: Complete historical price integration
+  - **Automatic Historical Price Fetching**: System automatically fetches real grant date prices when adding new grants
+  - **Smart Price Derivation**: Intelligently derives missing grant date prices from next available trading day
+  - **Bulk Historical Updates**: Settings → "Update Historical Prices" to rebuild historical data for entire portfolio
+  - **Real-time Progress Tracking**: Visual progress bars for both price fetching and portfolio recalculation phases
+  - **Data Quality Handling**: System rounds derived prices to nearest 10 for consistency (e.g., 50.41 → 50.00)
+- **Enhanced Grant Addition Workflow**: 
+  - Historical price modal with detailed fetch progress and results
+  - Visual indicators for derived prices with tooltips explaining the source
+  - User-controlled workflow - users manually proceed after reviewing fetched prices
+- **Intelligent Progress Management**:
+  - Timeline rebuild progress with detailed step-by-step feedback
+  - Optimized progress updates (every 10%) to prevent UI overwhelming
+  - Clear phase separation between data fetching and portfolio recalculation
+
+### Enhanced
+- **Portfolio Evolution Accuracy**: Portfolio timeline now uses actual historical grant date prices instead of hardcoded €10 values
+- **Database Migration System**: Automatic migration for existing users to populate historical grant date prices
+- **Price Update Efficiency**: Auto-update on startup only runs when prices are actually outdated, reducing unnecessary scraping
+- **User Experience**: Historical price fetch modal no longer auto-closes, giving users control over the workflow
+
+### Fixed
+- **Grant Date Price Accuracy**: Replaced all hardcoded €10 values with real historical prices from grant dates
+- **Timeline Rebuild Progress**: Fixed "18/17" display issue and static progress bar during portfolio recalculation
+- **Tax Calculations**: Tax estimates now use actual fetched grant date prices instead of hardcoded values
+- **Modal Management**: Historical price fetch modal properly shows only close button (not cancel) and prevents accidental closure during fetch
+- **Performance Issues**: Reduced historical price update frequency to prevent UI freezing during large portfolio rebuilds
+
+### Technical Improvements
+- **Enhanced Historical Scraper**: Added grant date price derivation logic with comprehensive logging
+- **Database Schema**: Added `grant_date_price` column with proper migration handling for existing users  
+- **Progress Reporting**: Backend methods now support progress callbacks for real-time UI updates
+- **Error Handling**: Improved error handling and user feedback during historical price operations
+- **CSS Styling**: Added visual styling for derived price indicators with hover tooltips
+
+### Performance Notes
+- **Processing Time**: Historical price updates can take 5-15 minutes for large portfolios depending on grant count
+- **Internet Requirement**: Historical price fetching requires active internet connection
+- **Background Processing**: System processes historical data in phases with clear visual feedback
+
 ## [0.2.0] - 2025-08-02
 
 ### Added
@@ -76,20 +119,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Release Notes
 
-### Version 0.2.0 Highlights
-This release focuses on enhancing the user experience with improved portfolio analysis capabilities. The standout feature is the new Evolution tab enhancement that provides real-time profit/loss calculations based on user-selected time periods, giving users better insights into their portfolio performance over time.
+### Version 0.3.0 Highlights
+This major release introduces **intelligent historical price management**, transforming portfolio accuracy from hardcoded estimates to real historical grant date prices. The system now automatically fetches and derives accurate historical prices, providing true portfolio evolution tracking with comprehensive progress feedback during processing.
+
+**Key Features:**
+- **Automatic Historical Price Integration**: Real grant date prices replace €10 estimates
+- **Smart Price Derivation**: Handles missing data by intelligently deriving from available dates  
+- **Bulk Portfolio Updates**: Rebuild entire portfolio historical data with visual progress tracking
+- **Enhanced Accuracy**: Tax calculations and evolution tracking now use actual historical prices
+
+⚠️ **Important**: First-time historical price update may take 5-15 minutes depending on portfolio size. This is a one-time process that significantly improves portfolio accuracy.
+
+### Version 0.2.0 Highlights  
+Enhanced user experience with improved portfolio analysis capabilities and real-time profit/loss calculations based on user-selected time periods.
 
 ### Upgrade Instructions
 1. Close the existing Portfolio Tracker application
-2. Download and install version 0.2.0
-3. Your existing data will be preserved automatically
-4. No manual migration required
+2. Download and install version 0.3.0
+3. Your existing data will be preserved automatically  
+4. **First Launch**: System will automatically migrate database to support historical prices
+5. **Recommended**: Run "Settings → Update Historical Prices" to populate accurate grant date prices (may take several minutes)
 
 ### Known Issues
-- None reported for this version
+- Historical price updates require stable internet connection
+- Large portfolios (15+ grants) may require extended processing time for historical updates
 
 ### Future Roadmap
-- Enhanced reporting capabilities
-- Additional chart types and visualizations  
-- Portfolio performance benchmarking
-- Advanced filtering and search features
+- Enhanced reporting capabilities with historical price insights
+- Portfolio performance benchmarking against historical data
+- Additional chart types leveraging historical price accuracy
+- Advanced filtering and search features with historical context
