@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.1] - 2025-08-10
 
+### ⚠️ Important Update Notice
+**After updating to v0.3.1, users should run Settings → Update Historical Prices** to benefit from the new performance optimizations and ensure portfolio data integrity. This rebuilds your portfolio timeline using the dramatically improved in-memory processing introduced in this version.
+
 ### 🚀 Performance Improvements
 - **Optimized Evolution Timeline Recalculation**: Dramatically improved speed using in-memory data processing instead of database queries per date
 - **Intelligent Partial Rebuilds**: Evolution timeline now rebuilds only from affected dates instead of complete recalculation, improving performance by up to 70%

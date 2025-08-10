@@ -67,6 +67,9 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 2. **Run**: Double-click the .exe file to start the application
 3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
 
+### ⚠️ Important for Version 0.3.1 Users
+**Due to recent performance improvements and bug fixes in v0.3.1, please run Settings → Update Historical Prices** to ensure your portfolio evolution calculations are using the latest optimized data processing. This will rebuild your portfolio timeline with the new performance enhancements and ensure all historical data is properly synchronized.
+
 #### ✨ Portable Features
 - **🗂️ Fully Self-Contained**: All dependencies bundled in single .exe file
 - **💾 Local Data Storage**: Database stored next to .exe file - your data stays local
