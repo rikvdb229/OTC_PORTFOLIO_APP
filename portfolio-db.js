@@ -2251,8 +2251,8 @@ ORDER BY st.sale_date DESC
       }
       existingStmt.free();
 
-      // Get accurate portfolio state as of this date
-      const portfolioState = await this.getPortfolioStateAsOfDate(date);
+      // Get accurate portfolio state as of this date using optimized method
+      const portfolioState = await this.getPortfolioStateOptimized(date);
 
       if (existingSnapshot) {
         // Update existing snapshot with new notes and accurate values
@@ -3020,6 +3020,42 @@ ORDER BY st.sale_date DESC
       
     } catch (error) {
       console.error('❌ Error storing historical prices:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Helper method to get portfolio state for a single date (loads data and calls optimized method)
+   */
+  async getPortfolioStateOptimized(date) {
+    try {
+      // Load all necessary data once
+      const portfolioEntries = [];
+      const portfolioStmt = this.db.prepare('SELECT * FROM portfolio_entries');
+      while (portfolioStmt.step()) {
+        portfolioEntries.push(portfolioStmt.getAsObject());
+      }
+      portfolioStmt.free();
+
+      const allSales = [];
+      const salesStmt = this.db.prepare('SELECT * FROM sales_transactions ORDER BY sale_date');
+      while (salesStmt.step()) {
+        allSales.push(salesStmt.getAsObject());
+      }
+      salesStmt.free();
+
+      const allPrices = [];
+      const priceStmt = this.db.prepare('SELECT * FROM price_history ORDER BY price_date');
+      while (priceStmt.step()) {
+        allPrices.push(priceStmt.getAsObject());
+      }
+      priceStmt.free();
+
+      const targetPercentage = parseFloat(await this.getSetting('target_percentage') || '65');
+
+      return this.calculatePortfolioStateOptimized(date, portfolioEntries, allSales, allPrices, targetPercentage);
+    } catch (error) {
+      console.error(`❌ Error getting optimized portfolio state for ${date}:`, error);
       throw error;
     }
   }
