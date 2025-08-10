@@ -18,29 +18,59 @@ const FooterManager = {
       const appStatusElement = document.getElementById("appStatus");
       const buildDateElement = document.getElementById("buildDate");
       
+      // Add retry mechanism for version loading
+      const updateFooterInfo = () => {
+        if (appVersionElement) {
+          const version = window.AppConfig.APP_CONFIG.VERSION;
+          const appName = window.AppConfig.APP_CONFIG.APP_NAME;
+          
+          if (version && version !== "Loading...") {
+            appVersionElement.textContent = `${appName} v${version}`;
+          } else {
+            appVersionElement.textContent = "Portfolio Tracker v0.3.1"; // Fallback
+          }
+        }
 
-      if (appVersionElement) {
-        appVersionElement.textContent =
-          window.AppConfig.APP_CONFIG.getFullVersion();
-      }
+        if (appStatusElement) {
+          const status = window.AppConfig.APP_CONFIG.STATUS;
+          appStatusElement.textContent = status && status !== "Loading..." ? status : "Beta Version";
+        }
 
-      if (appStatusElement) {
-        appStatusElement.textContent = window.AppConfig.APP_CONFIG.STATUS;
-      }
+        if (buildDateElement) {
+          const buildDate = window.AppConfig.APP_CONFIG.BUILD_DATE;
+          buildDateElement.textContent = `Build: ${buildDate && buildDate !== "Loading..." ? buildDate : "10-08-2025"}`;
+        }
 
-      if (buildDateElement) {
-        buildDateElement.textContent = `Build: ${window.AppConfig.APP_CONFIG.BUILD_DATE}`;
-      }
+        // Update window title too
+        if (version && version !== "Loading...") {
+          document.title = `${appName} v${version}`;
+        } else {
+          document.title = "Portfolio Tracker v0.3.1";
+        }
+      };
 
-      document.title = window.AppConfig.APP_CONFIG.getFullVersion();
+      // Update immediately
+      updateFooterInfo();
+
+      // Retry after short delays to ensure version is loaded
+      setTimeout(updateFooterInfo, 500);
+      setTimeout(updateFooterInfo, 1000);
 
       console.log(
-        `🚀 ${window.AppConfig.APP_CONFIG.getFullVersion()} - ${
-          window.AppConfig.APP_CONFIG.STATUS
-        } initialized`
+        `🚀 Footer initialized with version info`
       );
     } catch (error) {
       console.error("Error initializing footer:", error);
+      
+      // Fallback if everything fails
+      const appVersionElement = document.getElementById("appVersion");
+      const appStatusElement = document.getElementById("appStatus");
+      const buildDateElement = document.getElementById("buildDate");
+      
+      if (appVersionElement) appVersionElement.textContent = "Portfolio Tracker v0.3.1";
+      if (appStatusElement) appStatusElement.textContent = "Beta Version";
+      if (buildDateElement) buildDateElement.textContent = "Build: 10-08-2025";
+      document.title = "Portfolio Tracker v0.3.1";
     }
   },
 };
