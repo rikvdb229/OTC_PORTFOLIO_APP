@@ -3,10 +3,10 @@
  * Shared configuration for both main and renderer processes
  */
 const APP_CONFIG = {
-  VERSION: "0.2.0", // Default values
+  VERSION: "Loading...", // Will be loaded from package.json via IPC
   APP_NAME: "Portfolio Tracker",
-  STATUS: "Development Version",
-  BUILD_DATE: "2025-07-08",
+  STATUS: "Loading...",
+  BUILD_DATE: "Loading...",
   AUTHOR: "Portfolio Manager",
 
   // Load real values from main process
