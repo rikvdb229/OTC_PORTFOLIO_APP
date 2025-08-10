@@ -4,7 +4,7 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 ![Portfolio Tracker](assets/logo.svg)
 
-## Version 0.3.0
+## Version 0.3.1
 
 **Status**: Beta Version  
 **Build Date**: August 10, 2025  
@@ -63,7 +63,7 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 **No installation required!** Download and run the portable executable:
 
-1. **Download**: Get the latest `Portfolio Tracker 0.3.0.exe` from the [Releases](../../releases) page
+1. **Download**: Get the latest `Portfolio Tracker 0.3.1.exe` from the [Releases](../../releases) page
 2. **Run**: Double-click the .exe file to start the application
 3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
 
@@ -145,7 +145,7 @@ npm run build:all
 
 **Remember: This app is for tracking only. Use your official platform for actual transactions.**
 
-1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.0.exe`
+1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.1.exe`
 2. **First Run**: The app creates a `portfolio.db` file next to the .exe
 3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information for tracking
 4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
@@ -327,4 +327,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Portfolio Tracker v0.3.0** - Professional stock options portfolio management with intelligent historical price management.
+**Portfolio Tracker v0.3.1** - Professional stock options portfolio management with intelligent historical price management and optimized performance.
