@@ -2,3 +2,4 @@ Delete, Sale and Edit sale should show their are working add spinner to button w
 Update sales should also rebuild evolution table
 Clean up the folder
 Build version 0.3
+Make chart zoomable?

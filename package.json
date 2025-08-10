@@ -16,10 +16,10 @@
     "build:linux": "rimraf dist && electron-builder --linux AppImage",
     "build:all": "rimraf dist && electron-builder --win --mac --linux",
     "postinstall": "electron-builder install-app-deps",
-    "test:parse-table": "electron test-parse-options-table.js",
-    "test:historical": "electron test-historical-scraper.js",
-    "download:all-historical": "electron download-all-historical-data.js",
-    "analyze:portfolio-historical": "electron download-portfolio-historical-data.js"
+    "test:parse-table": "electron test-scripts/test-parse-options-table.js",
+    "test:historical": "electron test-scripts/test-historical-scraper.js",
+    "download:all-historical": "electron test-scripts/download-all-historical-data.js",
+    "analyze:portfolio-historical": "electron test-scripts/download-portfolio-historical-data.js"
   },
   "devDependencies": {
     "rimraf": "^6.0.1",
@@ -71,6 +71,7 @@
       "main.js",
       "portfolio-db.js",
       "scraper.js",
+      "enhanced-historical-scraper.js",
       "index.html",
       "renderer.js",
       "utils/**/*",

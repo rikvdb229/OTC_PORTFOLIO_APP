@@ -380,7 +380,17 @@ const PortfolioOperations = {
    * @param {Object} app - Application instance
    */
   async confirmDelete(app) {
+    // Get the delete button and show spinner
+    const deleteBtn = document.getElementById('confirmDelete');
+    const originalText = deleteBtn ? deleteBtn.innerHTML : '🗑️ Delete';
+    
     try {
+      // Show spinner on delete button
+      if (deleteBtn) {
+        deleteBtn.innerHTML = '<span class="spinner"></span> Deleting...';
+        deleteBtn.disabled = true;
+      }
+
       const result = await window.ipcRenderer.invoke(
         "delete-portfolio-entry",
         app.currentDeletingEntryId
@@ -388,15 +398,43 @@ const PortfolioOperations = {
 
       if (result.error) {
         alert("Error deleting entry: " + result.error);
+        // Restore button state on error
+        if (deleteBtn) {
+          deleteBtn.innerHTML = originalText;
+          deleteBtn.disabled = false;
+        }
         return;
       }
 
       app.closeModals();
+      
+      // Show spinner for rebuilding evolution
+      if (deleteBtn) {
+        deleteBtn.innerHTML = '<span class="spinner"></span> Rebuilding evolution...';
+      }
+      
       await app.loadPortfolioData();
+      
+      // Rebuild evolution table if on evolution tab
+      if (app.activeTab === "evolution") {
+        await app.loadEvolutionData();
+      }
+      
       console.log(`✅ Deleted portfolio entry`);
+      
+      // Restore button state
+      if (deleteBtn) {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+      }
     } catch (error) {
       console.error("Error deleting portfolio entry:", error);
       alert("Error deleting entry");
+      // Restore button state on error
+      if (deleteBtn) {
+        deleteBtn.innerHTML = originalText;
+        deleteBtn.disabled = false;
+      }
     }
   },
   /**
@@ -744,6 +782,16 @@ const SalesOperations = {
 
       console.log("✅ Sale recorded successfully");
 
+      // Get the sale button and show spinner
+      const saleBtn = document.getElementById('confirmSale');
+      const originalText = saleBtn ? saleBtn.innerHTML : '💰 Confirm Sale';
+      
+      // Show spinner for rebuilding
+      if (saleBtn) {
+        saleBtn.innerHTML = '<span class="spinner"></span> Rebuilding data...';
+        saleBtn.disabled = true;
+      }
+
       // Show success notification
       window.UIStateManager.showSuccess(
         `Sale recorded: ${quantityToSell} options at €${salePrice}`,
@@ -754,12 +802,11 @@ const SalesOperations = {
       app.closeModals();
       await app.loadPortfolioData();
 
+      // Always rebuild evolution table after sale
+      await app.loadEvolutionData();
+
       // Refresh the current tab data
-      if (app.activeTab === "portfolio") {
-        // Already refreshed with loadPortfolioData
-      } else if (app.activeTab === "evolution") {
-        await app.loadEvolutionData();
-      } else if (app.activeTab === "chart") {
+      if (app.activeTab === "chart") {
         await app.loadChartData();
       } else if (app.activeTab === "sales-history") {
         await app.loadSalesHistory();
@@ -769,6 +816,12 @@ const SalesOperations = {
 
       // Clear current sell entry
       app.currentSellEntry = null;
+      
+      // Restore button state
+      if (saleBtn) {
+        saleBtn.innerHTML = originalText;
+        saleBtn.disabled = false;
+      }
     } catch (error) {
       console.error("❌ Error confirming sale:", error);
       alert("Error recording sale: " + error.message);
@@ -820,6 +873,16 @@ const SalesOperations = {
 
       console.log("✅ Sale updated successfully:", result);
 
+      // Get the edit sale button and show spinner
+      const editSaleBtn = document.getElementById('confirmEditSale');
+      const originalText = editSaleBtn ? editSaleBtn.innerHTML : '💾 Save Changes';
+      
+      // Show spinner for rebuilding
+      if (editSaleBtn) {
+        editSaleBtn.innerHTML = '<span class="spinner"></span> Rebuilding data...';
+        editSaleBtn.disabled = true;
+      }
+
       // Show success notification
       window.UIStateManager.showSuccess(
         `Sale updated: ${salePrice.toLocaleString()} per option`,
@@ -829,6 +892,9 @@ const SalesOperations = {
       // Close modal and refresh data
       app.closeModals();
       await app.loadPortfolioData();
+      
+      // Always rebuild evolution table after editing sale
+      await app.loadEvolutionData();
 
       // Refresh the current tab data
       if (app.activeTab === "sales-history") {
@@ -837,6 +903,12 @@ const SalesOperations = {
 
       // Clear current editing sale ID
       app.currentEditingSaleId = null;
+      
+      // Restore button state
+      if (editSaleBtn) {
+        editSaleBtn.innerHTML = originalText;
+        editSaleBtn.disabled = false;
+      }
     } catch (error) {
       console.error("❌ Error confirming edit sale:", error);
       alert("Error updating sale: " + error.message);
