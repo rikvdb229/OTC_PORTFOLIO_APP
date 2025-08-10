@@ -5,6 +5,37 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-08-10
+
+### 🚀 Performance Improvements
+- **Optimized Evolution Timeline Recalculation**: Dramatically improved speed using in-memory data processing instead of database queries per date
+- **Intelligent Partial Rebuilds**: Evolution timeline now rebuilds only from affected dates instead of complete recalculation, improving performance by up to 70%
+- **Pre-loaded Data Processing**: Added `calculatePortfolioStateOptimized` method for efficient batch data processing
+
+### 🐛 Critical Bug Fixes
+- **Fixed SQL Binding Errors**: Resolved "Wrong API use: tried to bind a value of an unknown type (undefined)" error when updating sales
+- **Fixed Portfolio Entry Deletion**: Resolved "getPortfolioStateAsOfDate is not a function" error when deleting portfolio entries
+- **Fixed Loading Indicators**: Added missing spinner animations for tax update operations
+- **Fixed UI Label Issues**: Corrected "Current option:" label display during evolution timeline rebuild phase
+- **Fixed Version Display**: Resolved version showing "Loading..." in packaged builds with retry mechanism and fallback values
+
+### 🔄 Code Quality & Maintenance
+- **Removed Dead Code**: Cleaned up ~240 lines of obsolete recalculation methods and duplicate functions
+- **Standardized Operations**: All portfolio operations now use the same optimized recalculation approach for consistency
+- **Enhanced Error Handling**: Added proper parameter validation and SQL.js binding patterns throughout
+- **Dynamic Version Management**: Window title and footer now properly fetch version information from package.json
+
+### ⚡ Technical Enhancements
+- Tax amount updates now properly trigger evolution recalculation (affects unrealized gains calculations)
+- Enhanced createPortfolioSnapshot method with optimized portfolio state calculation
+- Improved IPC communication reliability in packaged builds
+- Better fallback handling for version display in offline scenarios
+
+### 🛠️ Developer Experience
+- Consistent SQL.js binding patterns across all database operations
+- Improved debugging with better error messages and logging
+- Streamlined codebase with unified recalculation methodology
+
 ## [0.3.0] - 2025-08-10
 
 ### Added
