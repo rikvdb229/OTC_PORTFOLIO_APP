@@ -94,6 +94,16 @@ const PortfolioOperations = {
         return;
       }
 
+      // Get the update tax button and show spinner
+      const updateTaxBtn = document.getElementById('confirmEditTax');
+      const originalText = updateTaxBtn ? updateTaxBtn.innerHTML : 'Update Tax';
+      
+      // Show spinner for updating
+      if (updateTaxBtn) {
+        updateTaxBtn.innerHTML = '<span class="spinner"></span> Updating tax...';
+        updateTaxBtn.disabled = true;
+      }
+
       const result = await window.ipcRenderer.invoke(
         "update-tax-amount",
         app.currentEditingTaxId,
@@ -101,11 +111,21 @@ const PortfolioOperations = {
       );
 
       if (result.error) {
+        // Restore button state on error
+        if (updateTaxBtn) {
+          updateTaxBtn.innerHTML = originalText;
+          updateTaxBtn.disabled = false;
+        }
         alert("Error updating tax: " + result.error);
         return;
       }
 
       console.log("✅ Tax updated successfully");
+
+      // Show spinner for rebuilding data
+      if (updateTaxBtn) {
+        updateTaxBtn.innerHTML = '<span class="spinner"></span> Rebuilding data...';
+      }
 
       // Show success notification
       window.UIStateManager.showSuccess(
@@ -119,8 +139,22 @@ const PortfolioOperations = {
 
       // Clear current editing ID
       app.currentEditingTaxId = null;
+      
+      // Restore button state after completion
+      if (updateTaxBtn) {
+        updateTaxBtn.innerHTML = originalText;
+        updateTaxBtn.disabled = false;
+      }
     } catch (error) {
       console.error("❌ Error updating tax:", error);
+      
+      // Restore button state on exception
+      const updateTaxBtn = document.getElementById('confirmEditTax');
+      if (updateTaxBtn) {
+        updateTaxBtn.innerHTML = 'Update Tax';
+        updateTaxBtn.disabled = false;
+      }
+      
       alert("Error updating tax: " + error.message);
     }
   },
@@ -858,6 +892,16 @@ const SalesOperations = {
         return;
       }
 
+      // Get the edit sale button and show initial spinner
+      const editSaleBtn = document.getElementById('confirmEditSale');
+      const originalText = editSaleBtn ? editSaleBtn.innerHTML : '💾 Save Changes';
+      
+      // Show spinner for updating
+      if (editSaleBtn) {
+        editSaleBtn.innerHTML = '<span class="spinner"></span> Updating sale...';
+        editSaleBtn.disabled = true;
+      }
+
       // Update the sale transaction
       const result = await window.ipcRenderer.invoke("update-sale", {
         id: app.currentEditingSaleId,
@@ -867,17 +911,18 @@ const SalesOperations = {
       });
 
       if (result.error) {
+        // Restore button state on error
+        if (editSaleBtn) {
+          editSaleBtn.innerHTML = originalText;
+          editSaleBtn.disabled = false;
+        }
         alert("Error updating sale: " + result.error);
         return;
       }
 
       console.log("✅ Sale updated successfully:", result);
 
-      // Get the edit sale button and show spinner
-      const editSaleBtn = document.getElementById('confirmEditSale');
-      const originalText = editSaleBtn ? editSaleBtn.innerHTML : '💾 Save Changes';
-      
-      // Show spinner for rebuilding
+      // Show spinner for rebuilding (reuse existing editSaleBtn variable)
       if (editSaleBtn) {
         editSaleBtn.innerHTML = '<span class="spinner"></span> Rebuilding data...';
         editSaleBtn.disabled = true;
@@ -911,6 +956,14 @@ const SalesOperations = {
       }
     } catch (error) {
       console.error("❌ Error confirming edit sale:", error);
+      
+      // Restore button state on exception
+      const editSaleBtn = document.getElementById('confirmEditSale');
+      if (editSaleBtn) {
+        editSaleBtn.innerHTML = '💾 Save Changes';
+        editSaleBtn.disabled = false;
+      }
+      
       alert("Error updating sale: " + error.message);
     }
   },

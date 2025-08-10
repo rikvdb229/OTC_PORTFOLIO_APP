@@ -22,7 +22,13 @@ class EnhancedPortfolioApp {
     );
     window.DOMHelpers.initializeApplicationElements(this);
     window.DOMHelpers.attachApplicationEventListeners(this); // <-- NEW LINE
-    window.IPCCommunication.setupIpcListeners(this);
+    
+    // Safety check for IPCCommunication
+    if (window.IPCCommunication && window.IPCCommunication.setupIpcListeners) {
+      window.IPCCommunication.setupIpcListeners(this);
+    } else {
+      console.error('IPCCommunication.setupIpcListeners not found - IPC communication may not work properly');
+    }
     this.isScrapingInProgress = false;
     this.currentEditingTaxId = null;
     this.currentDeletingEntryId = null;

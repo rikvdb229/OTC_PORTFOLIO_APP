@@ -228,42 +228,11 @@ async function loadChartData(period = "all") {
   }
 }
 confirm;
-async function updateTax(app) {
-  try {
-    const newTaxAmount = parseFloat(
-      document.getElementById("newTaxAmount").value
-    );
-
-    if (isNaN(newTaxAmount) || newTaxAmount < 0) {
-      alert("Please enter a valid tax amount");
-      return;
-    }
-
-    const result = await window.ipcRenderer.invoke(
-      "update-tax-amount",
-      app.currentEditingTaxId,
-      newTaxAmount
-    );
-
-    if (result.error) {
-      alert("Error updating tax: " + result.error);
-      return;
-    }
-
-    app.closeModals();
-    await app.loadPortfolioData();
-    console.log(`✅ Updated tax amount to €${newTaxAmount}`);
-  } catch (error) {
-    console.error("Error updating tax:", error);
-    alert("Error updating tax amount");
-  }
-}
 // Export at the bottom
 window.DataLoader = {
   loadPortfolioData,
   loadEvolutionData,
   loadChartData,
   confirmEditSale,
-  updateTax,
   updateEvolutionPeriodStats,
 };

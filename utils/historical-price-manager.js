@@ -291,9 +291,13 @@ const HistoricalPriceManager = {
   updateBulkProgress(batchProgress) {
     const { optionIndex, totalOptions, optionName, progress } = batchProgress;
 
+    // Get the label element to update it dynamically (the span that contains "Current option:")
+    const labelElement = document.querySelector('#bulkHistoricalUpdateModal .progress-item:nth-child(2) span');
+
     // Check if this is the rebuild phase
     if (optionIndex === 'rebuild' && totalOptions === 'phase') {
-      // Special handling for rebuild phase - don't show confusing numbers
+      // Special handling for rebuild phase - change label and don't show confusing numbers
+      if (labelElement) labelElement.textContent = 'Phase:';
       document.getElementById('bulkProcessedCount').textContent = 'Timeline';
       document.getElementById('bulkTotalCount').textContent = 'Rebuild';
       document.getElementById('bulkCurrentOption').textContent = optionName;
@@ -302,7 +306,8 @@ const HistoricalPriceManager = {
       document.getElementById('bulkHistoricalProgressBar').style.width = `${progress.percentage}%`;
       document.getElementById('bulkHistoricalStatus').textContent = progress.text;
     } else {
-      // Normal option processing phase
+      // Normal option processing phase - restore original label
+      if (labelElement) labelElement.textContent = 'Current option:';
       document.getElementById('bulkProcessedCount').textContent = optionIndex;
       document.getElementById('bulkTotalCount').textContent = totalOptions;
       document.getElementById('bulkCurrentOption').textContent = optionName;
@@ -446,12 +451,20 @@ const HistoricalPriceManager = {
     document.getElementById('bulkUpdateResults').style.display = 'none';
     document.querySelector('#bulkHistoricalUpdateModal .progress-container').style.display = 'block';
     
-    // Update progress indicators for recalculation phase
+    // Store the original options count to preserve it
+    const originalProcessedCount = document.getElementById('bulkProcessedCount').textContent;
+    const originalTotalCount = document.getElementById('bulkTotalCount').textContent;
+    
+    // Update progress indicators for recalculation phase - preserve original count
     document.getElementById('bulkHistoricalProgressBar').style.width = '0%';
     document.getElementById('bulkHistoricalStatus').textContent = 'Starting portfolio recalculation...';
-    document.getElementById('bulkProcessedCount').textContent = 'Recalc';
-    document.getElementById('bulkTotalCount').textContent = 'Phase';
-    document.getElementById('bulkCurrentOption').textContent = 'Initializing...';
+    // Keep the original options processed count visible
+    // Don't overwrite bulkProcessedCount and bulkTotalCount - they show options progress
+    document.getElementById('bulkCurrentOption').textContent = 'Recalculation: Initializing...';
+    
+    // Store original counts for later restoration if needed
+    this.originalProcessedCount = originalProcessedCount;
+    this.originalTotalCount = originalTotalCount;
   },
 
   // Update recalculation progress with specific step
@@ -461,7 +474,8 @@ const HistoricalPriceManager = {
     // Update progress bar and text
     document.getElementById('bulkHistoricalProgressBar').style.width = `${percentage}%`;
     document.getElementById('bulkHistoricalStatus').textContent = stepText;
-    document.getElementById('bulkCurrentOption').textContent = `Progress: ${percentage}%`;
+    // Show recalculation progress in the current option field, but keep it distinct
+    document.getElementById('bulkCurrentOption').textContent = `Recalculation: ${stepText} (${percentage}%)`;
     
     // Add a small delay to ensure the UI updates are visible
     await new Promise(resolve => setTimeout(resolve, 300));
@@ -477,6 +491,12 @@ const HistoricalPriceManager = {
     
     // Update status to indicate completion
     document.getElementById('bulkTotalPricePoints').textContent = 'Portfolio Recalculated';
+    
+    // Clear the recalculation progress from current option display
+    const currentOptionEl = document.getElementById('bulkCurrentOption');
+    if (currentOptionEl && currentOptionEl.textContent.includes('Recalculation:')) {
+      currentOptionEl.textContent = 'Recalculation completed';
+    }
   }
 };
 

@@ -899,6 +899,7 @@ class PortfolioDatabase {
       const stmt = this.db.prepare(`
     SELECT 
       st.id,
+      st.portfolio_entry_id,
       st.sale_date,
       st.quantity_sold,
       st.sale_price,
@@ -955,9 +956,24 @@ class PortfolioDatabase {
     try {
       console.log("🔄 Updating sale with data:", updatedSale);
 
+      // Validate required parameters
+      if (!updatedSale.id) {
+        throw new Error("Sale ID is required");
+      }
+      if (!updatedSale.sale_date) {
+        throw new Error("Sale date is required");  
+      }
+      if (updatedSale.sale_price === undefined || updatedSale.sale_price === null) {
+        throw new Error("Sale price is required");
+      }
+
       // First get the current sale data
       const currentSale = await this.getSaleDetails(updatedSale.id);
       console.log("📦 Current sale data:", currentSale);
+
+      if (!currentSale) {
+        throw new Error(`Sale with ID ${updatedSale.id} not found`);
+      }
 
       // Check if the sale date is changing
       const oldSaleDate = currentSale.sale_date;
@@ -1006,13 +1022,26 @@ class PortfolioDatabase {
       WHERE id = ?
     `);
 
-      stmt.run([
+      // Validate all parameters before binding
+      const params = [
         updatedSale.sale_date,
         updatedSale.sale_price,
         newTotalSaleValue,
         updatedSale.notes || null,
         updatedSale.id,
-      ]);
+      ];
+      
+      console.log("🔍 SQL binding parameters:", params);
+      
+      // Check for undefined values
+      params.forEach((param, index) => {
+        if (param === undefined) {
+          throw new Error(`SQL parameter at index ${index} is undefined`);
+        }
+      });
+
+      stmt.bind(params);
+      stmt.step();
       stmt.free();
 
       // ===== HANDLE EVOLUTION ENTRIES AND TIMELINE RECALCULATION =====
@@ -1032,10 +1061,11 @@ class PortfolioDatabase {
         // 2. Add the sale note to the NEW date
         await this.addSaleNoteToEvolution(newSaleDate, saleNote);
 
-        // 3. *** NEW: Recalculate evolution timeline from the earliest affected date ***
+        // 3. *** NEW: Recalculate evolution timeline from earliest affected date ***
         const earliestDate =
           oldSaleDate < newSaleDate ? oldSaleDate : newSaleDate;
-        await this.recalculateEvolutionFromDate(earliestDate);
+        console.log(`🔥 Triggering optimized evolution timeline rebuild from ${earliestDate} due to sale date change`);
+        await this.rebuildCompleteEvolutionTimeline(null, earliestDate);
 
         console.log(
           `✅ Evolution timeline recalculated from ${earliestDate} forward`
@@ -1053,8 +1083,9 @@ class PortfolioDatabase {
           newSaleNote
         );
 
-        // Recalculate from this date forward (price change affects realized gains)
-        await this.recalculateEvolutionFromDate(newSaleDate);
+        // Recalculate timeline from sale date (price change affects realized gains)
+        console.log(`🔥 Triggering optimized evolution timeline rebuild from ${newSaleDate} due to sale price change`);
+        await this.rebuildCompleteEvolutionTimeline(null, newSaleDate);
       }
 
       this.saveDatabase();
@@ -1237,224 +1268,8 @@ class PortfolioDatabase {
       console.error("❌ Error updating sale note in evolution:", error);
     }
   }
-  // Add this method to portfolio-db.js to recalculate evolution timeline
 
-  /**
-   * Recalculate all evolution snapshots from a given date forward
-   * This ensures portfolio values and gains are correct after sale date changes
-   * @param {string} fromDate - Date to start recalculation from (YYYY-MM-DD)
-   */
-  async recalculateEvolutionFromDate(fromDate) {
-    try {
-      console.log(
-        `🔄 Recalculating evolution timeline from ${fromDate} forward...`
-      );
 
-      // Get all evolution entries from the date forward, ordered by date
-      const evolutionStmt = this.db.prepare(`
-      SELECT * FROM portfolio_evolution 
-      WHERE snapshot_date >= ? 
-      ORDER BY snapshot_date ASC
-    `);
-
-      const evolutionEntries = [];
-      evolutionStmt.bind([fromDate]);
-      while (evolutionStmt.step()) {
-        evolutionEntries.push(evolutionStmt.getAsObject());
-      }
-      evolutionStmt.free();
-
-      console.log(
-        `📊 Found ${evolutionEntries.length} evolution entries to recalculate`
-      );
-
-      // Recalculate each entry
-      for (const entry of evolutionEntries) {
-        await this.recalculateEvolutionEntry(entry.snapshot_date, entry.notes);
-      }
-
-      console.log(`✅ Evolution timeline recalculated from ${fromDate}`);
-    } catch (error) {
-      console.error("❌ Error recalculating evolution timeline:", error);
-      throw error;
-    }
-  }
-
-  /**
-   * Recalculate a specific evolution entry with correct portfolio values
-   * @param {string} date - Date of the evolution entry (YYYY-MM-DD)
-   * @param {string} existingNotes - Preserve existing notes
-   */
-  async recalculateEvolutionEntry(date, existingNotes) {
-    try {
-      console.log(`🧮 Recalculating evolution entry for ${date}`);
-
-      // Get portfolio state as of this date
-      const portfolioState = await this.getPortfolioStateAsOfDate(date);
-
-      // Calculate total values
-      const totalPortfolioValue = portfolioState.totalCurrentValue;
-      const totalRealizedGain = portfolioState.totalRealizedGain;
-      const totalUnrealizedGain = portfolioState.totalUnrealizedGain;
-      const totalOptionsCount = portfolioState.totalOptionsCount;
-      const activeOptionsCount = portfolioState.activeOptionsCount;
-
-      // Update the evolution entry
-      const updateStmt = this.db.prepare(`
-      UPDATE portfolio_evolution 
-      SET 
-        total_portfolio_value = ?,
-        total_unrealized_gain = ?,
-        total_realized_gain = ?,
-        total_options_count = ?,
-        active_options_count = ?
-      WHERE snapshot_date = ?
-    `);
-
-      updateStmt.run([
-        totalPortfolioValue,
-        totalUnrealizedGain,
-        totalRealizedGain,
-        totalOptionsCount,
-        activeOptionsCount,
-        date,
-      ]);
-      updateStmt.free();
-
-      console.log(`✅ Updated evolution entry for ${date}:`, {
-        totalPortfolioValue,
-        totalRealizedGain,
-        totalUnrealizedGain,
-      });
-    } catch (error) {
-      console.error(
-        `❌ Error recalculating evolution entry for ${date}:`,
-        error
-      );
-    }
-  }
-
-  /**
-   * Get portfolio state as of a specific date
-   * This calculates what the portfolio looked like on that date
-   * @param {string} asOfDate - Date to calculate state for (YYYY-MM-DD)
-   * @returns {Object} Portfolio state
-   */
-  async getPortfolioStateAsOfDate(asOfDate) {
-    try {
-      // Get all portfolio entries
-      const entriesStmt = this.db.prepare(`
-      SELECT * FROM portfolio_entries
-    `);
-
-      const entries = [];
-      while (entriesStmt.step()) {
-        entries.push(entriesStmt.getAsObject());
-      }
-      entriesStmt.free();
-
-      // Get all sales that happened up to this date
-      const salesStmt = this.db.prepare(`
-      SELECT 
-        portfolio_entry_id,
-        SUM(quantity_sold) as total_sold,
-        SUM(total_sale_value) as total_sale_value,
-        SUM(realized_gain_loss) as total_realized_gain
-      FROM sales_transactions 
-      WHERE sale_date <= ?
-      GROUP BY portfolio_entry_id
-    `);
-
-      const salesByEntry = {};
-      salesStmt.bind([asOfDate]);
-      while (salesStmt.step()) {
-        const sale = salesStmt.getAsObject();
-        salesByEntry[sale.portfolio_entry_id] = sale;
-      }
-      salesStmt.free();
-
-      // Get price data as of this date (or closest before)
-      const priceStmt = this.db.prepare(`
-      SELECT 
-        exercise_price,
-        current_value,
-        grant_date
-      FROM price_history 
-      WHERE price_date <= ?
-      ORDER BY price_date DESC
-    `);
-
-      const pricesByKey = {};
-      priceStmt.bind([asOfDate]);
-      while (priceStmt.step()) {
-        const price = priceStmt.getAsObject();
-        const key = `${price.exercise_price}-${price.grant_date}`;
-        if (!pricesByKey[key]) {
-          pricesByKey[key] = price.current_value;
-        }
-      }
-      priceStmt.free();
-
-      // Calculate portfolio state
-      let totalCurrentValue = 0;
-      let totalRealizedGain = 0;
-      let totalUnrealizedGain = 0;
-      let totalOptionsCount = 0;
-      let activeOptionsCount = 0;
-
-      for (const entry of entries) {
-        // Calculate quantities as of this date
-        const salesForEntry = salesByEntry[entry.id];
-        const soldQuantity = salesForEntry ? salesForEntry.total_sold : 0;
-        const remainingQuantity = entry.quantity - soldQuantity;
-
-        // Add to totals
-        totalOptionsCount += entry.quantity;
-        activeOptionsCount += remainingQuantity;
-
-        // Add realized gains from sales
-        if (salesForEntry) {
-          totalRealizedGain += salesForEntry.total_realized_gain || 0;
-        }
-
-        // Calculate current value using price as of this date
-        const priceKey = `${entry.exercise_price}-${entry.grant_date}`;
-        const currentPrice = pricesByKey[priceKey] || entry.current_value || 0;
-        const currentEntryValue = remainingQuantity * currentPrice;
-
-        totalCurrentValue += currentEntryValue;
-
-        // Calculate unrealized gain for this entry
-        const targetPercentageQuery =
-          await this.getSetting("target_percentage");
-        const targetPercentage = parseFloat(targetPercentageQuery || "65");
-        const grantDatePrice = entry.grant_date_price || 10;
-        const targetValue = remainingQuantity * grantDatePrice * (targetPercentage / 100);
-
-        // Tax calculation (proportional to remaining quantity)
-        const taxRatio = remainingQuantity / entry.quantity;
-        const entryTax =
-          (entry.tax_amount || entry.tax_auto_calculated || 0) * taxRatio;
-
-        const unrealizedGain = currentEntryValue - entryTax - targetValue;
-        totalUnrealizedGain += unrealizedGain;
-      }
-
-      return {
-        totalCurrentValue,
-        totalRealizedGain,
-        totalUnrealizedGain,
-        totalOptionsCount,
-        activeOptionsCount,
-      };
-    } catch (error) {
-      console.error(
-        `❌ Error calculating portfolio state for ${asOfDate}:`,
-        error
-      );
-      throw error;
-    }
-  }
   // FIXED: Check for existing grants to handle merging
   // UPDATE this method in portfolio-db.js
 
@@ -1813,10 +1628,10 @@ class PortfolioDatabase {
       }
 
       // CRITICAL FIX: Recalculate all evolution entries from the grant date forward
-      // This ensures that all evolution snapshots after the grant date reflect the newly added grant
-      console.log(`🔄 Recalculating evolution timeline from grant date (${grantDate}) forward...`);
-      await this.recalculateEvolutionFromDate(grantDate);
-      console.log("✅ Evolution timeline recalculated after adding grant");
+      // This ensures that all evolution snapshots reflect the newly added grant
+      console.log(`🔥 Triggering optimized evolution timeline rebuild from ${grantDate} after adding grant`);
+      await this.rebuildCompleteEvolutionTimeline(null, grantDate);
+      console.log("✅ Evolution timeline rebuilt from grant date forward");
 
       return Promise.resolve({ id: insertId });
     } catch (error) {
@@ -2015,9 +1830,9 @@ class PortfolioDatabase {
 
       // 🔥 CRITICAL FIX: Recalculate ALL evolution entries from the sale date forward
       console.log(
-        `🔄 Recalculating evolution timeline from ${saleDate} forward due to past sale...`
+        `🔥 Triggering optimized evolution timeline rebuild from ${saleDate} due to past sale...`
       );
-      await this.recalculateEvolutionFromDate(saleDate);
+      await this.rebuildCompleteEvolutionTimeline(null, saleDate);
 
       console.log(
         `✅ Sale recorded and evolution timeline updated. Tax reduced from €${totalTax.toFixed(
@@ -2529,9 +2344,9 @@ ORDER BY st.sale_date DESC
       earliestStmt.free();
 
       if (earliestDate) {
-        console.log(`📅 Recalculating from earliest date: ${earliestDate}`);
-        await this.recalculateEvolutionFromDate(earliestDate);
-        console.log("✅ Entire evolution timeline recalculated");
+        console.log(`🔥 Triggering optimized evolution timeline rebuild from ${earliestDate} after deletion`);
+        await this.rebuildCompleteEvolutionTimeline(null, earliestDate);
+        console.log("✅ Evolution timeline rebuilt from earliest date forward");
       } else {
         console.log("ℹ️ No evolution entries found to recalculate");
       }
@@ -2790,6 +2605,18 @@ ORDER BY st.sale_date DESC
       console.log("=== UPDATE TAX AMOUNT (sql.js) ===");
       console.log("Params:", { entryId, taxAmount });
 
+      // Get the grant date for evolution recalculation
+      const grantStmt = this.db.prepare(`
+        SELECT grant_date FROM portfolio_entries WHERE id = ?
+      `);
+      grantStmt.bind([entryId]);
+      let grantDate = null;
+      if (grantStmt.step()) {
+        const row = grantStmt.getAsObject();
+        grantDate = row.grant_date;
+      }
+      grantStmt.free();
+
       // FIXED: Use sql.js pattern
       const stmt = this.db.prepare(`
       UPDATE portfolio_entries 
@@ -2802,6 +2629,12 @@ ORDER BY st.sale_date DESC
       stmt.free();
 
       console.log("Update result:", result);
+
+      // Recalculate evolution timeline from grant date (tax affects unrealized gains)
+      if (grantDate) {
+        console.log(`🔥 Triggering optimized evolution timeline rebuild from ${grantDate} due to tax change`);
+        await this.rebuildCompleteEvolutionTimeline(null, grantDate);
+      }
 
       this.saveDatabase();
       return Promise.resolve({ changes: 1 });
@@ -2987,7 +2820,9 @@ ORDER BY st.sale_date DESC
       // CRITICAL FIX: Recalculate evolution from the GRANT DATE forward preserving events
       // When deleting a grant, we need to recalculate from when it was originally added
       console.log(`🔄 Recalculating evolution after grant deletion from grant date ${entryToDelete.grant_date}...`);
-      await this.recalculateEvolutionPreservingEvents(entryToDelete.grant_date);
+      // Use the optimized rebuild method from grant date
+      console.log(`🔥 Triggering optimized evolution timeline rebuild from ${entryToDelete.grant_date} after deletion`);
+      await this.rebuildCompleteEvolutionTimeline(null, entryToDelete.grant_date);
       console.log("✅ Evolution timeline recalculated from grant date after deletion");
 
       console.log("✅ Portfolio entry deleted successfully");
@@ -3189,280 +3024,126 @@ ORDER BY st.sale_date DESC
     }
   }
 
-  // Enhanced recalculateEvolutionFromDate that preserves sales and deletion events
-  async recalculateEvolutionPreservingEvents(fromDate) {
-    try {
-      console.log(`🔄 Recalculating evolution from ${fromDate} while preserving events...`);
-      
-      // Get all evolution entries from the date forward
-      const evolutionStmt = this.db.prepare(`
-        SELECT * FROM portfolio_evolution 
-        WHERE snapshot_date >= ? 
-        ORDER BY snapshot_date ASC
-      `);
-      
-      const evolutionEntries = [];
-      evolutionStmt.bind([fromDate]);
-      while (evolutionStmt.step()) {
-        evolutionEntries.push(evolutionStmt.getAsObject());
-      }
-      evolutionStmt.free();
-      
-      console.log(`📊 Found ${evolutionEntries.length} evolution entries to recalculate`);
-      
-      // For each entry, recalculate values but preserve event notes
-      for (const entry of evolutionEntries) {
-        await this.recalculateEvolutionEntryPreservingEvents(entry.snapshot_date, entry.notes);
-      }
-      
-      console.log(`✅ Evolution recalculated from ${fromDate} with events preserved`);
-      
-    } catch (error) {
-      console.error('❌ Error recalculating evolution while preserving events:', error);
-      throw error;
-    }
-  }
-
-  // Recalculate a specific evolution entry while preserving event notes
-  async recalculateEvolutionEntryPreservingEvents(date, existingNotes) {
-    try {
-      console.log(`🧮 Recalculating evolution entry for ${date} (preserving events)`);
-      
-      // Get portfolio state as of this date using historical prices where available
-      const portfolioState = await this.getPortfolioStateAsOfDateWithHistoricalPrices(date);
-      
-      // Update the evolution entry with recalculated values but preserve notes
-      const updateStmt = this.db.prepare(`
-        UPDATE portfolio_evolution 
-        SET 
-          total_portfolio_value = ?,
-          total_unrealized_gain = ?,
-          total_realized_gain = ?,
-          total_options_count = ?,
-          active_options_count = ?
-        WHERE snapshot_date = ?
-      `);
-      
-      updateStmt.run([
-        portfolioState.totalCurrentValue || 0,
-        portfolioState.totalUnrealizedGain || 0,
-        portfolioState.totalRealizedGain || 0,
-        portfolioState.totalOptionsCount || 0,
-        portfolioState.activeOptionsCount || 0,
-        date
-      ]);
-      
-      updateStmt.free();
-      
-    } catch (error) {
-      console.error(`❌ Error recalculating evolution entry for ${date}:`, error);
-      throw error;
-    }
-  }
-
-  // Get portfolio state as of date using historical prices when available
-  async getPortfolioStateAsOfDateWithHistoricalPrices(date) {
-    try {
-      // Get all portfolio entries that existed on or before this date
-      const portfolioStmt = this.db.prepare(`
-        SELECT pe.*, 
-               COALESCE(hist_price.current_value, pe.current_value) as historical_price
-        FROM portfolio_entries pe
-        LEFT JOIN (
-          SELECT fund_name, exercise_price, grant_date, current_value
-          FROM price_history 
-          WHERE price_date <= ?
-          GROUP BY fund_name, exercise_price, grant_date
-          HAVING price_date = MAX(price_date)
-        ) hist_price ON (
-          pe.fund_name = hist_price.fund_name AND 
-          pe.exercise_price = hist_price.exercise_price AND 
-          pe.grant_date = hist_price.grant_date
-        )
-        WHERE pe.grant_date <= ?
-      `);
-      
-      const portfolioEntries = [];
-      portfolioStmt.bind([date, date]);
-      while (portfolioStmt.step()) {
-        portfolioEntries.push(portfolioStmt.getAsObject());
-      }
-      portfolioStmt.free();
-      
-      // Get sales that happened on or before this date
-      const salesStmt = this.db.prepare(`
-        SELECT * FROM sales_transactions 
-        WHERE sale_date <= ?
-        ORDER BY sale_date ASC
-      `);
-      
-      const sales = [];
-      salesStmt.bind([date]);
-      while (salesStmt.step()) {
-        sales.push(salesStmt.getAsObject());
-      }
-      salesStmt.free();
-      
-      // Calculate portfolio state
-      let totalCurrentValue = 0;
-      let totalUnrealizedGain = 0;
-      let totalRealizedGain = 0;
-      let totalOptionsCount = 0;
-      let activeOptionsCount = 0;
-      
-      // Calculate realized gains from sales
-      totalRealizedGain = sales.reduce((sum, sale) => {
-        const saleValue = sale.quantity_sold * sale.sale_price;
-        const costBasis = sale.quantity_sold * sale.exercise_price; 
-        return sum + (saleValue - costBasis);
-      }, 0);
-      
-      // Calculate current portfolio values
-      for (const entry of portfolioEntries) {
-        // Calculate remaining quantity after sales
-        const soldQuantity = sales
-          .filter(s => s.portfolio_entry_id === entry.id)
-          .reduce((sum, s) => sum + s.quantity_sold, 0);
-        
-        const remainingQuantity = entry.quantity - soldQuantity;
-        
-        if (remainingQuantity > 0) {
-          const historicalPrice = entry.historical_price || entry.current_value;
-          const currentValue = remainingQuantity * historicalPrice;
-          const unrealizedGain = remainingQuantity * (historicalPrice - entry.exercise_price);
-          
-          totalCurrentValue += currentValue;
-          totalUnrealizedGain += unrealizedGain;
-          activeOptionsCount += remainingQuantity;
+  /**
+   * OPTIMIZED: Calculate portfolio state using pre-loaded data (no database queries)
+   * This is much faster than the original method that made queries for each date
+   */
+  calculatePortfolioStateOptimized(date, portfolioEntries, allSales, allPrices, targetPercentage) {
+    // Calculate sales up to this date
+    const salesByEntry = {};
+    allSales.forEach(sale => {
+      if (sale.sale_date <= date) {
+        const entryId = sale.portfolio_entry_id;
+        if (!salesByEntry[entryId]) {
+          salesByEntry[entryId] = { total_sold: 0, total_sale_value: 0, total_realized_gain: 0 };
         }
-        
-        totalOptionsCount += entry.quantity;
+        salesByEntry[entryId].total_sold += sale.quantity_sold;
+        salesByEntry[entryId].total_sale_value += sale.total_sale_value;
+        salesByEntry[entryId].total_realized_gain += sale.realized_gain_loss;
       }
-      
-      return {
-        totalCurrentValue,
-        totalUnrealizedGain,
-        totalRealizedGain,
-        totalOptionsCount,
-        activeOptionsCount
-      };
-      
-    } catch (error) {
-      console.error(`❌ Error getting portfolio state for ${date}:`, error);
-      throw error;
-    }
-  }
+    });
 
-  // Create evolution entries for all grant dates (ONLY if they don't exist)
-  async createEvolutionEntriesForAllGrants() {
-    try {
-      console.log('📊 Creating evolution entries for grant dates (if missing)...');
-      
-      // Get all unique grant dates from portfolio_entries
-      const grantStmt = this.db.prepare(`
-        SELECT grant_date, 
-               SUM(quantity) as total_quantity,
-               GROUP_CONCAT(fund_name || ' (' || quantity || ')') as grants_summary
-        FROM portfolio_entries 
-        GROUP BY grant_date 
-        ORDER BY grant_date ASC
-      `);
-      
-      const grantDates = [];
-      while (grantStmt.step()) {
-        grantDates.push(grantStmt.getAsObject());
-      }
-      grantStmt.free();
-      
-      console.log(`📅 Found ${grantDates.length} unique grant dates to check`);
-      
-      let createdCount = 0;
-      
-      for (const grantInfo of grantDates) {
-        const { grant_date, total_quantity, grants_summary } = grantInfo;
-        
-        // Check if evolution entry already exists for this grant date
-        const existingStmt = this.db.prepare(`
-          SELECT notes FROM portfolio_evolution 
-          WHERE snapshot_date = ?
-        `);
-        
-        let existingEntry = null;
-        existingStmt.bind([grant_date]);
-        if (existingStmt.step()) {
-          existingEntry = existingStmt.getAsObject();
-        }
-        existingStmt.free();
-        
-        // ONLY create entry if no evolution entry exists for this grant date
-        if (!existingEntry) {
-          // Create the grant event note
-          const grantNote = `• Grant received: ${total_quantity} options (${grants_summary})`;
-          
-          // Calculate portfolio state as of this grant date using historical prices
-          const portfolioState = await this.getPortfolioStateAsOfDateWithHistoricalPrices(grant_date);
-          
-          // Insert evolution entry for this grant date
-          const evolutionStmt = this.db.prepare(`
-            INSERT INTO portfolio_evolution 
-            (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `);
-          
-          evolutionStmt.run([
-            grant_date,
-            portfolioState.totalCurrentValue || 0,
-            portfolioState.totalUnrealizedGain || 0,
-            portfolioState.totalRealizedGain || 0,
-            portfolioState.totalOptionsCount || 0,
-            portfolioState.activeOptionsCount || 0,
-            grantNote
-          ]);
-          
-          evolutionStmt.free();
-          createdCount++;
-          
-          console.log(`✅ Created evolution entry for ${grant_date}: ${total_quantity} options`);
-        } else {
-          console.log(`⏭️ Evolution entry already exists for ${grant_date}, skipping...`);
+    // Get prices as of this date
+    const pricesByKey = {};
+    allPrices.forEach(price => {
+      if (price.price_date <= date) {
+        const key = `${price.exercise_price}-${price.grant_date}`;
+        if (!pricesByKey[key]) {
+          pricesByKey[key] = price.current_value;
         }
       }
+    });
+
+    // Calculate portfolio totals
+    let totalCurrentValue = 0;
+    let totalRealizedGain = 0;
+    let totalUnrealizedGain = 0;
+    let totalOptionsCount = 0;
+    let activeOptionsCount = 0;
+
+    for (const portfolioEntry of portfolioEntries) {
+      // Only include grants that existed by this date
+      if (portfolioEntry.grant_date > date) continue;
+
+      const salesForEntry = salesByEntry[portfolioEntry.id];
+      const soldQuantity = salesForEntry ? salesForEntry.total_sold : 0;
+      const remainingQuantity = portfolioEntry.quantity - soldQuantity;
       
-      this.saveDatabase();
-      console.log(`✅ Created ${createdCount} new evolution entries for grant dates`);
-      
-    } catch (error) {
-      console.error('❌ Error creating evolution entries for grants:', error);
-      throw error;
+      // Add to totals
+      totalOptionsCount += portfolioEntry.quantity;
+      activeOptionsCount += remainingQuantity;
+
+      // Add realized gains from sales
+      if (salesForEntry) {
+        totalRealizedGain += salesForEntry.total_realized_gain || 0;
+      }
+
+      // Calculate current value using price as of this date
+      const priceKey = `${portfolioEntry.exercise_price}-${portfolioEntry.grant_date}`;
+      const currentPrice = pricesByKey[priceKey] || portfolioEntry.current_value || 0;
+      const currentEntryValue = remainingQuantity * currentPrice;
+
+      totalCurrentValue += currentEntryValue;
+
+      // Calculate unrealized gain
+      const grantDatePrice = portfolioEntry.grant_date_price || 10;
+      const targetValue = remainingQuantity * grantDatePrice * (targetPercentage / 100);
+      const taxRatio = remainingQuantity / portfolioEntry.quantity;
+      const entryTax = (portfolioEntry.tax_amount || portfolioEntry.tax_auto_calculated || 0) * taxRatio;
+      const unrealizedGain = currentEntryValue - entryTax - targetValue;
+      totalUnrealizedGain += unrealizedGain;
     }
+
+    return {
+      totalCurrentValue,
+      totalRealizedGain,
+      totalUnrealizedGain,
+      totalOptionsCount,
+      activeOptionsCount,
+    };
   }
 
   // Completely rebuild the evolution table with historical data
-  async rebuildCompleteEvolutionTimeline(onProgress = null) {
+  async rebuildCompleteEvolutionTimeline(onProgress = null, fromDate = null) {
     try {
       // Reset progress tracking
       this._lastReportedPercentage = 0;
       
-      console.log('🔥 Completely rebuilding daily evolution timeline with historical data...');
+      if (fromDate) {
+        console.log(`🚀 OPTIMIZED: Rebuilding evolution timeline from ${fromDate} forward...`);
+        
+        // Step 1: Delete only evolution data from the specified date forward
+        console.log(`🗑️ Clearing evolution data from ${fromDate} forward...`);
+        const deleteStmt = this.db.prepare('DELETE FROM portfolio_evolution WHERE snapshot_date >= ?');
+        deleteStmt.bind([fromDate]);
+        deleteStmt.step();
+        deleteStmt.free();
+      } else {
+        console.log('🔥 Completely rebuilding daily evolution timeline with historical data...');
+        
+        // Step 1: Drop and recreate the entire evolution table
+        console.log('🗑️ Clearing existing evolution data...');
+        this.db.exec('DELETE FROM portfolio_evolution');
+      }
       
-      // Step 1: Drop and recreate the evolution table
-      console.log('🗑️ Clearing existing evolution data...');
-      this.db.exec('DELETE FROM portfolio_evolution');
-      
-      // Step 2: Get the date range (first grant to today)
+      // Step 2: Get the date range
       const dateRange = await this.getPortfolioDateRange();
       if (!dateRange.firstGrantDate) {
         console.log('ℹ️ No grants found, nothing to rebuild');
         return;
       }
       
-      console.log(`📅 Building daily evolution from ${dateRange.firstGrantDate} to ${dateRange.endDate}`);
+      // Determine the actual start date for rebuild
+      const startDate = fromDate || dateRange.firstGrantDate;
+      const endDate = dateRange.endDate;
+      
+      console.log(`📅 Building daily evolution from ${startDate} to ${endDate}`);
       
       // Step 3: Get all significant events for notes
       const significantEvents = await this.getAllSignificantEvents();
       
-      // Step 4: Generate all dates from first grant to today
-      const allDates = this.generateDateRange(dateRange.firstGrantDate, dateRange.endDate);
+      // Step 4: Generate dates from start date to today
+      const allDates = this.generateDateRange(startDate, endDate);
       console.log(`📊 Processing ${allDates.length} daily entries...`);
       
       // Performance warning for large date ranges
@@ -3470,7 +3151,40 @@ ORDER BY st.sale_date DESC
         console.log(`⚠️ Large date range detected (${allDates.length} days). This may take several minutes...`);
       }
       
-      // Step 5: Create evolution entries only when portfolio value changes
+      // Step 5: OPTIMIZED - Pre-load all data once and process in memory
+      console.log('🚀 PERFORMANCE OPTIMIZATION: Pre-loading all portfolio data...');
+      
+      // Pre-load all portfolio entries
+      const portfolioStmt = this.db.prepare('SELECT * FROM portfolio_entries');
+      const portfolioEntries = [];
+      while (portfolioStmt.step()) {
+        portfolioEntries.push(portfolioStmt.getAsObject());
+      }
+      portfolioStmt.free();
+      
+      // Pre-load all sales
+      const salesStmt = this.db.prepare('SELECT * FROM sales_transactions ORDER BY sale_date ASC');
+      const allSales = [];
+      while (salesStmt.step()) {
+        allSales.push(salesStmt.getAsObject());
+      }
+      salesStmt.free();
+      
+      // Pre-load all historical prices
+      const pricesStmt = this.db.prepare('SELECT * FROM price_history ORDER BY price_date DESC');
+      const allPrices = [];
+      while (pricesStmt.step()) {
+        allPrices.push(pricesStmt.getAsObject());
+      }
+      pricesStmt.free();
+      
+      // Get target percentage once
+      const targetPercentageQuery = await this.getSetting("target_percentage");
+      const targetPercentage = parseFloat(targetPercentageQuery || "65");
+      
+      console.log(`📊 Pre-loaded: ${portfolioEntries.length} entries, ${allSales.length} sales, ${allPrices.length} prices`);
+      
+      // Create evolution entries only when portfolio value changes
       let processedCount = 0;
       let insertedCount = 0;
       let previousPortfolioValue = null;
@@ -3482,8 +3196,10 @@ ORDER BY st.sale_date DESC
       `);
       
       for (const date of allDates) {
-        // Calculate portfolio state as of this date with historical prices
-        const portfolioState = await this.getPortfolioStateAsOfDateWithHistoricalPrices(date);
+        // OPTIMIZED: Calculate portfolio state using pre-loaded data
+        const portfolioState = this.calculatePortfolioStateOptimized(
+          date, portfolioEntries, allSales, allPrices, targetPercentage
+        );
         const currentValue = portfolioState.totalCurrentValue || 0;
         
         // Get events for this specific date
@@ -3496,8 +3212,8 @@ ORDER BY st.sale_date DESC
         const shouldInsert = valueChanged || hasEvents;
         
         if (shouldInsert) {
-          // Insert evolution entry
-          insertStmt.run([
+          // Insert evolution entry (using correct bind/step pattern)
+          insertStmt.bind([
             date,
             currentValue,
             portfolioState.totalUnrealizedGain || 0,
@@ -3506,6 +3222,7 @@ ORDER BY st.sale_date DESC
             portfolioState.activeOptionsCount || 0,
             notes
           ]);
+          insertStmt.step();
           
           insertedCount++;
           previousPortfolioValue = currentValue;

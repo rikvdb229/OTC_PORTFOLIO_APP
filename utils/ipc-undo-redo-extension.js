@@ -66,7 +66,11 @@ const DatabaseUndoRedoExtension = {
 
 // Add this to your existing window.IPCCommunication.Database object
 // Extend the existing Database object with undo/redo methods
-Object.assign(window.IPCCommunication.Database, DatabaseUndoRedoExtension);
+if (window.IPCCommunication && window.IPCCommunication.Database) {
+  Object.assign(window.IPCCommunication.Database, DatabaseUndoRedoExtension);
+} else {
+  console.warn('IPCCommunication.Database not found, undo/redo extension not loaded');
+}
 
 /**
  * ===== ENHANCED OPERATION WRAPPERS =====
