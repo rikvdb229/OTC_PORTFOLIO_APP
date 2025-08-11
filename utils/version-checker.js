@@ -52,7 +52,7 @@ const VersionChecker = {
       
       if (lastDismissed) {
         const daysSinceDismiss = (Date.now() - parseInt(lastDismissed)) / (1000 * 60 * 60 * 24);
-        if (daysSinceDismiss < 7) { // Don't check for 7 days after dismiss
+        if (daysSinceDismiss < 14) { // Don't check for 14 days after dismiss
           console.log('⏭️ Version check recently dismissed, skipping');
           return;
         }
@@ -116,46 +116,44 @@ const VersionChecker = {
 
   // Show update notification
   showUpdateNotification(version, releaseInfo) {
-    // Create notification element if it doesn't exist
-    let notification = document.getElementById('versionUpdateNotification');
+    // Create modal element if it doesn't exist
+    let modal = document.getElementById('versionUpdateModal');
     
-    if (!notification) {
-      notification = document.createElement('div');
-      notification.id = 'versionUpdateNotification';
-      notification.className = 'version-notification';
-      notification.innerHTML = `
-        <div class="version-notification-content">
-          <div class="version-notification-header">
-            <span class="version-notification-icon">🆕</span>
-            <span class="version-notification-title">New Version Available!</span>
-            <button class="version-notification-close" onclick="VersionChecker.dismissNotification()">&times;</button>
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'versionUpdateModal';
+      modal.className = 'modal';
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>🆕 New Version Available!</h3>
+            <button class="close-btn" onclick="VersionChecker.closeNotification()" title="Close (will show again next time)">&times;</button>
           </div>
-          <div class="version-notification-body">
+          <div class="modal-body">
             <p><strong>Version ${version}</strong> is now available on GitHub.</p>
-            <p>You're currently using version ${this.currentVersion}.</p>
-            <div class="version-notification-actions">
-              <button class="btn btn-primary btn-sm" onclick="VersionChecker.openGitHub()">📥 View Release</button>
-              <button class="btn btn-secondary btn-sm" onclick="VersionChecker.dismissNotification()">Maybe Later</button>
-            </div>
+            <p>You're currently using version <strong>${this.currentVersion}</strong>.</p>
+            <p>Download the latest version to get the newest features and bug fixes.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="VersionChecker.dismissNotification()">Maybe Later</button>
+            <button class="btn btn-primary" onclick="VersionChecker.openGitHub()">📥 View Release</button>
           </div>
         </div>
       `;
       
-      document.body.appendChild(notification);
+      document.body.appendChild(modal);
     }
     
     // Store release info for later use
     this.currentReleaseInfo = releaseInfo;
     
-    // Show notification with animation
-    setTimeout(() => {
-      notification.classList.add('show');
-    }, 100);
+    // Show modal
+    modal.classList.add('active');
     
     // Auto-hide after 30 seconds if user doesn't interact
     setTimeout(() => {
-      if (notification && notification.classList.contains('show')) {
-        this.dismissNotification(false); // Don't mark as dismissed, just hide
+      if (modal && modal.classList.contains('active')) {
+        this.closeNotification(); // Just close, don't dismiss
       }
     }, 30000);
   },
@@ -171,34 +169,35 @@ const VersionChecker = {
       window.open(url, '_blank');
     }
     
-    this.dismissNotification(true);
+    this.closeNotification(); // Just close, don't dismiss
   },
 
-  // Dismiss notification
-  dismissNotification(markAsDismissed = true) {
-    const notification = document.getElementById('versionUpdateNotification');
-    if (notification) {
-      notification.classList.remove('show');
-      
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 300);
+  // Close notification (will show again next time)
+  closeNotification() {
+    const modal = document.getElementById('versionUpdateModal');
+    if (modal) {
+      modal.classList.remove('active');
+      console.log('📝 Version check modal closed (will show again next time)');
+    }
+  },
+
+  // Dismiss notification (won't show again for 7 days)
+  dismissNotification() {
+    const modal = document.getElementById('versionUpdateModal');
+    if (modal) {
+      modal.classList.remove('active');
     }
     
-    if (markAsDismissed) {
-      // Remember that user dismissed this check
-      localStorage.setItem('versionCheckDismissed', Date.now().toString());
-      
-      // Remember the specific version that was dismissed
-      if (this.currentReleaseInfo) {
-        const dismissedVersion = this.currentReleaseInfo.tag_name.replace(/^v/, '');
-        localStorage.setItem('dismissedVersion', dismissedVersion);
-      }
-      
-      console.log('📝 Version check dismissed by user');
+    // Remember that user dismissed this check for 7 days
+    localStorage.setItem('versionCheckDismissed', Date.now().toString());
+    
+    // Remember the specific version that was dismissed
+    if (this.currentReleaseInfo) {
+      const dismissedVersion = this.currentReleaseInfo.tag_name.replace(/^v/, '');
+      localStorage.setItem('dismissedVersion', dismissedVersion);
     }
+    
+    console.log('📝 Version check dismissed by user for 14 days');
   }
 };
 

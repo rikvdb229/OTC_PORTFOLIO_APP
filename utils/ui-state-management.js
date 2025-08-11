@@ -42,8 +42,10 @@ const FooterManager = {
         }
 
         // Update window title too
-        if (version && version !== "Loading...") {
-          document.title = `${appName} v${version}`;
+        const currentVersion = window.AppConfig.APP_CONFIG.VERSION;
+        const currentAppName = window.AppConfig.APP_CONFIG.APP_NAME;
+        if (currentVersion && currentVersion !== "Loading...") {
+          document.title = `${currentAppName || "Portfolio Tracker"} v${currentVersion}`;
         } else {
           document.title = "Portfolio Tracker v0.3.1";
         }

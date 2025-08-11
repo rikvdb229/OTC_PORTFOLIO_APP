@@ -3194,6 +3194,28 @@ body {
     padding: 0.75rem;
   }
 }
+/* Version Update Modal Styles */
+.modal .close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.modal .close-btn:hover {
+  background: #f8f9fa;
+  color: #495057;
+}
+
 /* Updated CSS for simplified sell modal */
 
 /* Replace the existing .tax-calculation-sell styles with this simplified version */

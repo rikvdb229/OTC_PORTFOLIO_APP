@@ -495,6 +495,33 @@ const PriceOperations = {
    * Check price update status and show appropriate notifications
    * @param {Object} app - Application instance
    */
+  /**
+   * Get price update status without showing notifications (for programmatic checks)
+   * @returns {Object} Status object with isCurrent property
+   */
+  async getPriceUpdateStatus() {
+    try {
+      const latestPriceDate = await window.ipcRenderer.invoke("get-latest-price-date");
+      
+      if (!latestPriceDate) {
+        return { isCurrent: false, reason: "No price data available" };
+      }
+
+      const today = new Date().toLocaleDateString("en-CA");
+      const latestPrice = new Date(latestPriceDate).toISOString().split("T")[0];
+      
+      return { 
+        isCurrent: latestPrice === today, 
+        latestDate: latestPrice,
+        today: today,
+        reason: latestPrice === today ? "Current" : `Prices from ${latestPrice}`
+      };
+    } catch (error) {
+      console.error("Error checking price status:", error);
+      return { isCurrent: false, reason: "Error checking price status" };
+    }
+  },
+
   async checkPriceUpdateStatus(app) {
     try {
       // Get the latest price_date from the database (this comes from CSV column 6)

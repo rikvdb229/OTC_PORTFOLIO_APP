@@ -5,6 +5,27 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2025-08-11
+
+### ✨ New Features
+- **Automatic Version Checker**: Added automatic version checking against GitHub releases
+  - Checks for new versions 10 seconds after app startup (non-intrusive)
+  - Shows stylized modal notification with direct link to latest release
+  - Smart dismissal system: Close (×) vs "Maybe Later" (14-day dismissal)
+  - Completely silent operation - no network errors shown to users
+  - Respects user preferences with localStorage-based dismissal tracking
+
+### 🔧 Technical Improvements
+- **Lightweight Implementation**: Version checker adds minimal overhead with intelligent caching
+- **User-Friendly Design**: Modal matches app styling with proper close/dismiss differentiation
+- **Privacy-Conscious**: Only makes GitHub API calls when necessary, fails silently on network issues
+- **Content Security Policy**: Updated CSP to allow GitHub API access for version checking
+
+### 🐛 Bug Fixes
+- **Fixed IPC Handler Conflict**: Resolved duplicate 'get-app-version' handler registration causing startup errors
+- **Fixed Footer Initialization**: Resolved undefined variable errors in footer version display
+- **Added Missing Function**: Added `getPriceUpdateStatus` function for price update automation
+
 ## [0.3.2] - 2025-08-11
 
 ### 🐛 Critical Bug Fix
