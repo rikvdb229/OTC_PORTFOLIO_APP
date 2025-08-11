@@ -5,6 +5,23 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.2] - 2025-08-11
+
+### 🐛 Critical Bug Fix
+- **Fixed Evolution Table Updates**: Resolved issue where evolution entries were not properly updated after price scraping from KBC
+- Regular price scraper now correctly rebuilds evolution timeline from the updated price date forward
+- Evolution entries now reflect current prices instead of showing outdated portfolio values
+
+### ⚡ Technical Improvements
+- **Unified Evolution Processing**: All portfolio operations (add grant, record sale, update tax, delete entry, update prices) now consistently use `rebuildCompleteEvolutionTimeline()` 
+- **Removed Redundant Functions**: Eliminated obsolete `createPortfolioSnapshot()` and `createEvolutionEntryForGrant()` functions (~160 lines of dead code)
+- **Preserved Event Generation**: Evolution events (grant and sale notes) continue to be generated from actual database data via `getAllSignificantEvents()`
+- **Optimized Performance**: Evolution rebuilds only from affected dates forward, maintaining excellent performance
+
+### 🔧 Code Quality
+- **Consistent Architecture**: Streamlined evolution update approach across all operations for better maintainability
+- **Enhanced Data Integrity**: Evolution timeline now always accurately reflects the latest scraped prices
+
 ## [0.3.1] - 2025-08-10
 
 ### ⚠️ Important Update Notice

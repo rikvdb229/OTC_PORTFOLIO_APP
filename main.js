@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const KBCScraper = require("./scraper");
@@ -1145,6 +1145,27 @@ ipcMain.handle("get-historical-prices-for-option", async (event, grantDate, exer
     console.error("❌ Error getting historical prices for option:", error);
     return [];
   }
+});
+
+// IPC handler for opening external URLs
+ipcMain.handle('open-external', async (event, url) => {
+  try {
+    await shell.openExternal(url);
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error opening external URL:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// IPC handler for getting app version info
+ipcMain.handle('get-app-version', async () => {
+  return {
+    version: APP_CONFIG.VERSION,
+    fullVersion: APP_CONFIG.getFullVersion(),
+    status: APP_CONFIG.STATUS,
+    buildDate: APP_CONFIG.BUILD_DATE
+  };
 });
 
 console.log("🚀 KBC ESOP Portfolio Tracker v0.2 - Main process initialized");

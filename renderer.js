@@ -555,6 +555,12 @@ document.addEventListener("DOMContentLoaded", () => {
   window.portfolioApp = new EnhancedPortfolioApp();
   console.log("🚀 Enhanced Portfolio Management App initialized");
 
+  // Initialize version checker
+  if (window.VersionChecker) {
+    window.VersionChecker.init();
+    console.log("🔍 Version Checker initialized");
+  }
+
   // Add this line to ensure button state is checked after DOM is ready
   setTimeout(() => {
     window.portfolioApp.checkDataAvailability();

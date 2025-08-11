@@ -1,6 +1,6 @@
 {
   "name": "portfolio-tracker",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Portfolio Tracker - Stock Options Management App",
   "main": "main.js",
   "author": "Portfolio Manager",
@@ -22,9 +22,9 @@
     "analyze:portfolio-historical": "electron test-scripts/download-portfolio-historical-data.js"
   },
   "devDependencies": {
-    "rimraf": "^6.0.1",
     "electron": "^33.4.11",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "rimraf": "^6.0.1"
   },
   "dependencies": {
     "csv-parser": "^3.2.0",

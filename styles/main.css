@@ -3637,3 +3637,98 @@ body {
 .derived-price:hover {
   color: var(--color-warning) !important;
 }
+
+/* ===== VERSION UPDATE NOTIFICATION ===== */
+.version-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 320px;
+  background: var(--color-white);
+  border: 1px solid var(--border-medium);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  opacity: 0;
+  transform: translateX(350px);
+  transition: all 0.3s ease;
+}
+
+.version-notification.show {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.version-notification-content {
+  padding: 0;
+}
+
+.version-notification-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--color-primary-light), #e8f4fd);
+  border-bottom: 1px solid var(--border-light);
+  border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+}
+
+.version-notification-icon {
+  font-size: 16px;
+  margin-right: 8px;
+}
+
+.version-notification-title {
+  flex: 1;
+  font-weight: var(--font-weight-medium);
+  color: var(--color-dark);
+  font-size: var(--font-size-md);
+}
+
+.version-notification-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.version-notification-close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: var(--color-dark);
+}
+
+.version-notification-body {
+  padding: 16px;
+}
+
+.version-notification-body p {
+  margin: 0 0 8px 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.version-notification-body p:last-of-type {
+  margin-bottom: 16px;
+  color: var(--text-secondary);
+}
+
+.version-notification-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.version-notification-actions .btn {
+  flex: 1;
+  text-align: center;
+  padding: 6px 12px;
+  font-size: var(--font-size-sm);
+}

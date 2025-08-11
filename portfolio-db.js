@@ -1616,19 +1616,8 @@ class PortfolioDatabase {
 
       console.log("✅ Portfolio entry added with ID:", insertId);
 
-      // FIXED: Create evolution entry for grants
-      if (insertId) {
-        console.log("📊 About to create evolution entry for grant...");
-        await this.createEvolutionEntryForGrant(grantDate, quantity, fundName);
-        console.log("📊 Evolution entry creation completed");
-      } else {
-        console.error(
-          "❌ No insert ID returned, cannot create evolution entry"
-        );
-      }
-
-      // CRITICAL FIX: Recalculate all evolution entries from the grant date forward
-      // This ensures that all evolution snapshots reflect the newly added grant
+      // Rebuild evolution timeline from grant date forward
+      // This creates evolution entries with proper notes and values for the new grant
       console.log(`🔥 Triggering optimized evolution timeline rebuild from ${grantDate} after adding grant`);
       await this.rebuildCompleteEvolutionTimeline(null, grantDate);
       console.log("✅ Evolution timeline rebuilt from grant date forward");
@@ -1637,92 +1626,6 @@ class PortfolioDatabase {
     } catch (error) {
       console.error("Error adding portfolio entry:", error);
       return Promise.reject(error);
-    }
-  }
-
-  // FIXED: Create evolution entry specifically for grants
-  async createEvolutionEntryForGrant(grantDate, quantity, fundName) {
-    try {
-      console.log("🔄 Creating evolution entry for grant:", {
-        grantDate,
-        quantity,
-        fundName,
-      });
-
-      // FIXED: Use the GRANT DATE for evolution entry (when the grant actually happened)
-      // This is a portfolio tracker, so we record events when they actually occurred
-      const evolutionDate = grantDate; // Use grant date, not today
-
-      // Get current total portfolio value
-      const portfolioOverview = await this.getPortfolioOverview();
-      const currentTotalValue = portfolioOverview.reduce(
-        (sum, entry) => sum + (entry.current_total_value || 0),
-        0
-      );
-
-      // Use the fund name that was already looked up in addPortfolioEntry
-      const displayFundName = fundName || "Unknown Fund";
-
-      const evolutionNote = `Grant received: ${quantity} options (${displayFundName})`;
-
-      // FIXED: Check if entry already exists for the GRANT DATE
-      const existingStmt = this.db.prepare(`
-      SELECT notes FROM portfolio_evolution 
-      WHERE snapshot_date = ?
-    `);
-
-      let existingEntry = null;
-      existingStmt.bind([evolutionDate]);
-      if (existingStmt.step()) {
-        existingEntry = existingStmt.getAsObject();
-      }
-      existingStmt.free();
-
-      let finalNotes = evolutionNote;
-
-      if (existingEntry && existingEntry.notes) {
-        // Entry exists - append new note with bullet point
-        const existingNotes = existingEntry.notes;
-        // Only append if the new note is different
-        if (!existingNotes.includes(evolutionNote)) {
-          finalNotes = `${existingNotes}\n• ${evolutionNote}`;
-        } else {
-          finalNotes = existingNotes; // Don't duplicate
-        }
-      } else {
-        // New entry - add bullet point for consistency
-        finalNotes = `• ${evolutionNote}`;
-      }
-
-      console.log(
-        `📝 Grant evolution note for grant date (${evolutionDate}): ${finalNotes}`
-      );
-
-      // FIXED: Use GRANT DATE for evolution entry to track when the grant actually occurred
-      const stmt = this.db.prepare(`
-      INSERT OR REPLACE INTO portfolio_evolution 
-      (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `);
-
-      stmt.run([
-        evolutionDate, // Use grant date to record when the grant actually happened
-        currentTotalValue || 0,
-        0, // unrealized gain
-        0, // realized gain
-        quantity || 0,
-        quantity || 0,
-        finalNotes,
-      ]);
-
-      stmt.free();
-      this.saveDatabase();
-
-      console.log(
-        `✅ Created/updated evolution entry for grant date: ${evolutionDate}`
-      );
-    } catch (error) {
-      console.error("❌ Error creating evolution entry for grant:", error);
     }
   }
 
@@ -1821,16 +1724,10 @@ class PortfolioDatabase {
 
       this.saveDatabase();
 
-      // Create evolution snapshot for the sale date
-      await this.createPortfolioSnapshot(
-        saleDate,
-        "sale",
-        `Sale: ${quantitySold} options at €${salePrice}`
-      );
-
-      // 🔥 CRITICAL FIX: Recalculate ALL evolution entries from the sale date forward
+      // Rebuild evolution timeline from sale date forward
+      // This ensures all evolution entries reflect the sale and creates proper notes
       console.log(
-        `🔥 Triggering optimized evolution timeline rebuild from ${saleDate} due to past sale...`
+        `🔥 Triggering optimized evolution timeline rebuild from ${saleDate} due to sale...`
       );
       await this.rebuildCompleteEvolutionTimeline(null, saleDate);
 
@@ -2222,8 +2119,10 @@ ORDER BY st.sale_date DESC
 
       this.saveDatabase();
 
-      // Create portfolio snapshot for price updates (this affects portfolio value)
-      await this.createPortfolioSnapshot(today, "price_update", "Price update");
+      // Rebuild evolution timeline from today after price update
+      // This ensures all evolution entries reflect the new prices
+      console.log(`🔥 Triggering evolution timeline rebuild from ${today} after price update`);
+      await this.rebuildCompleteEvolutionTimeline(null, today);
 
       return Promise.resolve({ updatedCount });
     } catch (error) {
@@ -2231,101 +2130,6 @@ ORDER BY st.sale_date DESC
     }
   }
 
-  // FIXED: Enhanced portfolio snapshot creation with duplicate handling
-  async createPortfolioSnapshot(date, triggerType = "auto", notes = "") {
-    try {
-      console.log(
-        `📸 Creating portfolio snapshot for ${date} (${triggerType})`
-      );
-
-      // Check if snapshot already exists for this date
-      const existingStmt = this.db.prepare(`
-      SELECT id, notes FROM portfolio_evolution 
-      WHERE snapshot_date = ?
-    `);
-      existingStmt.bind([date]);
-
-      let existingSnapshot = null;
-      if (existingStmt.step()) {
-        existingSnapshot = existingStmt.getAsObject();
-      }
-      existingStmt.free();
-
-      // Get accurate portfolio state as of this date using optimized method
-      const portfolioState = await this.getPortfolioStateOptimized(date);
-
-      if (existingSnapshot) {
-        // Update existing snapshot with new notes and accurate values
-        let updatedNotes = existingSnapshot.notes || "";
-
-        if (notes && notes.trim() !== "") {
-          if (updatedNotes && !updatedNotes.includes(notes)) {
-            updatedNotes += updatedNotes.endsWith(".") ? " " : ". ";
-            updatedNotes += notes;
-          } else if (!updatedNotes) {
-            updatedNotes = notes;
-          }
-        }
-
-        const updateStmt = this.db.prepare(`
-        UPDATE portfolio_evolution 
-        SET 
-          total_portfolio_value = ?,
-          total_unrealized_gain = ?,
-          total_realized_gain = ?,
-          total_options_count = ?,
-          active_options_count = ?,
-          notes = ?
-        WHERE snapshot_date = ?
-      `);
-
-        updateStmt.run([
-          portfolioState.totalCurrentValue,
-          portfolioState.totalUnrealizedGain,
-          portfolioState.totalRealizedGain,
-          portfolioState.totalOptionsCount,
-          portfolioState.activeOptionsCount,
-          updatedNotes,
-          date,
-        ]);
-        updateStmt.free();
-
-        console.log(`✅ Updated existing portfolio snapshot for ${date}`);
-      } else {
-        // Create new snapshot with accurate values
-        const insertStmt = this.db.prepare(`
-        INSERT INTO portfolio_evolution (
-          snapshot_date,
-          total_portfolio_value,
-          total_unrealized_gain,
-          total_realized_gain,
-          total_options_count,
-          active_options_count,
-          notes
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `);
-
-        insertStmt.run([
-          date,
-          portfolioState.totalCurrentValue,
-          portfolioState.totalUnrealizedGain,
-          portfolioState.totalRealizedGain,
-          portfolioState.totalOptionsCount,
-          portfolioState.activeOptionsCount,
-          notes,
-        ]);
-        insertStmt.free();
-
-        console.log(`✅ Created new portfolio snapshot for ${date}`);
-      }
-
-      this.saveDatabase();
-      return Promise.resolve({ success: true });
-    } catch (error) {
-      console.error(`❌ Error creating portfolio snapshot for ${date}:`, error);
-      return Promise.reject(error);
-    }
-  }
   async recalculateEntireEvolutionTimeline() {
     try {
       console.log("🔄 Manually recalculating entire evolution timeline...");
@@ -2803,24 +2607,8 @@ ORDER BY st.sale_date DESC
 
       this.saveDatabase();
 
-      // Create evolution entry for deletion
-      const todayDate = new Date().toISOString().split("T")[0];
-      const remainingQuantity =
-        entryToDelete.quantity - (entryToDelete.total_sold_quantity || 0);
-      const fundName = entryToDelete.fund_name || "Unknown Fund";
-
-      await this.createPortfolioSnapshot(
-        todayDate,
-        "delete",
-        `Grant deleted: ${remainingQuantity} options (${fundName}) - Original Grant Date: ${new Date(
-          entryToDelete.grant_date
-        ).toLocaleDateString()}`
-      );
-
-      // CRITICAL FIX: Recalculate evolution from the GRANT DATE forward preserving events
+      // Rebuild evolution timeline from the grant date forward
       // When deleting a grant, we need to recalculate from when it was originally added
-      console.log(`🔄 Recalculating evolution after grant deletion from grant date ${entryToDelete.grant_date}...`);
-      // Use the optimized rebuild method from grant date
       console.log(`🔥 Triggering optimized evolution timeline rebuild from ${entryToDelete.grant_date} after deletion`);
       await this.rebuildCompleteEvolutionTimeline(null, entryToDelete.grant_date);
       console.log("✅ Evolution timeline recalculated from grant date after deletion");
