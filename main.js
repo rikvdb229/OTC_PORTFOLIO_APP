@@ -1158,14 +1158,5 @@ ipcMain.handle('open-external', async (event, url) => {
   }
 });
 
-// IPC handler for getting app version info
-ipcMain.handle('get-app-version', async () => {
-  return {
-    version: APP_CONFIG.VERSION,
-    fullVersion: APP_CONFIG.getFullVersion(),
-    status: APP_CONFIG.STATUS,
-    buildDate: APP_CONFIG.BUILD_DATE
-  };
-});
 
 console.log("🚀 KBC ESOP Portfolio Tracker v0.2 - Main process initialized");
