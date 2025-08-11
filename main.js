@@ -238,14 +238,21 @@ ipcMain.handle(
   }
 );
 ipcMain.handle("get-app-version", () => {
-  return {
+  console.log("🔍 get-app-version IPC called");
+  console.log("📦 pkg.version:", pkg.version);
+  console.log("📦 Full pkg object:", JSON.stringify(pkg, null, 2));
+  
+  const versionInfo = {
     version: pkg.version,
-    appName: pkg.build.productName,
+    appName: pkg.build?.productName || pkg.name,
     description: pkg.description,
     author: pkg.author,
     buildDate: pkg.buildDate,
     status: pkg.status,
   };
+  
+  console.log("📤 Returning version info:", versionInfo);
+  return versionInfo;
 });
 ipcMain.handle("delete-database", async () => {
   try {

@@ -27,7 +27,7 @@ const FooterManager = {
           if (version && version !== "Loading...") {
             appVersionElement.textContent = `${appName} v${version}`;
           } else {
-            appVersionElement.textContent = "Portfolio Tracker v0.3.1"; // Fallback
+            appVersionElement.textContent = "Portfolio Tracker v0.3.4"; // Fallback
           }
         }
 
@@ -47,7 +47,7 @@ const FooterManager = {
         if (currentVersion && currentVersion !== "Loading...") {
           document.title = `${currentAppName || "Portfolio Tracker"} v${currentVersion}`;
         } else {
-          document.title = "Portfolio Tracker v0.3.1";
+          document.title = "Portfolio Tracker v0.3.4";
         }
       };
 

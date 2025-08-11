@@ -1501,11 +1501,11 @@ class PortfolioDatabase {
         );
       }
 
-      // Get the fund name and current value from price history
+      // Get the fund name and current value from price history for the exact grant date
       const priceStmt = this.db.prepare(`
       SELECT fund_name, current_value 
       FROM price_history 
-      WHERE exercise_price = ? AND grant_date = ?
+      WHERE exercise_price = ? AND price_date = ?
       ORDER BY price_date DESC 
       LIMIT 1
     `);
@@ -1526,18 +1526,18 @@ class PortfolioDatabase {
         currentValue = priceData.current_value || 0;
       } else {
         console.log(
-          "No exact price data found, trying fallback lookup by exercise price only"
+          "No exact grant date price found, trying fallback lookup for closest price on or before grant date"
         );
         const fallbackStmt = this.db.prepare(`
-        SELECT fund_name, current_value 
+        SELECT fund_name, current_value, price_date
         FROM price_history 
-        WHERE exercise_price = ?
+        WHERE exercise_price = ? AND price_date <= ?
         ORDER BY price_date DESC 
         LIMIT 1
       `);
 
         let fallbackData = null;
-        fallbackStmt.bind([exercisePrice]);
+        fallbackStmt.bind([exercisePrice, grantDate]);
         if (fallbackStmt.step()) {
           fallbackData = fallbackStmt.getAsObject();
         }
@@ -1546,11 +1546,18 @@ class PortfolioDatabase {
         if (fallbackData) {
           fundName = fallbackData.fund_name || null;
           currentValue = fallbackData.current_value || 0;
-          console.log("Found fallback price data:", { fundName, currentValue });
+          console.log("Found fallback price data for grant date:", { 
+            fundName, 
+            currentValue, 
+            priceDate: fallbackData.price_date,
+            grantDate 
+          });
         } else {
           console.warn(
-            "No price data found for exercise price:",
-            exercisePrice
+            "No historical price data found for grant date or before for exercise price:",
+            exercisePrice,
+            "grant date:",
+            grantDate
           );
         }
       }

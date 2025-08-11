@@ -5,6 +5,23 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2025-08-11
+
+### 🔧 Bug Fixes
+- **Fixed Grant Date Price Calculation**: Resolved issue where grant amounts were calculated using current prices instead of historical grant date prices
+  - Updated `addPortfolioEntry` to properly fetch historical prices for grant date
+  - Fixed fallback logic to find closest historical price on or before grant date
+  - Ensures accurate amount granted calculations for new grants
+- **Fixed Version Display Consistency**: Resolved version mismatch between development and standalone builds
+  - Updated all hardcoded fallback versions from 0.3.1 to current version
+  - Fixed version display in footer and window title for standalone builds
+  - Added comprehensive debugging for version loading issues
+
+### 🔧 Technical Improvements  
+- **Enhanced Historical Price Queries**: Improved database queries to prioritize grant date prices over current prices
+- **Better Version Loading**: Added robust fallback mechanisms for version display in packaged applications
+- **Debug Logging**: Added detailed logging for version loading and grant price calculations
+
 ## [0.3.3] - 2025-08-11
 
 ### ✨ New Features

@@ -12,19 +12,41 @@ const APP_CONFIG = {
   // Load real values from main process
   async loadFromMain() {
     try {
+      console.log("🔄 loadFromMain() called");
+      console.log("🔍 window.ipcRenderer available:", !!window.ipcRenderer);
+      
       if (window.ipcRenderer) {
+        console.log("📞 Calling get-app-version IPC...");
         const info = await window.ipcRenderer.invoke("get-app-version");
-        this.VERSION = info.version;
-        this.APP_NAME = info.appName;
-        this.STATUS = info.status;
-        this.BUILD_DATE = info.buildDate;
-        this.AUTHOR = info.author;
+        console.log("📥 Received version info:", info);
+        
+        this.VERSION = info.version || "0.3.4";
+        this.APP_NAME = info.appName || "Portfolio Tracker";
+        this.STATUS = info.status || "Beta Version";
+        this.BUILD_DATE = info.buildDate || "11-08-2025";
+        this.AUTHOR = info.author || "Portfolio Manager";
+        
         console.log(`✅ Version loaded from main: ${this.getFullVersion()}`);
-        console.log("Loaded from main:", info);
-console.log("BUILD_DATE set to:", this.BUILD_DATE);
+        console.log("✅ Final config values:", {
+          VERSION: this.VERSION,
+          APP_NAME: this.APP_NAME,
+          STATUS: this.STATUS,
+          BUILD_DATE: this.BUILD_DATE
+        });
+      } else {
+        console.warn("⚠️ ipcRenderer not available, using defaults");
+        this.VERSION = "0.3.4";
+        this.APP_NAME = "Portfolio Tracker";
+        this.STATUS = "Beta Version"; 
+        this.BUILD_DATE = "11-08-2025";
       }
     } catch (error) {
-      console.warn("Could not load version from main:", error);
+      console.error("❌ Could not load version from main:", error);
+      // Set fallback values
+      this.VERSION = "0.3.4";
+      this.APP_NAME = "Portfolio Tracker";
+      this.STATUS = "Beta Version";
+      this.BUILD_DATE = "11-08-2025";
     }
   },
 

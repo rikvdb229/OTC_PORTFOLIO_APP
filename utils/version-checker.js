@@ -6,7 +6,7 @@ const VersionChecker = {
   REPO_NAME: 'OTC_PORTFOLIO_APP',
   
   // Current app version (will be loaded from APP_CONFIG or IPC)
-  currentVersion: '0.3.1', // Fallback version
+  currentVersion: '0.3.4', // Fallback version
   
   // Initialize version checker
   async init() {
