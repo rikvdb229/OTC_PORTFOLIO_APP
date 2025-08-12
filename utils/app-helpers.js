@@ -121,10 +121,7 @@ class AppHelpers {
   // Replace your current calculateSaleProceeds function with this:
 
   calculateSaleProceeds(app) {
-    console.log("🐛 DEBUG: calculateSaleProceeds called");
-
     if (!app.currentSellEntry) {
-      console.log("🐛 DEBUG: No currentSellEntry");
       return;
     }
 
@@ -132,8 +129,6 @@ class AppHelpers {
       parseInt(document.getElementById("quantityToSell").value) || 0;
     const salePrice =
       parseFloat(document.getElementById("salePrice").value) || 0;
-
-    console.log("🐛 DEBUG: Input values:", { quantityToSell, salePrice });
 
     if (quantityToSell > 0 && salePrice > 0) {
       // Calculate total sale value
@@ -155,25 +150,15 @@ class AppHelpers {
         remainingQuantity > 0 ? totalTax / remainingQuantity : 0;
       const taxForSoldOptions = taxPerOption * quantityToSell;
 
-      // Target value = quantity × €10 × target_percentage
+      // Target value = quantity × grant_date_price × target_percentage (same as portfolio overview)
       const targetPercentage = app.targetPercentage?.value || 65;
-      const targetValue = quantityToSell * 10 * (targetPercentage / 100);
+      const grantDatePrice = app.currentSellEntry.grant_date_price || 10; // Use grant date price, fallback to 10
+      const targetValue = quantityToSell * grantDatePrice * (targetPercentage / 100);
 
       // Final calculation: (Sale Value - Tax) - Target Value
       const profitLossVsTarget =
         currentTotalValue - taxForSoldOptions - targetValue;
 
-      console.log("🐛 DEBUG: Calculated values:", {
-        totalSaleValue,
-        currentTotalValue,
-        totalTax,
-        remainingQuantity,
-        taxPerOption,
-        taxForSoldOptions,
-        targetPercentage,
-        targetValue,
-        profitLossVsTarget,
-      });
 
       // Update Total Sale Value
       const totalSaleValueElement = document.getElementById("totalSaleValue");
@@ -193,11 +178,6 @@ class AppHelpers {
         const plClass =
           window.FormatHelpers.getProfitLossClass(profitLossVsTarget);
         profitLossElement.className = `currency ${plClass}`;
-
-        console.log(
-          "🐛 DEBUG: Updated profitLossVsTarget with class:",
-          plClass
-        );
       }
     } else {
       // Reset to zero when no valid input
@@ -212,8 +192,6 @@ class AppHelpers {
         profitLossElement.textContent = "€ 0.00";
         profitLossElement.className = "currency neutral";
       }
-
-      console.log("🐛 DEBUG: Reset values to zero");
     }
   }
   async updatePrices(app) {

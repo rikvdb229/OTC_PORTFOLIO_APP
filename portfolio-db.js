@@ -1768,6 +1768,7 @@ SELECT
   pe.fund_name,
   pe.exercise_price,
   pe.quantity,
+  pe.grant_date_price,
   -- Amount granted = remaining options × grant date price
   ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10)) as amount_granted,
   pe.current_value,
