@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.5] - 2025-08-14
 
+### 🐛 Bug Fixes
+- **Fixed Sell Modal Grant Price Display**: Resolved issue where sell modal was showing incorrect grant date price
+  - Sell modal now correctly displays the historical price from the grant date
+  - Ensures accurate profit/loss calculations when planning sales
+
 ### 🔧 Improvements
 - **Enhanced Version Checker**: Replaced modal notification with non-intrusive toast notification
   - Toast appears in bottom-right corner without blocking workflow
