@@ -5,6 +5,22 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-08-14
+
+### 🔧 Improvements
+- **Enhanced Version Checker**: Replaced modal notification with non-intrusive toast notification
+  - Toast appears in bottom-right corner without blocking workflow
+  - Can continue working while notification is present
+  - Better UX during price updates - toast doesn't interfere with progress modal
+  - Cleaner visual hierarchy with proper z-index management
+  
+### 🎨 UI/UX Updates  
+- **Toast Notification Design**: Implemented modern toast-style notification for version updates
+  - Smooth slide-in animation from right edge
+  - Persistent notification until user interaction (no auto-hide)
+  - Clear action buttons: "Dismiss (14 days)" vs "View Release"
+  - Maintains visibility during all app operations
+
 ## [0.3.4] - 2025-08-11
 
 ### 🔧 Bug Fixes

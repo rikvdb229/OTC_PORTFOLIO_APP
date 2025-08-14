@@ -20,10 +20,10 @@ const APP_CONFIG = {
         const info = await window.ipcRenderer.invoke("get-app-version");
         console.log("📥 Received version info:", info);
         
-        this.VERSION = info.version || "0.3.4";
+        this.VERSION = info.version || "0.3.5";
         this.APP_NAME = info.appName || "Portfolio Tracker";
         this.STATUS = info.status || "Beta Version";
-        this.BUILD_DATE = info.buildDate || "11-08-2025";
+        this.BUILD_DATE = info.buildDate || "14-08-2025";
         this.AUTHOR = info.author || "Portfolio Manager";
         
         console.log(`✅ Version loaded from main: ${this.getFullVersion()}`);

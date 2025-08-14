@@ -4,10 +4,10 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 ![Portfolio Tracker](assets/logo.svg)
 
-## Version 0.3.4
+## Version 0.3.5
 
 **Status**: Beta Version  
-**Build Date**: August 11, 2025  
+**Build Date**: August 14, 2025  
 **License**: MIT  
 
 ## ⚠️ Important Disclaimer
