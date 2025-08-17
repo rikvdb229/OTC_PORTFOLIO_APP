@@ -81,7 +81,9 @@ class AppHelpers {
       "2025-04-21", // Easter Monday
       "2025-05-01", // Labour Day
       "2025-05-29", // Ascension Day
-      "2025-06-09", // White Monday
+      "2025-05-30", // Bank holiday
+      "2025-06-09", // Whit Monday
+      "2025-07-11", // Regional holiday
       "2025-07-21", // Belgian National Day
       "2025-08-15", // Assumption Day
       "2025-11-01", // All Saints' Day
