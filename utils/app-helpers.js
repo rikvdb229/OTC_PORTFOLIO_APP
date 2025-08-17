@@ -86,7 +86,7 @@ class AppHelpers {
       "2025-07-11", // Regional holiday
       "2025-07-21", // Belgian National Day
       "2025-08-15", // Assumption Day
-      "2025-11-01", // All Saints' Day
+      "2025-11-01", // All Saints Day
       "2025-11-11", // Armistice Day
       "2025-12-25", // Christmas Day
       "2025-12-26"  // Boxing Day
