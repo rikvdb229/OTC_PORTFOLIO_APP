@@ -67,34 +67,6 @@ class AppHelpers {
   }
 
   /**
-   * Create helper function to check Bank Work days
-   */
-  isBankWorkDay = (date) => {
-    const day = date.getUTCDay(); // 0 = Sunday, 6 = Saturday
-    if (day === 0 || day === 6) return false;
-
-    // Optionally check for holidays
-    // Future proofing: can add more holidays dynamically
-    const holidays = [
-      "2025-01-01", // New Year's Day
-      "2025-04-18", // Good Friday
-      "2025-04-21", // Easter Monday
-      "2025-05-01", // Labour Day
-      "2025-05-29", // Ascension Day
-      "2025-06-09", // White Monday
-      "2025-07-21", // Belgian National Day
-      "2025-08-15", // Assumption Day
-      "2025-11-01", // All Saints' Day
-      "2025-11-11", // Armistice Day
-      "2025-12-25", // Christmas Day
-      "2025-12-26"  // Boxing Day
-    ];
-
-    const iso = date.toISOString().slice(0, 10);
-    return !holidays.includes(iso);
-  };
-
-  /**
    * Check for auto-update setting and trigger price update if enabled
    * MIGRATED FROM: renderer.js checkAutoUpdate() method
    * UPDATED: Only auto-update if prices are not current to avoid annoying users
@@ -106,19 +78,15 @@ class AppHelpers {
         await window.IPCCommunication.Settings.getSetting("auto_update_prices");
       if (autoUpdate === "true") {
         console.log('🔍 Auto-update enabled, checking if prices need updating...');
-
+        
         // Check if prices are current before auto-updating
         const priceStatus = await window.IPCCommunication.Price.getPriceUpdateStatus();
-
-        if (priceStatus && !priceStatus.isCurrent && this.isBankWorkDay(new Date())) {
+        
+        if (priceStatus && !priceStatus.isCurrent) {
           console.log('📊 Prices are not current, starting auto-update...');
           setTimeout(() => this.app.updatePrices(), 2000);
         } else {
-          if (!this.isBankWorkDay(new Date())) {
-            console.warn('⚠️ Auto-update skipped: Today is NOT a bank work day');
-          } else {
-            console.log('✅ Prices are already current, skipping auto-update');
-          }
+          console.log('✅ Prices are already current, skipping auto-update');
         }
       }
     } catch (error) {

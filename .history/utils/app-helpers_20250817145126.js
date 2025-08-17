@@ -112,7 +112,7 @@ class AppHelpers {
 
         if (priceStatus && !priceStatus.isCurrent && this.isBankWorkDay(new Date())) {
           console.log('📊 Prices are not current, starting auto-update...');
-          setTimeout(() => this.app.updatePrices(), 2000);
+          // setTimeout(() => this.app.updatePrices(), 2000);
         } else {
           if (!this.isBankWorkDay(new Date())) {
             console.warn('⚠️ Auto-update skipped: Today is NOT a bank work day');
