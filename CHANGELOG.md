@@ -5,12 +5,24 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.6] - 2025-08-17
+## [0.3.6] - 2025-08-18
+
+### ✨ New Features
+- **GitHub Actions CI/CD**: Added automated build pipelines for multi-platform releases
+  - Automated Windows, macOS, and Linux builds on every release
+  - Continuous integration testing on push and pull requests
+  - Support for manual workflow triggers for testing
+
+### 🔧 Improvements
+- **Extended Bank Holidays**: Added Belgian bank holidays from 2026 to 2040
+  - Comprehensive list of all Belgian national holidays
+  - Excludes regional and compensatory holidays
+  - Ensures accurate price update scheduling for the next 15 years
 
 ### 🐛 Bug Fixes
-- **Fixed Automatic Price Update**: Resolved issue where automatic price update tried to update prices during non-bank work day's
-  - New function added isBankWorkday
-  - Prices update only when isBankWorkday = true and priceStatus.isCurrent = false
+- **Fixed Automatic Price Update**: Resolved issue where automatic price update tried to update prices during non-bank work days
+  - New function added `isBankWorkday`
+  - Prices update only when `isBankWorkday = true` and `priceStatus.isCurrent = false`
 
 ## [0.3.5] - 2025-08-14
 
