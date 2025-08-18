@@ -72,8 +72,8 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 - **Extended Bank Holidays**: Added Belgian holidays through 2040 for accurate price scheduling
 - **Bug Fix**: Fixed automatic price updates on non-bank work days
 
-### ⚠️ Important for Version 0.3.1 Users
-**Due to recent performance improvements and bug fixes in v0.3.1, please run Settings → Update Historical Prices** to ensure your portfolio evolution calculations are using the latest optimized data processing. This will rebuild your portfolio timeline with the new performance enhancements and ensure all historical data is properly synchronized.
+### ⚠️ Important for Users Upgrading from Older Versions
+**If upgrading from version 0.3.1 or earlier, please run Settings → Update Historical Prices** to ensure your portfolio evolution calculations are using the latest optimized data processing. This will rebuild your portfolio timeline with the new performance enhancements and ensure all historical data is properly synchronized.
 
 #### ✨ Portable Features
 - **🗂️ Fully Self-Contained**: All dependencies bundled in single .exe file
