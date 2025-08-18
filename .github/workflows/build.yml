@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build-windows:
     runs-on: windows-latest
@@ -93,6 +96,19 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Extract version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+    - name: Extract changelog for this version
+      id: changelog
+      run: |
+        VERSION="${{ steps.get_version.outputs.VERSION }}"
+        CHANGELOG=$(awk "/## \[$VERSION\]/{flag=1; next} /## \[/{flag=0} flag" CHANGELOG.md)
+        echo "BODY<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+      
     - name: Download Windows artifact
       uses: actions/download-artifact@v4
       with:
@@ -114,12 +130,26 @@ jobs:
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
+        name: Portfolio Tracker v${{ steps.get_version.outputs.VERSION }}
+        body: |
+          ## Portfolio Tracker v${{ steps.get_version.outputs.VERSION }}
+          
+          ${{ steps.changelog.outputs.BODY }}
+          
+          ### Downloads
+          - **Windows**: `Portfolio Tracker ${{ steps.get_version.outputs.VERSION }}.exe` - Portable executable
+          - **macOS**: `Portfolio Tracker-${{ steps.get_version.outputs.VERSION }}.dmg` - Disk image
+          - **Linux**: `Portfolio Tracker-${{ steps.get_version.outputs.VERSION }}.AppImage` - AppImage package
+          
+          ### Installation
+          - **Windows**: Download and run the .exe file - no installation needed
+          - **macOS**: Download the .dmg, open it, and drag the app to Applications
+          - **Linux**: Download the AppImage, make it executable (`chmod +x`), and run
         files: |
           dist-windows/*.exe
           dist-mac/*.dmg
           dist-linux/*.AppImage
         draft: false
         prerelease: false
-        generate_release_notes: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
