@@ -21,8 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🐛 Bug Fixes
 - **Fixed Automatic Price Update**: Resolved issue where automatic price update tried to update prices during non-bank work days
-  - New function added `isBankWorkday`
-  - Prices update only when `isBankWorkday = true` and `priceStatus.isCurrent = false`
+  - New function added `isBankWorkDay`
+  - Prices update only when `isBankWorkDay = true` and `priceStatus.isCurrent = false`
 
 ## [0.3.5] - 2025-08-14
 
