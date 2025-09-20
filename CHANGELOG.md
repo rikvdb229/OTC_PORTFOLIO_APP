@@ -5,6 +5,23 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.7] - 2025-09-20
+
+### ✨ New Features
+- **Normalized Price % Column**: Added new column to portfolio table showing current price position within historical range
+  - Shows percentage position between historical minimum and maximum prices (e.g., 73.2% = near historical high)
+  - Color-coded display: green for high position (≥66%), red for low position (≤33%), neutral for middle range
+  - Available in both portfolio table and detailed option info modal
+  - Pre-calculated values for optimal performance
+
+### 🔧 Technical Improvements
+- **Backend Price Analysis**: Added `calculateNormalizedPricePercentage()` method to portfolio database
+  - Fetches complete price history for each option during data loading
+  - Handles edge cases: missing data, flat price history, invalid values
+  - Returns null for options with insufficient historical data
+- **Enhanced Portfolio Overview**: Extended `getPortfolioOverview()` to include normalized percentage calculations
+- **UI Table Updates**: Expanded "Current Status and Performance" section from 4 to 5 columns
+
 ## [0.3.6] - 2025-08-18
 
 ### ✨ New Features

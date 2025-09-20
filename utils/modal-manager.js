@@ -1036,6 +1036,12 @@ const ModalManager = {
                 }
               </div>
             </div>
+            <div class="info-stat">
+              <h4>Normalized Price %</h4>
+              <div class="stat-value ${this.getNormalizedPriceClass(priceHistory, entry.current_value)}">
+                ${this.calculateNormalizedPricePercentage(priceHistory, entry.current_value)}
+              </div>
+            </div>
           </div>
           
           <div class="option-restrictions">
@@ -2019,6 +2025,79 @@ updateProgress(app, progressData) {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  },
+
+  /**
+   * Calculate normalized price percentage
+   * @param {Array} priceHistory - Array of price history data
+   * @param {number} currentValue - Current option value
+   * @returns {string} Formatted normalized price percentage
+   */
+  calculateNormalizedPricePercentage(priceHistory, currentValue) {
+    if (!priceHistory || priceHistory.length === 0) {
+      return "N/A";
+    }
+
+    if (!currentValue || currentValue === 0) {
+      return "N/A";
+    }
+
+    // Extract price values from history
+    const priceValues = priceHistory.map(p => p.current_value).filter(v => v !== null && v !== undefined && !isNaN(v));
+    
+    if (priceValues.length === 0) {
+      return "N/A";
+    }
+
+    const min = Math.min(...priceValues);
+    const max = Math.max(...priceValues);
+
+    // Handle edge cases
+    if (min === max) {
+      return "N/A"; // If all prices are the same, position is meaningless
+    }
+
+    // Calculate normalized percentage (0-100)
+    const normalizedPct = ((currentValue - min) / (max - min)) * 100;
+    
+    // Use existing formatter
+    return window.FormatHelpers.formatPercentage(normalizedPct, 1);
+  },
+
+  /**
+   * Get CSS class for normalized price percentage
+   * @param {Array} priceHistory - Array of price history data
+   * @param {number} currentValue - Current option value
+   * @returns {string} CSS class name
+   */
+  getNormalizedPriceClass(priceHistory, currentValue) {
+    if (!priceHistory || priceHistory.length === 0 || !currentValue) {
+      return "";
+    }
+
+    const priceValues = priceHistory.map(p => p.current_value).filter(v => v !== null && v !== undefined && !isNaN(v));
+    
+    if (priceValues.length === 0) {
+      return "";
+    }
+
+    const min = Math.min(...priceValues);
+    const max = Math.max(...priceValues);
+
+    if (min === max) {
+      return ""; // Neutral if all prices are the same
+    }
+
+    const normalizedPct = ((currentValue - min) / (max - min)) * 100;
+    
+    // Use existing color scheme
+    if (normalizedPct >= 66) {
+      return "positive"; // Green for high position (top third)
+    } else if (normalizedPct <= 33) {
+      return "negative"; // Red for low position (bottom third) 
+    } else {
+      return ""; // Neutral for middle third
+    }
   },
 };
 window.ModalManager = ModalManager;

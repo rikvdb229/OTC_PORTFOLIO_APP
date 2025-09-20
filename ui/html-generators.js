@@ -72,6 +72,10 @@ class HTMLGenerators {
             : "N/A"
         }
       </td>
+      <td class="${this.getNormalizedPriceClassForRow(entry)}" 
+          title="Position of current price within historical range">
+        ${this.calculateNormalizedPriceForRow(entry)}
+      </td>
       <td class="status-column">
         ${this.app.helpers.getSellingStatusBadge(
           entry.selling_status,
@@ -133,7 +137,7 @@ class HTMLGenerators {
     if (!hasData) {
       tableBody.innerHTML = `
         <tr class="no-data">
-          <td colspan="11">
+          <td colspan="12">
             <div class="no-grants-message">
               <div class="no-grants-content">
                 <h3>📊 Welcome to Portfolio tracker</h3>
@@ -151,7 +155,7 @@ class HTMLGenerators {
     } else {
       tableBody.innerHTML = `
         <tr class="no-data">
-          <td colspan="11">
+          <td colspan="12">
             <div class="no-grants-message">
               <div class="no-grants-content">
                 <h3>🎯 Ready to Add Your First Grant!</h3>
@@ -460,6 +464,43 @@ class HTMLGenerators {
       return prices && prices.length > 0 && !prices.error;
     } catch (_error) {
       return false;
+    }
+  }
+
+  /**
+   * Calculate normalized price percentage for table row
+   * Uses pre-calculated value from backend
+   * @param {Object} entry - Portfolio entry
+   * @returns {string} Formatted normalized price percentage
+   */
+  calculateNormalizedPriceForRow(entry) {
+    if (entry.normalized_price_percentage === null || entry.normalized_price_percentage === undefined) {
+      return "N/A";
+    }
+    
+    // Format using existing formatter
+    return window.FormatHelpers.formatPercentage(entry.normalized_price_percentage, 1);
+  }
+
+  /**
+   * Get CSS class for normalized price percentage in table row
+   * @param {Object} entry - Portfolio entry
+   * @returns {string} CSS class name for coloring
+   */
+  getNormalizedPriceClassForRow(entry) {
+    if (entry.normalized_price_percentage === null || entry.normalized_price_percentage === undefined) {
+      return ""; // Neutral for N/A
+    }
+    
+    const percentage = entry.normalized_price_percentage;
+    
+    // Use same thresholds as in modal: 66% = high (green), 33% = low (red)
+    if (percentage >= 66) {
+      return "positive"; // Green for high position (top third)
+    } else if (percentage <= 33) {
+      return "negative"; // Red for low position (bottom third) 
+    } else {
+      return ""; // Neutral for middle third
     }
   }
 }

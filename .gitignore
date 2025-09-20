@@ -20,3 +20,10 @@ gh.zip
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Exclude all dotfiles and dotfolders (except .gitignore itself if uncommented)
+.*
+# !.gitignore
+
+# Exclude WARP.md (Claude configuration file)
+WARP.md

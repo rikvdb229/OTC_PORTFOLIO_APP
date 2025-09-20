@@ -1852,6 +1852,20 @@ ORDER BY pe.grant_date DESC
       }
       stmt.free();
 
+      // Calculate normalized price percentage for each row
+      for (const row of rows) {
+        try {
+          row.normalized_price_percentage = await this.calculateNormalizedPricePercentage(
+            row.exercise_price, 
+            row.grant_date, 
+            row.current_value
+          );
+        } catch (error) {
+          console.warn(`Failed to calculate normalized price for option ${row.exercise_price}:`, error.message);
+          row.normalized_price_percentage = null;
+        }
+      }
+
       return Promise.resolve(rows);
     } catch (error) {
       return Promise.reject(error);
@@ -2023,6 +2037,48 @@ ORDER BY st.sale_date DESC
       return Promise.resolve(rows);
     } catch (error) {
       return Promise.reject(error);
+    }
+  }
+
+  // Calculate normalized price percentage for an option
+  async calculateNormalizedPricePercentage(exercisePrice, grantDate, currentValue) {
+    try {
+      if (!currentValue || currentValue === 0) {
+        return null;
+      }
+
+      // Get price history for this option
+      const priceHistory = await this.getOptionPriceHistory(exercisePrice, grantDate);
+      
+      if (!priceHistory || priceHistory.length === 0) {
+        return null;
+      }
+
+      // Extract valid price values
+      const priceValues = priceHistory
+        .map(p => p.current_value)
+        .filter(v => v !== null && v !== undefined && !isNaN(v) && v > 0);
+      
+      if (priceValues.length === 0) {
+        return null;
+      }
+
+      const min = Math.min(...priceValues);
+      const max = Math.max(...priceValues);
+
+      // Handle edge case where all prices are the same
+      if (min === max) {
+        return null; // Position is meaningless if all prices are identical
+      }
+
+      // Calculate normalized percentage (0-100)
+      const normalizedPct = ((currentValue - min) / (max - min)) * 100;
+      
+      // Round to 1 decimal place
+      return Math.round(normalizedPct * 10) / 10;
+    } catch (error) {
+      console.warn(`Error calculating normalized price percentage:`, error.message);
+      return null;
     }
   }
 
