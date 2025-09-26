@@ -4,10 +4,10 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 ![Portfolio Tracker](assets/logo.svg)
 
-## Version 0.3.5
+## Version 0.3.8
 
-**Status**: Beta Version  
-**Build Date**: August 14, 2025  
+**Status**: Beta Version
+**Build Date**: September 26, 2025
 **License**: MIT  
 
 ## ⚠️ Important Disclaimer
@@ -63,14 +63,14 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 **No installation required!** Download and run the portable executable:
 
-1. **Download**: Get the latest `Portfolio Tracker 0.3.6.exe` from the [Releases](../../releases) page
+1. **Download**: Get the latest `Portfolio Tracker 0.3.8.exe` from the [Releases](../../releases) page
 2. **Run**: Double-click the .exe file to start the application
 3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
 
-### 🆕 New in Version 0.3.6
-- **CI/CD Pipeline**: Automated multi-platform builds via GitHub Actions
-- **Extended Bank Holidays**: Added Belgian holidays through 2040 for accurate price scheduling
-- **Bug Fix**: Fixed automatic price updates on non-bank work days
+### 🆕 New in Version 0.3.8
+- **GitHub Actions Optimization**: Removed non-functional macOS build from CI/CD pipeline
+- **Streamlined Build Process**: Focused on Windows and Linux support for improved reliability
+- **Infrastructure Improvements**: Enhanced release pipeline with better artifact handling
 
 ### ⚠️ Important for Users Upgrading from Older Versions
 **If upgrading from version 0.3.1 or earlier, please run Settings → Update Historical Prices** to ensure your portfolio evolution calculations are using the latest optimized data processing. This will rebuild your portfolio timeline with the new performance enhancements and ensure all historical data is properly synchronized.
@@ -153,7 +153,7 @@ npm run build:all
 
 **Remember: This app is for tracking only. Use your official platform for actual transactions.**
 
-1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.6.exe`
+1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.8.exe`
 2. **First Run**: The app creates a `portfolio.db` file next to the .exe
 3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information for tracking
 4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
@@ -335,4 +335,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Portfolio Tracker v0.3.6** - Professional stock options portfolio management with automated CI/CD, extended bank holiday support, and intelligent price update scheduling.
+**Portfolio Tracker v0.3.8** - Professional stock options portfolio management with optimized CI/CD pipeline, streamlined multi-platform builds, and enhanced infrastructure reliability.

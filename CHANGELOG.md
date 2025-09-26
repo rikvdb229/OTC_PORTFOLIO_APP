@@ -5,6 +5,19 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8] - 2025-09-26
+
+### 🔧 Infrastructure Improvements
+- **GitHub Actions Optimization**: Removed non-functional macOS build from CI/CD pipeline
+  - Streamlined build process to Windows and Linux only
+  - Reduced build time and eliminated macOS build failures
+  - Updated release artifacts to exclude macOS DMG files
+- **Build Configuration**: Cleaned up release workflow dependencies and artifact handling
+
+### 📦 Release Process
+- **Automated Releases**: Improved release pipeline reliability by focusing on supported platforms
+- **Documentation**: Updated installation instructions to reflect Windows and Linux support only
+
 ## [0.3.7] - 2025-09-20
 
 ### ✨ New Features
