@@ -520,6 +520,9 @@ class PortfolioDatabase {
     this.logDebug("🔄 Running database migrations...");
 
     try {
+      // Rename FOP to isin
+      await this.migrateRenameFOPToIsin();
+
       // Migrate source column
       await this.migrateAddSourceColumn();
 
@@ -540,6 +543,28 @@ class PortfolioDatabase {
     } catch (error) {
       this.logDebug(`❌ Migration failed: ${error.message}`);
       throw error;
+    }
+  }
+
+  async migrateRenameFOPToIsin() {
+    try {
+      const stmt = this.db.prepare("PRAGMA table_info(portfolio_entries)");
+      const columns = [];
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        columns.push(row.name);
+      }
+      stmt.free();
+
+      if (columns.includes('FOP') && !columns.includes('isin')) {
+        this.logDebug("🔧 Renaming FOP column to isin...");
+        this.db.exec(`ALTER TABLE portfolio_entries RENAME COLUMN FOP TO isin;`);
+        this.logDebug("✅ FOP column renamed to isin successfully");
+      } else {
+        this.logDebug("✅ isin column already exists or FOP column does not exist. No rename needed.");
+      }
+    } catch (error) {
+      this.logDebug(`❌ Error renaming FOP column: ${error.message}`);
     }
   }
 
@@ -1588,122 +1613,71 @@ class PortfolioDatabase {
     }
   }
 
-  async addPortfolioEntry(
-    grantDate,
-    exercisePrice,
-    quantity,
-    taxAmount = null,
-    isin = null,
-    source = "KBC"
-  ) {
-    try {
-      console.log("Adding portfolio entry:", {
-        grantDate,
-        exercisePrice,
-        quantity,
-        taxAmount,
-      });
+  async addPortfolioEntry(grantData) {
+    const {
+      grantDate,
+      exercisePrice,
+      quantity,
+      taxAmount = null,
+      source = "KBC",
+      isin = null,
+      fundName: ingFundName,
+      currentValue: ingCurrentValue,
+    } = grantData;
 
-      // Validate required parameters
+    try {
+      console.log("Adding portfolio entry:", grantData);
+
       if (!grantDate || !exercisePrice || !quantity) {
         throw new Error(
           "Missing required parameters: grantDate, exercisePrice, or quantity"
         );
       }
 
-      // Get the fund name and current value from price history for the exact grant date
-      const priceStmt = this.db.prepare(`
-      SELECT fund_name, current_value 
-      FROM price_history 
-      WHERE exercise_price = ? AND price_date = ?
-      ORDER BY price_date DESC 
-      LIMIT 1
-    `);
+      let fundName = ingFundName;
+      let currentValue = ingCurrentValue;
 
-      let priceData = null;
-      priceStmt.bind([exercisePrice, grantDate]);
-      if (priceStmt.step()) {
-        priceData = priceStmt.getAsObject();
-      }
-      priceStmt.free();
-
-      // Fallback: if no exact match, try to find by exercise price only
-      let fundName = null;
-      let currentValue = 0;
-
-      if (priceData) {
-        fundName = priceData.fund_name || null;
-        currentValue = priceData.current_value || 0;
-      } else {
-        console.log(
-          "No exact grant date price found, trying fallback lookup for closest price on or before grant date"
+      if (source === "KBC") {
+        const priceStmt = this.db.prepare(
+          `SELECT fund_name, current_value FROM price_history WHERE exercise_price = ? AND price_date = ? ORDER BY price_date DESC LIMIT 1`
         );
-        const fallbackStmt = this.db.prepare(`
-        SELECT fund_name, current_value, price_date
-        FROM price_history 
-        WHERE exercise_price = ? AND price_date <= ?
-        ORDER BY price_date DESC 
-        LIMIT 1
-      `);
-
-        let fallbackData = null;
-        fallbackStmt.bind([exercisePrice, grantDate]);
-        if (fallbackStmt.step()) {
-          fallbackData = fallbackStmt.getAsObject();
+        let priceData = null;
+        priceStmt.bind([exercisePrice, grantDate]);
+        if (priceStmt.step()) {
+          priceData = priceStmt.getAsObject();
         }
-        fallbackStmt.free();
+        priceStmt.free();
 
-        if (fallbackData) {
-          fundName = fallbackData.fund_name || null;
-          currentValue = fallbackData.current_value || 0;
-          console.log("Found fallback price data for grant date:", {
-            fundName,
-            currentValue,
-            priceDate: fallbackData.price_date,
-            grantDate
-          });
+        if (priceData) {
+          fundName = priceData.fund_name || null;
+          currentValue = priceData.current_value || 0;
         } else {
-          console.warn(
-            "No historical price data found for grant date or before for exercise price:",
-            exercisePrice,
-            "grant date:",
-            grantDate
+          const fallbackStmt = this.db.prepare(
+            `SELECT fund_name, current_value, price_date FROM price_history WHERE exercise_price = ? AND price_date <= ? ORDER BY price_date DESC LIMIT 1`
           );
+          let fallbackData = null;
+          fallbackStmt.bind([exercisePrice, grantDate]);
+          if (fallbackStmt.step()) {
+            fallbackData = fallbackStmt.getAsObject();
+          }
+          fallbackStmt.free();
+
+          if (fallbackData) {
+            fundName = fallbackData.fund_name || null;
+            currentValue = fallbackData.current_value || 0;
+          }
         }
       }
 
-      // Store the grant date price (historical price for the grant date)
-      const grantDatePrice = currentValue || 10; // Use historical price if available, fallback to €10
+      const grantDatePrice = currentValue && currentValue !== 'N/A' ? currentValue : 10;
       const amountGranted = quantity * grantDatePrice;
-
-      // Calculate auto tax - ensure we have a valid tax rate
-      let taxRateSetting;
-      try {
-        taxRateSetting = await this.getSetting("tax_auto_rate");
-      } catch (error) {
-        console.warn("Could not get tax rate setting, using default:", error);
-        taxRateSetting = "30";
-      }
-
+      const taxRateSetting = await this.getSetting("tax_auto_rate");
       const taxRate = parseFloat(taxRateSetting || "30");
       const autoTax = amountGranted * (taxRate / 100);
 
-      console.log("Calculated values:", {
-        fundName,
-        currentValue,
-        grantDatePrice,
-        amountGranted,
-        taxRate,
-        autoTax,
-        taxAmount,
-      });
-
-      // Insert the portfolio entry with grant_date_price
-      const stmt = this.db.prepare(`
-      INSERT INTO portfolio_entries 
-      (grant_date, fund_name, exercise_price, quantity, amount_granted, current_value, grant_date_price, tax_amount, tax_auto_calculated)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
+      const stmt = this.db.prepare(
+        `INSERT INTO portfolio_entries (grant_date, fund_name, exercise_price, quantity, amount_granted, current_value, grant_date_price, tax_amount, tax_auto_calculated, source, isin) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      );
 
       stmt.run([
         grantDate || null,
@@ -1711,33 +1685,25 @@ class PortfolioDatabase {
         exercisePrice || 0,
         quantity || 0,
         amountGranted || 0,
-        currentValue || 0,
-        grantDatePrice || 10,
+        currentValue && currentValue !== 'N/A' ? currentValue : 0,
+        grantDatePrice,
         taxAmount || null,
         autoTax || 0,
         source,
         isin || null,
       ]);
 
-      // FIXED: For sql.js, get the last insert rowid using proper method
       const lastIdStmt = this.db.prepare("SELECT last_insert_rowid() as id");
       let insertId = null;
-
-      lastIdStmt.bind([]);
       if (lastIdStmt.step()) {
-        const lastIdResult = lastIdStmt.getAsObject();
-        insertId = lastIdResult ? lastIdResult.id : null;
+        insertId = lastIdStmt.getAsObject().id;
       }
-
       stmt.free();
       lastIdStmt.free();
       this.saveDatabase();
 
       console.log("✅ Portfolio entry added with ID:", insertId);
 
-      // Rebuild evolution timeline from grant date forward
-      // This creates evolution entries with proper notes and values for the new grant
-      console.log(`🔥 Triggering optimized evolution timeline rebuild from ${grantDate} after adding grant`);
       await this.rebuildCompleteEvolutionTimeline(null, grantDate);
       console.log("✅ Evolution timeline rebuilt from grant date forward");
 

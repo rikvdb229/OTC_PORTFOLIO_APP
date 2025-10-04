@@ -1215,12 +1215,16 @@ const GrantOperations = {
       const actualTaxAmount = actualTaxAmountElement?.value
         ? parseFloat(actualTaxAmountElement.value) || null
         : null;
+      const source = document.getElementById('grantSource').value;
+      const isin = document.getElementById('isin').value;
 
       console.log("📝 Form data validated:", {
         grantDate,
         exercisePrice,
         quantity,
         actualTaxAmount,
+        source,
+        isin,
       });
 
       // ✅ Enhanced validation - the button should already be disabled if invalid
@@ -1238,6 +1242,8 @@ const GrantOperations = {
         exercisePrice: exercisePrice,
         quantity: quantity,
         actualTaxAmount: actualTaxAmount,
+        source: source,
+        isin: isin,
       };
 
       console.log("📝 Form data stored successfully:", app.currentFormData);
@@ -1291,7 +1297,7 @@ const GrantOperations = {
 
       // Proceed with grant addition (historical prices should already be fetched when option was selected)
       console.log("➕ Proceeding with grant addition...");
-      await this.completeGrantAddition(app, grantDate, exercisePrice, quantity, actualTaxAmount);
+      await this.completeGrantAddition(app, app.currentFormData);
     } catch (error) {
       console.error("❌ Error in addGrants:", error);
       alert("Error adding options: " + error.message);
@@ -1354,7 +1360,7 @@ const GrantOperations = {
         return;
       }
 
-      const { grantDate, exercisePrice, quantity, actualTaxAmount } = formData;
+      const { grantDate, exercisePrice, quantity, actualTaxAmount, source, isin } = formData;
 
       console.log("📝 Using stored form data for separate grant:", formData);
 
@@ -1366,15 +1372,20 @@ const GrantOperations = {
         return;
       }
 
+      let grantData = { ...formData };
+      if (source === 'ING') {
+        const exercisePriceSelect = document.getElementById('exercisePrice');
+        const selectedOption = exercisePriceSelect.options[exercisePriceSelect.selectedIndex];
+        grantData.fundName = selectedOption.dataset.fundName;
+        grantData.currentValue = selectedOption.dataset.currentValue;
+      }
+
       // Close modal BEFORE making the API call
       window.UIStateManager.Modals.closeAllModals(app);
 
       const result = await window.ipcRenderer.invoke(
         "add-portfolio-entry",
-        grantDate,
-        exercisePrice,
-        quantity,
-        actualTaxAmount
+        grantData
       );
 
       if (result.error) {
@@ -1563,14 +1574,19 @@ const GrantOperations = {
    * @param {number} quantity - Quantity
    * @param {number} actualTaxAmount - Tax amount
    */
-  async completeGrantAddition(app, grantDate, exercisePrice, quantity, actualTaxAmount) {
+  async completeGrantAddition(app, grantData) {
     try {
+      let data = { ...grantData };
+      if (data.source === 'ING') {
+        const exercisePriceSelect = document.getElementById('exercisePrice');
+        const selectedOption = exercisePriceSelect.options[exercisePriceSelect.selectedIndex];
+        data.fundName = selectedOption.dataset.fundName;
+        data.currentValue = selectedOption.dataset.currentValue;
+      }
+
       const result = await window.ipcRenderer.invoke(
         "add-portfolio-entry",
-        grantDate,
-        exercisePrice,
-        quantity,
-        actualTaxAmount
+        data
       );
 
       if (result.error) {
@@ -1592,7 +1608,7 @@ const GrantOperations = {
       app.currentFormData = null;
       app.pendingGrantData = null; // Clear pending data
 
-      console.log(`🎉 Successfully added ${quantity} options`);
+      console.log(`🎉 Successfully added ${data.quantity} options`);
     } catch (error) {
       console.error("❌ Error in completeGrantAddition:", error);
       alert("Error adding options: " + error.message);

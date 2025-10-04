@@ -505,32 +505,16 @@ ipcMain.handle(
 );
 
 // FIXED: Updated to match the new database method signature
-ipcMain.handle(
-  "add-portfolio-entry",
-  async (event, grantDate, exercisePrice, quantity, taxAmount, source = 'KBC', isin = null) => {
+ipcMain.handle("add-portfolio-entry", async (event, grantData) => {
     try {
-      console.log("IPC: Adding portfolio entry with params:", {
-        grantDate,
-        exercisePrice,
-        quantity,
-        taxAmount,
-        source,
-        isin
-      });
+      console.log("IPC: Adding portfolio entry with params:", grantData);
 
       // Validate ING requirements
-      if (source === 'ING' && !isin) {
+      if (grantData.source === 'ING' && !grantData.isin) {
         throw new Error('ISIN is required for ING grants');
       }
 
-      const result = await portfolioDb.addPortfolioEntry(
-        grantDate,
-        exercisePrice,
-        quantity,
-        taxAmount,
-        source,
-        isin
-      );
+      const result = await portfolioDb.addPortfolioEntry(grantData);
       return result;
     } catch (error) {
       console.error("Error adding portfolio entry:", error);

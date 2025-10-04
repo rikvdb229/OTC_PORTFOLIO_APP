@@ -497,7 +497,8 @@ class EnhancedPortfolioApp {
       const source = document.getElementById('grantSource').value;
       const isin = document.getElementById('isin')?.value || null;
       const grantDate = document.getElementById('grantDate').value;
-      const exercisePrice = parseFloat(document.getElementById('exercisePrice').value);
+      const exercisePriceSelect = document.getElementById('exercisePrice');
+      const exercisePrice = parseFloat(exercisePriceSelect.value);
       const quantity = parseInt(document.getElementById('quantity').value);
       const taxAmount = document.getElementById('taxAmount').value
         ? parseFloat(document.getElementById('taxAmount').value)
@@ -515,15 +516,23 @@ class EnhancedPortfolioApp {
         return;
       }
 
-      // Submit to backend
-      await window.IPCCommunication.Grants.addGrants(this, {
+      let grantData = {
         grantDate,
         exercisePrice,
         quantity,
         taxAmount,
         source,
-        isin
-      });
+        isin,
+      };
+
+      if (source === 'ING') {
+        const selectedOption = exercisePriceSelect.options[exercisePriceSelect.selectedIndex];
+        grantData.fundName = selectedOption.dataset.fundName;
+        grantData.currentValue = selectedOption.dataset.currentValue;
+      }
+
+      // Submit to backend
+      await window.IPCCommunication.Grants.addGrants(this, grantData);
 
       // Clear form and close modal on success
       this.clearaddGrantsForm();

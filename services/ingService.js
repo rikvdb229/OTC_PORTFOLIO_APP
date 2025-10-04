@@ -100,7 +100,7 @@ async function findFopProductInfo(isin) {
   try {
     await win.loadURL(urlInvestorProfile, { userAgent: "Mozilla/5.0" });
 
-    // Try to select professional investor if needed (same logic as before)
+    // Try to select professional investor
     const cookies = await win.webContents.session.cookies.get({ url: "https://www.ingmarkets.com" });
     const isPro = cookies.some(c => /investor/i.test(c.name) && /professional/i.test(c.value));
 
