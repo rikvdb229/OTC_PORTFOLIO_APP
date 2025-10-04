@@ -157,6 +157,10 @@ const FormManager = {
    * MIGRATED FROM: config.js FormManager.handleGrantDateSelection()
    */
   async handleGrantDateSelection(app) {
+    const grantSource = document.getElementById('grantSource')?.value;
+    if (grantSource === 'ING') {
+      return; // Do not perform KBC lookup for ING grants
+    }
     const grantDate = document.getElementById("grantDate").value;
     const exercisePriceSelect = document.getElementById("exercisePrice");
     const helpText = document.getElementById("exercisePriceHelp");
@@ -367,54 +371,54 @@ const FormValidation = {
    * @param {Object} app - Application instance
    */
   validateAddGrantsForm(app) {
+    const grantSource = document.getElementById('grantSource')?.value;
     const grantDate = document.getElementById("grantDate")?.value;
     const quantity = document.getElementById("quantity")?.value;
+    const exercisePrice = document.getElementById("exercisePrice")?.value;
+    const isin = document.getElementById("isin")?.value;
 
-    // ✅ FIX: Use the correct button ID
     const confirmButton = document.getElementById("confirmaddGrants");
 
-    // ALWAYS create validation object first
     const validation = {
       isValid: true,
       errors: [],
     };
 
-    // Check grant date
     if (!grantDate) {
       validation.isValid = false;
       validation.errors.push("Grant date is required");
     } else if (!this.isValidDate(grantDate)) {
       validation.isValid = false;
-      validation.errors.push("Grant date must be a valid date<");
+      validation.errors.push("Grant date must be a valid date");
     } else if (this.isFutureDate(grantDate)) {
       validation.isValid = false;
       validation.errors.push("Grant date cannot be in the future");
     }
 
-    // Check quantity
-    if (!quantity) {
-      validation.isValid = false;
-      validation.errors.push("Quantity is required");
-    } else if (
-      !Number.isInteger(parseInt(quantity)) ||
-      parseInt(quantity) <= 0
-    ) {
+    if (!quantity || !Number.isInteger(parseInt(quantity)) || parseInt(quantity) <= 0) {
       validation.isValid = false;
       validation.errors.push("Quantity must be a positive whole number");
     }
 
-    // Try to update button state
-    if (confirmButton) {
-      this.updateButtonState(confirmButton, validation);
-      console.log(
-        "✅ Button state updated:",
-        validation.isValid ? "enabled" : "disabled"
-      );
-    } else {
-      console.warn("⚠️ confirmaddGrants button not found");
+    if (grantSource === 'KBC') {
+      if (!exercisePrice) {
+        validation.isValid = false;
+        validation.errors.push("Please select an available option");
+      }
+    } else if (grantSource === 'ING') {
+      if (!isin || isin.length !== 12) {
+        validation.isValid = false;
+        validation.errors.push("A valid 12-character ISIN is required");
+      } else if (!exercisePrice) {
+        validation.isValid = false;
+        validation.errors.push("Waiting for product information from ISIN...");
+      }
     }
 
-    // ALWAYS return validation object
+    if (confirmButton) {
+      this.updateButtonState(confirmButton, validation);
+    }
+
     return validation;
   },
 
@@ -468,7 +472,7 @@ const FormValidation = {
    * @param {Object} app - Application instance
    */
   setupValidationListeners(app) {
-    const fieldsToWatch = ["grantDate", "exercisePrice", "quantity"];
+    const fieldsToWatch = ["grantDate", "exercisePrice", "quantity", "isin"];
 
     fieldsToWatch.forEach((fieldId) => {
       const field = document.getElementById(fieldId);

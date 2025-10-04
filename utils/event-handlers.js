@@ -542,9 +542,9 @@ const FormHandlers = {
         handler: () => app.handleExercisePriceSelection(),
       },
       {
-        id: "actualTaxAmount",
+        id: "isin",
         event: "input",
-        handler: () => app.updateTaxDisplay(),
+        handler: () => app.handleIsinInput(),
       },
 
       // UPDATED: Sell Options form with new date field and simplified calculation

@@ -89,7 +89,7 @@ class AppHelpers {
       "2025-11-11", // Armistice Day
       "2025-12-25", // Christmas Day
       "2025-12-26", // Boxing Day
-      
+
       // 2026
       "2026-01-01", // New Year's Day
       "2026-04-03", // Good Friday
@@ -103,7 +103,7 @@ class AppHelpers {
       "2026-11-11", // Armistice Day
       "2026-12-25", // Christmas Day
       "2026-12-26", // Boxing Day
-      
+
       // 2027
       "2027-01-01", // New Year's Day
       "2027-03-26", // Good Friday
@@ -117,7 +117,7 @@ class AppHelpers {
       "2027-11-11", // Armistice Day
       "2027-12-25", // Christmas Day
       "2027-12-26", // Boxing Day
-      
+
       // 2028
       "2028-01-01", // New Year's Day
       "2028-04-14", // Good Friday
@@ -131,7 +131,7 @@ class AppHelpers {
       "2028-11-11", // Armistice Day
       "2028-12-25", // Christmas Day
       "2028-12-26", // Boxing Day
-      
+
       // 2029
       "2029-01-01", // New Year's Day
       "2029-03-30", // Good Friday
@@ -145,7 +145,7 @@ class AppHelpers {
       "2029-11-11", // Armistice Day
       "2029-12-25", // Christmas Day
       "2029-12-26", // Boxing Day
-      
+
       // 2030
       "2030-01-01", // New Year's Day
       "2030-04-19", // Good Friday
@@ -159,7 +159,7 @@ class AppHelpers {
       "2030-11-11", // Armistice Day
       "2030-12-25", // Christmas Day
       "2030-12-26", // Boxing Day
-      
+
       // 2031
       "2031-01-01", // New Year's Day
       "2031-04-11", // Good Friday
@@ -173,7 +173,7 @@ class AppHelpers {
       "2031-11-11", // Armistice Day
       "2031-12-25", // Christmas Day
       "2031-12-26", // Boxing Day
-      
+
       // 2032
       "2032-01-01", // New Year's Day
       "2032-03-26", // Good Friday
@@ -187,7 +187,7 @@ class AppHelpers {
       "2032-11-11", // Armistice Day
       "2032-12-25", // Christmas Day
       "2032-12-26", // Boxing Day
-      
+
       // 2033
       "2033-01-01", // New Year's Day
       "2033-04-15", // Good Friday
@@ -201,7 +201,7 @@ class AppHelpers {
       "2033-11-11", // Armistice Day
       "2033-12-25", // Christmas Day
       "2033-12-26", // Boxing Day
-      
+
       // 2034
       "2034-01-01", // New Year's Day
       "2034-04-07", // Good Friday
@@ -215,7 +215,7 @@ class AppHelpers {
       "2034-11-11", // Armistice Day
       "2034-12-25", // Christmas Day
       "2034-12-26", // Boxing Day
-      
+
       // 2035
       "2035-01-01", // New Year's Day
       "2035-03-23", // Good Friday
@@ -229,7 +229,7 @@ class AppHelpers {
       "2035-11-11", // Armistice Day
       "2035-12-25", // Christmas Day
       "2035-12-26", // Boxing Day
-      
+
       // 2036
       "2036-01-01", // New Year's Day
       "2036-04-11", // Good Friday
@@ -243,7 +243,7 @@ class AppHelpers {
       "2036-11-11", // Armistice Day
       "2036-12-25", // Christmas Day
       "2036-12-26", // Boxing Day
-      
+
       // 2037
       "2037-01-01", // New Year's Day
       "2037-04-03", // Good Friday
@@ -257,7 +257,7 @@ class AppHelpers {
       "2037-11-11", // Armistice Day
       "2037-12-25", // Christmas Day
       "2037-12-26", // Boxing Day
-      
+
       // 2038
       "2038-01-01", // New Year's Day
       "2038-04-23", // Good Friday
@@ -271,7 +271,7 @@ class AppHelpers {
       "2038-11-11", // Armistice Day
       "2038-12-25", // Christmas Day
       "2038-12-26", // Boxing Day
-      
+
       // 2039
       "2039-01-01", // New Year's Day
       "2039-04-08", // Good Friday
@@ -285,7 +285,7 @@ class AppHelpers {
       "2039-11-11", // Armistice Day
       "2039-12-25", // Christmas Day
       "2039-12-26", // Boxing Day
-      
+
       // 2040
       "2040-01-01", // New Year's Day
       "2040-03-30", // Good Friday
@@ -478,7 +478,7 @@ class AppHelpers {
         if (progressBar) progressBar.style.width = "100%";
         if (progressText) progressText.textContent = "Update Complete!";
         if (statusOutput)
-          statusOutput.textContent = `✅ Successfully updated prices\nFile: ${result.fileName}`;
+          statusOutput.textContent = "✅ Successfully updated prices";
 
         console.log("🔄 Refreshing data after successful price update...");
         await app.loadPortfolioData();

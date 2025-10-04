@@ -3,6 +3,7 @@ const path = require("path");
 const fs = require("fs");
 const KBCScraper = require("./scraper");
 const PortfolioDatabase = require("./portfolio-db");
+const ingService = require("./services/ingService");
 
 // ADD HERE: Version checker at the top after imports
 const packageInfo = require("./package.json");
@@ -96,7 +97,7 @@ function createWindow() {
       // Fallback to simple error page
       mainWindow.loadURL(
         "data:text/html," +
-          encodeURIComponent(`
+        encodeURIComponent(`
       <h1>App Load Error</h1>
       <p>Error: ${error.message}</p>
       <p>Check that index.html exists in the project directory.</p>
@@ -152,7 +153,7 @@ app.on("window-all-closed", async () => {
   } catch (error) {
     console.error('❌ Error during app cleanup:', error);
   }
-  
+
   if (portfolioDb) {
     portfolioDb.close();
   }
@@ -170,7 +171,7 @@ app.on("activate", () => {
 // Additional cleanup on quit
 app.on("before-quit", async (event) => {
   event.preventDefault();
-  
+
   // Perform cleanup
   try {
     const CleanupManager = require('./utils/cleanup-manager');
@@ -180,7 +181,7 @@ app.on("before-quit", async (event) => {
   } catch (error) {
     console.error('❌ Error during app cleanup:', error);
   }
-  
+
   // Now actually quit
   app.exit(0);
 });
@@ -241,7 +242,7 @@ ipcMain.handle("get-app-version", () => {
   console.log("🔍 get-app-version IPC called");
   console.log("📦 pkg.version:", pkg.version);
   console.log("📦 Full pkg object:", JSON.stringify(pkg, null, 2));
-  
+
   const versionInfo = {
     version: pkg.version,
     appName: pkg.build?.productName || pkg.name,
@@ -250,7 +251,7 @@ ipcMain.handle("get-app-version", () => {
     buildDate: pkg.buildDate,
     status: pkg.status,
   };
-  
+
   console.log("📤 Returning version info:", versionInfo);
   return versionInfo;
 });
@@ -326,176 +327,92 @@ ipcMain.handle("window-close", () => {
 
 // IPC handlers for scraping functionality
 ipcMain.handle("scrape-data", async (event) => {
-  const scraper = new KBCScraper();
+  const { getPrice } = require('./services/priceService');
 
-  return new Promise((resolve) => {
-    scraper
-      .scrapeData((progress) => {
-        console.log(`📊 Scraper progress: ${progress}`);
+  return new Promise(async (resolve) => {
+    try {
+      // Get all grants that need price updates
+      const grants = await portfolioDb.getAllGrantsNeedingUpdate();
 
-        // FIXED: Only send detailed progress - no conflicts
-        mainWindow.webContents.send("scrape-progress", progress);
-      })
-      .then(async (result) => {
-        console.log("✅ Scraping completed:", result);
-
-        // CRITICAL: Process CSV data if scraping was successful
-        if (result.success && result.filePath && portfolioDb) {
-          try {
-            console.log("🔄 Processing CSV file:", result.filePath);
-
-            // Check if file exists
-            if (!fs.existsSync(result.filePath)) {
-              console.error("❌ CSV file not found:", result.filePath);
-              resolve(result);
-              return;
-            }
-
-            // Parse the CSV file
-            const Papa = require("papaparse");
-            const csvContent = fs.readFileSync(result.filePath, "utf-8");
-            console.log("📄 CSV content length:", csvContent.length);
-
-            const parsedData = Papa.parse(csvContent, {
-              header: false,
-              dynamicTyping: true,
-              skipEmptyLines: true,
-              delimiter: ",",
-            });
-
-            console.log("📊 CSV parsed, total rows:", parsedData.data.length);
-            console.log("📄 First few rows:", parsedData.data.slice(0, 3));
-
-            // Send processing update
-            mainWindow.webContents.send(
-              "scrape-progress",
-              "Processing CSV data..."
-            );
-
-            // Transform the data to match expected database format
-            const transformedData = parsedData.data
-              .map((row, index) => {
-                try {
-                  if (row.length >= 8) {
-                    // Parse CSV columns (adjust based on actual CSV structure)
-                    const exercisePrice = parseFloat(row[3]);
-                    const currentValue = parseFloat(row[5]);
-                    const grantDate = row[2];
-                    const priceDate =
-                      row[6] || new Date().toISOString().split("T")[0];
-                    const fundName = row[7];
-
-                    // Validate data
-                    if (
-                      !isNaN(exercisePrice) &&
-                      !isNaN(currentValue) &&
-                      exercisePrice > 0 &&
-                      currentValue > 0 &&
-                      fundName &&
-                      fundName.trim() !== ""
-                    ) {
-                      return {
-                        exercise_price: exercisePrice,
-                        current_value: currentValue,
-                        grant_date: grantDate,
-                        price_date: priceDate,
-                        fund_name: fundName.trim(),
-                      };
-                    }
-                  }
-                  return null;
-                } catch (error) {
-                  console.warn(`⚠️ Error parsing row ${index}:`, error);
-                  return null;
-                }
-              })
-              .filter((row) => row !== null);
-
-            console.log("🔄 Transformed data count:", transformedData.length);
-            console.log(
-              "📊 Sample transformed data:",
-              transformedData.slice(0, 3)
-            );
-
-            if (transformedData.length > 0) {
-              // Get the actual price date from the CSV data
-              const actualPriceDate =
-                transformedData[0].price_date ||
-                new Date().toISOString().split("T")[0];
-
-              console.log(
-                "💾 Updating database with price date:",
-                actualPriceDate
-              );
-
-              // Update the database with new price data
-              await portfolioDb.updatePricesFromCSV(
-                transformedData,
-                actualPriceDate
-              );
-
-              // Send completion update
-              mainWindow.webContents.send(
-                "scrape-progress",
-                `✅ Successfully updated ${transformedData.length} price entries`
-              );
-
-              console.log(
-                `✅ Portfolio prices updated: ${transformedData.length} entries with price date: ${actualPriceDate}`
-              );
-
-              // Update the result to include processing info
-              result.message = `Data scraped and processed successfully. Updated ${transformedData.length} price entries.`;
-              result.priceEntriesUpdated = transformedData.length;
-              result.priceDate = actualPriceDate;
-            } else {
-              console.warn("❌ No valid price data found in CSV");
-              mainWindow.webContents.send(
-                "scrape-progress",
-                "❌ No valid price data found in CSV"
-              );
-              result.message =
-                "Data scraped but no valid price data found in CSV.";
-              result.priceEntriesUpdated = 0;
-            }
-          } catch (dbError) {
-            console.error("❌ Error processing CSV data:", dbError);
-            mainWindow.webContents.send(
-              "scrape-progress",
-              `❌ CSV processing failed: ${dbError.message}`
-            );
-            // Don't fail the entire operation, just log the error
-            result.message = `Scraping successful but CSV processing failed: ${dbError.message}`;
-            result.csvProcessingError = dbError.message;
-          }
-        } else if (result.success && !result.filePath) {
-          console.warn("⚠️ Scraping successful but no file path provided");
-          mainWindow.webContents.send(
-            "scrape-progress",
-            "⚠️ No file downloaded"
-          );
-        } else if (!result.success) {
-          console.error("❌ Scraping failed:", result.error);
-          mainWindow.webContents.send(
-            "scrape-progress",
-            `❌ Scraping failed: ${result.error}`
-          );
-        }
-
-        resolve(result);
-      })
-      .catch((error) => {
-        console.error("❌ Scraping failed with exception:", error);
+      if (grants.length === 0) {
         mainWindow.webContents.send(
           "scrape-progress",
-          `❌ Scraping failed: ${error.message}`
+          "✅ All grants already have today's prices"
         );
-        resolve({
-          success: false,
-          error: error.message,
-          message: "Scraping failed due to unexpected error",
+        return resolve({
+          success: true,
+          message: "All grants already have today's prices",
+          priceEntriesUpdated: 0
         });
+      }
+
+      let completedCount = 0;
+      const errors = [];
+
+      // Process grants in parallel with progress updates
+      const priceUpdates = grants.map(async (grant) => {
+        try {
+          // console.log(grant);
+          const priceResult = await getPrice(grant);
+
+          // Store the updated price
+          await portfolioDb.storePriceUpdate(
+            grant.id,
+            priceResult.price,
+            priceResult.timestamp
+          );
+
+          // Send progress update
+          completedCount++;
+          mainWindow.webContents.send("scrape-progress", {
+            text: `Updated ${completedCount}/${grants.length} grants`,
+            percentage: Math.round((completedCount / grants.length) * 100)
+          });
+
+          return { success: true, grantId: grant.id };
+        } catch (error) {
+          errors.push({
+            grantId: grant.id,
+            error: error.message
+          });
+          return { success: false, grantId: grant.id, error: error.message };
+        }
       });
+
+      // Wait for all updates to complete
+      const results = await Promise.all(priceUpdates);
+
+      // Calculate final stats
+      const successfulUpdates = results.filter(r => r.success).length;
+      const failedUpdates = results.filter(r => !r.success).length;
+
+      if (failedUpdates > 0) {
+        console.error("❌ Some price updates failed:", errors);
+        mainWindow.webContents.send(
+          "scrape-progress",
+          `❌ ${failedUpdates} price updates failed`
+        );
+      }
+
+      resolve({
+        success: failedUpdates === 0,
+        priceEntriesUpdated: successfulUpdates,
+        errors,
+        message: `Updated ${successfulUpdates} grants, ${failedUpdates} failed`
+      });
+
+    } catch (error) {
+      console.error("❌ Price update failed:", error);
+      mainWindow.webContents.send(
+        "scrape-progress",
+        `❌ Price update failed: ${error.message}`
+      );
+      resolve({
+        success: false,
+        error: error.message,
+        message: "Price update failed due to unexpected error"
+      });
+    }
   });
 });
 
@@ -590,20 +507,29 @@ ipcMain.handle(
 // FIXED: Updated to match the new database method signature
 ipcMain.handle(
   "add-portfolio-entry",
-  async (event, grantDate, exercisePrice, quantity, taxAmount) => {
+  async (event, grantDate, exercisePrice, quantity, taxAmount, source = 'KBC', isin = null) => {
     try {
       console.log("IPC: Adding portfolio entry with params:", {
         grantDate,
         exercisePrice,
         quantity,
         taxAmount,
+        source,
+        isin
       });
+
+      // Validate ING requirements
+      if (source === 'ING' && !isin) {
+        throw new Error('ISIN is required for ING grants');
+      }
 
       const result = await portfolioDb.addPortfolioEntry(
         grantDate,
         exercisePrice,
         quantity,
-        taxAmount
+        taxAmount,
+        source,
+        isin
       );
       return result;
     } catch (error) {
@@ -783,9 +709,8 @@ ipcMain.handle("export-database", async () => {
     // Show save dialog
     const result = await dialog.showSaveDialog(mainWindow, {
       title: "Export Portfolio Database",
-      defaultPath: `kbc-esop-backup-${
-        new Date().toISOString().split("T")[0]
-      }.json`,
+      defaultPath: `kbc-esop-backup-${new Date().toISOString().split("T")[0]
+        }.json`,
       filters: [{ name: "KBC ESOP Portfolio Backup", extensions: ["json"] }],
     });
 
@@ -952,29 +877,29 @@ ipcMain.handle(
 ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice, grantDate, onProgress) => {
   try {
     console.log(`📊 Fetching historical prices for: ${fundName} (€${exercisePrice}, ${grantDate})`);
-    
+
     const EnhancedHistoricalScraper = require('./enhanced-historical-scraper');
     const scraper = new EnhancedHistoricalScraper();
-    
+
     // Progress callback to update frontend
     const progressCallback = (progress) => {
       event.sender.send('historical-fetch-progress', progress);
     };
-    
+
     const result = await scraper.fetchHistoricalPricesForOption(
       fundName,
       exercisePrice,
       grantDate,
       progressCallback
     );
-    
+
     console.log(`✅ Successfully fetched ${result.priceHistory.length} historical prices`);
-    
+
     // Log derived price information if applicable
     if (result.grantDatePriceDerived) {
       console.log(`📊 Grant date price was derived: €${result.grantDatePrice} (${result.grantDatePriceSource})`);
     }
-    
+
     // Store in price_history table
     if (result.priceHistory.length > 0) {
       await portfolioDb.storeHistoricalPrices(
@@ -985,7 +910,7 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
       );
       console.log(`💾 Stored ${result.priceHistory.length} prices in database`);
     }
-    
+
     return {
       success: true,
       fundName: result.fundName,
@@ -1001,7 +926,7 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
         to: result.priceHistory[0]?.date
       }
     };
-    
+
   } catch (error) {
     console.error("❌ Error fetching historical prices:", error);
     return {
@@ -1015,11 +940,11 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
 ipcMain.handle("update-portfolio-historical-prices", async (event) => {
   try {
     console.log("🔄 Updating historical prices for existing portfolio...");
-    
+
     // Get unique options from portfolio
     const portfolioOverview = await portfolioDb.getPortfolioOverview();
     const uniqueOptions = new Map();
-    
+
     portfolioOverview.forEach(entry => {
       const key = `${entry.fund_name}-${entry.exercise_price}-${entry.grant_date}`;
       if (!uniqueOptions.has(key)) {
@@ -1030,22 +955,22 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
         });
       }
     });
-    
+
     const optionsToUpdate = Array.from(uniqueOptions.values());
     console.log(`📊 Found ${optionsToUpdate.length} unique options to update`);
-    
+
     const EnhancedHistoricalScraper = require('./enhanced-historical-scraper');
     const scraper = new EnhancedHistoricalScraper();
-    
+
     let successCount = 0;
     let errorCount = 0;
-    
+
     for (let i = 0; i < optionsToUpdate.length; i++) {
       const option = optionsToUpdate[i];
-      
+
       try {
-        console.log(`📊 Processing option ${i+1}/${optionsToUpdate.length}: ${option.fund_name} (€${option.exercise_price}, ${option.grant_date})`);
-        
+        console.log(`📊 Processing option ${i + 1}/${optionsToUpdate.length}: ${option.fund_name} (€${option.exercise_price}, ${option.grant_date})`);
+
         // Progress callback
         const progressCallback = (progress) => {
           event.sender.send('historical-batch-progress', {
@@ -1055,19 +980,19 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
             progress: progress
           });
         };
-        
+
         const result = await scraper.fetchHistoricalPricesForOption(
           option.fund_name,
           option.exercise_price,
           option.grant_date,
           progressCallback
         );
-        
+
         // Log derived price information if applicable
         if (result.grantDatePriceDerived) {
           console.log(`📊 [${option.fund_name}] Grant date price was derived: €${result.grantDatePrice} (${result.grantDatePriceSource})`);
         }
-        
+
         // Store prices
         if (result.priceHistory.length > 0) {
           await portfolioDb.storeHistoricalPrices(
@@ -1078,17 +1003,17 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
           );
           successCount++;
         }
-        
+
         // Add delay between options
         await new Promise(resolve => setTimeout(resolve, 2000));
-        
+
       } catch (error) {
         console.error(`❌ Error updating ${option.fund_name} (€${option.exercise_price}, ${option.grant_date}):`, error.message);
         console.error(`   Full error:`, error);
         errorCount++;
       }
     }
-    
+
     // Send progress update for rebuild phase - use special format to avoid 18/17 display
     event.sender.send('historical-batch-progress', {
       optionIndex: 'rebuild',
@@ -1096,10 +1021,10 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
       optionName: 'Rebuilding Evolution Timeline',
       progress: { text: 'Starting timeline rebuild...', percentage: 0 }
     });
-    
+
     // After all historical prices are processed, completely rebuild the evolution timeline
     console.log("🔥 Rebuilding complete evolution timeline with historical data...");
-    
+
     // Create progress callback to send updates during rebuild
     const rebuildProgressCallback = (progress) => {
       event.sender.send('historical-batch-progress', {
@@ -1109,9 +1034,9 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
         progress: progress
       });
     };
-    
+
     await portfolioDb.rebuildCompleteEvolutionTimeline(rebuildProgressCallback);
-    
+
     // Send final completion progress
     event.sender.send('historical-batch-progress', {
       optionIndex: 'rebuild',
@@ -1119,16 +1044,16 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
       optionName: 'Rebuilding Evolution Timeline',
       progress: { text: 'Evolution timeline rebuilt successfully!', percentage: 100 }
     });
-    
+
     console.log("✅ Complete evolution timeline rebuilt with historical data");
-    
+
     return {
       success: true,
       updated: successCount,
       errors: errorCount,
       total: optionsToUpdate.length
     };
-    
+
   } catch (error) {
     console.error("❌ Error updating portfolio historical prices:", error);
     return {
@@ -1142,12 +1067,12 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
 ipcMain.handle("get-historical-prices-for-option", async (event, grantDate, exercisePrice) => {
   try {
     console.log(`🔍 Getting historical prices for option: grant date ${grantDate}, exercise price €${exercisePrice}`);
-    
+
     const prices = await portfolioDb.getHistoricalPricesForOption(grantDate, exercisePrice);
-    
+
     console.log(`✅ Found ${prices ? prices.length : 0} historical price entries`);
     return prices || [];
-    
+
   } catch (error) {
     console.error("❌ Error getting historical prices for option:", error);
     return [];
@@ -1162,6 +1087,16 @@ ipcMain.handle('open-external', async (event, url) => {
   } catch (error) {
     console.error('❌ Error opening external URL:', error);
     return { success: false, error: error.message };
+  }
+});
+
+
+ipcMain.handle("find-fop-product-info", async (event, isin) => {
+  try {
+    return await ingService.findFopProductInfo(isin);
+  } catch (error) {
+    console.error("Error finding FOP product info:", error);
+    return { error: error.message };
   }
 });
 

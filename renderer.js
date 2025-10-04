@@ -1,5 +1,4 @@
 // Use shared configuration from utils/config.js
-// Use shared configuration from utils/config.js
 console.log("🔍 Available AppConfig:", window.AppConfig);
 // No local APP_CONFIG variable - use window.AppConfig.APP_CONFIG directly
 
@@ -22,7 +21,7 @@ class EnhancedPortfolioApp {
     );
     window.DOMHelpers.initializeApplicationElements(this);
     window.DOMHelpers.attachApplicationEventListeners(this); // <-- NEW LINE
-    
+
     // Safety check for IPCCommunication
     if (window.IPCCommunication && window.IPCCommunication.setupIpcListeners) {
       window.IPCCommunication.setupIpcListeners(this);
@@ -67,8 +66,8 @@ class EnhancedPortfolioApp {
   }
 
   // ADD HERE: New method to initialize footer (add this method to your class)
- async initializeFooter() {
-      await window.AppConfig.APP_CONFIG.loadFromMain();
+  async initializeFooter() {
+    await window.AppConfig.APP_CONFIG.loadFromMain();
     window.UIStateManager.Footer.initializeFooter(this);
   }
   /**
@@ -273,7 +272,7 @@ class EnhancedPortfolioApp {
 
   calculateEstimatedTax() {
     window.UIStateManager.Forms.calculateEstimatedTax(this);
-    
+
     // Also update the total grant value display if the current value group is visible
     const currentValueGroup = document.getElementById('currentValueGroup');
     if (currentValueGroup && currentValueGroup.style.display !== 'none') {
@@ -290,47 +289,47 @@ class EnhancedPortfolioApp {
   // Handle exercise price selection - calculate tax AND fetch historical prices
   async handleExercisePriceSelection() {
     console.log("🔍 handleExercisePriceSelection called");
-    
+
     // First calculate the estimated tax
     this.calculateEstimatedTax();
-    
+
     // Then check if we should fetch historical prices
     const exercisePriceElement = document.getElementById("exercisePrice");
     const grantDateElement = document.getElementById("grantDate");
-    
+
     console.log("📋 Form elements found:", {
       exercisePrice: !!exercisePriceElement,
       exercisePriceValue: exercisePriceElement?.value,
       grantDate: !!grantDateElement,
       grantDateValue: grantDateElement?.value
     });
-    
+
     if (exercisePriceElement && exercisePriceElement.value && grantDateElement && grantDateElement.value) {
       const exercisePrice = parseFloat(exercisePriceElement.value);
       const grantDate = grantDateElement.value;
       const selectedOption = exercisePriceElement.options[exercisePriceElement.selectedIndex];
       const fundName = selectedOption.dataset.fundName || 'Unknown Fund';
-      
+
       if (exercisePrice && grantDate) {
         console.log(`🔍 Exercise price selected: €${exercisePrice} for grant date: ${grantDate}`);
-        
+
         // Show the current value group
         document.getElementById('currentValueGroup').style.display = 'block';
-        
+
         // Check if historical prices already exist
         try {
           console.log(`🔍 Checking historical prices for: grantDate=${grantDate}, exercisePrice=${exercisePrice}`);
           const shouldFetch = await window.IPCCommunication.Grants.shouldFetchHistoricalPrices(grantDate, exercisePrice);
           console.log(`🔍 shouldFetch result: ${shouldFetch}`);
-          
+
           if (shouldFetch) {
             console.log('📊 No historical prices found, automatically fetching...');
-            
+
             // Show default value while fetching
             this.updateCurrentValueDisplay(10.00, 'Fetching historical prices from KBC...');
-            
+
             // Automatically start historical price fetching (no user confirmation needed)
-            console.log(`🔗 Auto-starting historical price fetch for:`, {fundName, exercisePrice, grantDate});
+            console.log(`🔗 Auto-starting historical price fetch for:`, { fundName, exercisePrice, grantDate });
             await window.HistoricalPriceManager.showFetchModal(
               fundName,
               exercisePrice,
@@ -338,7 +337,7 @@ class EnhancedPortfolioApp {
             );
           } else {
             console.log('✅ Historical prices already exist, updating current value...');
-            
+
             // Get the historical price for the grant date and update the display
             await this.updateCurrentValueFromHistoricalPrices(grantDate, exercisePrice, selectedOption);
           }
@@ -356,16 +355,16 @@ class EnhancedPortfolioApp {
     const quantityElement = document.getElementById('quantity');
     const quantity = parseInt(quantityElement?.value) || 0;
     const totalValue = quantity * pricePerOption;
-    
+
     // Update the display elements
     document.getElementById('currentValuePerOption').textContent = `€${pricePerOption.toFixed(2)}`;
     document.getElementById('totalGrantValue').textContent = `€${totalValue.toFixed(2)}`;
-    
+
     // Update help text if provided
     if (helpText) {
       document.getElementById('currentValueHelp').textContent = helpText;
     }
-    
+
     console.log(`💰 Updated value display: €${pricePerOption.toFixed(2)} per option, total: €${totalValue.toFixed(2)}`);
   }
 
@@ -377,24 +376,24 @@ class EnhancedPortfolioApp {
         grantDate,
         exercisePrice
       );
-      
+
       if (historicalPrices && historicalPrices.length > 0) {
         // Find the price for the grant date
         const grantDatePrice = historicalPrices.find(p => p.price_date === grantDate);
-        
+
         if (grantDatePrice) {
           const priceValue = parseFloat(grantDatePrice.current_value);
-          
+
           // Update the option element's current value data
           optionElement.dataset.currentValue = priceValue.toFixed(2);
-          
+
           // Update the display text to show the historical price
           const fundName = this.helpers?.formatFundName(optionElement.dataset.fundName) || optionElement.dataset.fundName;
           optionElement.textContent = `${fundName} - €${exercisePrice} (Grant Date Value: €${priceValue.toFixed(2)})`;
-          
+
           // Update the current value display
           this.updateCurrentValueDisplay(priceValue, `Historical price from grant date (${grantDate})`);
-          
+
           console.log(`✅ Updated current value to grant date price: €${priceValue.toFixed(2)}`);
         } else {
           console.warn(`⚠️ No price found for exact grant date ${grantDate}, using fallback`);
@@ -416,9 +415,123 @@ class EnhancedPortfolioApp {
   // FIXED: Enhanced Add Grants with better error handling
   // REPLACE your existing addGrants() function in renderer.js with this complete version:
 
+  async handleIsinInput() {
+    const isinInput = document.getElementById('isin');
+    const isin = isinInput.value.trim();
+    const exercisePriceSelect = document.getElementById('exercisePrice');
+    const exercisePriceGroup = exercisePriceSelect.parentElement;
+    const currentValueGroup = document.getElementById('currentValueGroup');
+
+    if (isin.length === 12) {
+      try {
+        const productInfo = await window.ipcRenderer.invoke('find-fop-product-info', isin);
+        if (productInfo) {
+          exercisePriceSelect.innerHTML = ''; // Clear existing options
+          const option = document.createElement('option');
+          option.value = productInfo.exercise_price;
+          option.textContent = `${productInfo.fund_name} - €${productInfo.exercise_price} (Current Value: €${productInfo.current_value})`;
+          option.dataset.fundName = productInfo.fund_name;
+          option.dataset.currentValue = productInfo.current_value;
+          exercisePriceSelect.appendChild(option);
+          exercisePriceSelect.disabled = false;
+          document.getElementById('exercisePriceHelp').textContent = 'Product info found';
+          exercisePriceGroup.style.display = 'block'; // Show the dropdown
+
+          if (productInfo.current_value !== "N/A") {
+            currentValueGroup.style.display = 'block';
+            this.updateCurrentValueDisplay(productInfo.current_value);
+          } else {
+            currentValueGroup.style.display = 'none';
+          }
+
+        } else {
+          exercisePriceSelect.innerHTML = '<option value="">No product info found...</option>';
+          exercisePriceSelect.disabled = true;
+          document.getElementById('exercisePriceHelp').textContent = 'No product info found for the entered ISIN';
+          exercisePriceGroup.style.display = 'none'; // Hide the dropdown
+          currentValueGroup.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Error finding FOP product info:', error);
+        exercisePriceSelect.innerHTML = '<option value="">Error fetching data...</option>';
+        exercisePriceSelect.disabled = true;
+        document.getElementById('exercisePriceHelp').textContent = 'Error fetching product info';
+        exercisePriceGroup.style.display = 'none'; // Hide the dropdown
+        currentValueGroup.style.display = 'none';
+      }
+    } else {
+      exercisePriceSelect.innerHTML = '<option value="">Enter a valid 12-character ISIN...</option>';
+      exercisePriceSelect.disabled = true;
+      exercisePriceGroup.style.display = 'none'; // Hide the dropdown
+      currentValueGroup.style.display = 'none';
+    }
+    window.UIStateManager.Validation.validateAddGrantsForm(this);
+  }
+
+  toggleIsinField() {
+    console.log('toggleIsinField called');
+    const isinGroup = document.getElementById('isinGroup');
+    const isinInput = document.getElementById('isin');
+    const exercisePriceGroup = document.getElementById('exercisePrice').parentElement;
+    this.currentGrantSource = document.getElementById('grantSource').value;
+    console.log('Current source:', this.currentGrantSource);
+
+    if (this.currentGrantSource === 'ING') {
+      console.log('Showing ISIN field');
+      isinGroup.style.display = 'block';
+      isinInput.required = true;
+      exercisePriceGroup.style.display = 'none'; // Hide by default for ING
+    } else {
+      console.log('Hiding ISIN field');
+      isinGroup.style.display = 'none';
+      isinInput.required = false;
+      isinInput.value = ''; // Clear ISIN when switching back to KBC
+      exercisePriceGroup.style.display = 'block'; // Show for KBC
+    }
+  }
+
+
   async addOptions() {
-    // Delegate to IPC communication layer with app context
-    await window.IPCCommunication.Grants.addGrants(this);
+    try {
+      // Collect all form data
+      const source = document.getElementById('grantSource').value;
+      const isin = document.getElementById('isin')?.value || null;
+      const grantDate = document.getElementById('grantDate').value;
+      const exercisePrice = parseFloat(document.getElementById('exercisePrice').value);
+      const quantity = parseInt(document.getElementById('quantity').value);
+      const taxAmount = document.getElementById('taxAmount').value
+        ? parseFloat(document.getElementById('taxAmount').value)
+        : null;
+
+      // Validate required fields
+      if (!grantDate || isNaN(exercisePrice) || isNaN(quantity)) {
+        alert('Please fill all required fields');
+        return;
+      }
+
+      // Validate ING requirements
+      if (source === 'ING' && !isin) {
+        alert('ISIN is required for ING grants');
+        return;
+      }
+
+      // Submit to backend
+      await window.IPCCommunication.Grants.addGrants(this, {
+        grantDate,
+        exercisePrice,
+        quantity,
+        taxAmount,
+        source,
+        isin
+      });
+
+      // Clear form and close modal on success
+      this.clearaddGrantsForm();
+      window.UIStateManager.Modals.closeModal('addGrantsModal');
+    } catch (error) {
+      console.error('Error adding grant:', error);
+      alert('Failed to add grant: ' + error.message);
+    }
   }
   /**
    * Confirm and save sale edits
@@ -457,7 +570,7 @@ class EnhancedPortfolioApp {
     window.ChartVisualization.createSimpleChartLegend();
   }
 
-   // ===== GRANT HISTORY TAB =====
+  // ===== GRANT HISTORY TAB =====
   async loadSalesHistory() {
     return await window.IPCCommunication.Portfolio.loadSalesHistory(this);
   }

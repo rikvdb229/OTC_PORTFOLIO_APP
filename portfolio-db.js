@@ -2,6 +2,7 @@ const initSqlJs = require("sql.js");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
+
 class PortfolioDatabase {
   constructor() {
     this.db = null;
@@ -318,7 +319,7 @@ class PortfolioDatabase {
         const filebuffer = fs.readFileSync(this.dbPath);
         this.db = new SQL.Database(filebuffer);
         this.logDebug("✅ Existing database loaded successfully");
-        
+
         // Run database migrations for existing databases
         await this.runMigrations();
       } else {
@@ -391,6 +392,8 @@ class PortfolioDatabase {
       tax_amount DECIMAL(10,2) DEFAULT NULL,
       tax_auto_calculated DECIMAL(10,2),
       total_sold_quantity INTEGER DEFAULT 0,
+      source TEXT CHECK(source IN ('KBC', 'ING')) NOT NULL DEFAULT 'KBC',
+      isin VARCHAR(50),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
@@ -405,8 +408,10 @@ class PortfolioDatabase {
       low_value DECIMAL(10,2),
       grant_date DATE,
       fund_name TEXT,
+      portfolio_entry_id INTEGER,
       scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(exercise_price, grant_date, price_date)
+      UNIQUE(exercise_price, grant_date, price_date),
+      FOREIGN KEY (portfolio_entry_id) REFERENCES portfolio_entries(id)
     );
 
     -- Sales transactions table
@@ -513,20 +518,123 @@ class PortfolioDatabase {
   // Database migration system
   async runMigrations() {
     this.logDebug("🔄 Running database migrations...");
-    
+
     try {
+      // Migrate source column
+      await this.migrateAddSourceColumn();
+
+      // Migrate FOP column
+      await this.migrateAddFOPColumn();
+
+      // Migrate price_history relations
+      await this.migratePriceHistoryRelations();
+
       // Check if grant_date_price column exists
       await this.migrateAddGrantDatePriceColumn();
-      
+
       // Populate grant_date_price for existing entries
       await this.migratePopulateGrantDatePrices();
-      
+
+
       this.logDebug("✅ All migrations completed successfully");
     } catch (error) {
       this.logDebug(`❌ Migration failed: ${error.message}`);
       throw error;
     }
   }
+
+  // Migration: Add source column to portfolio_entries if it doesn't exist
+  async migrateAddSourceColumn() {
+    try {
+      // Check if column exists
+      const stmt = this.db.prepare("PRAGMA table_info(portfolio_entries)");
+      const columns = [];
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        columns.push(row.name);
+      }
+      stmt.free();
+
+      if (columns.includes('source')) {
+        this.logDebug("✅ source column already exists");
+        return;
+      }
+      this.logDebug("🔧 Adding source column to portfolio_entries table...");
+
+      this.db.exec(`
+        ALTER TABLE portfolio_entries
+        ADD COLUMN source TEXT CHECK(source IN ('KBC', 'ING')) NOT NULL DEFAULT 'KBC';
+      `);
+      this.logDebug("✅ source column added successfully");
+    } catch (error) {
+      this.logDebug(`❌ Error adding source column: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Migration: Add FOP column to portfolio_entries if it doesn't exist
+  async migrateAddFOPColumn() {
+    try {
+      // Check if column exists
+      const stmt = this.db.prepare("PRAGMA table_info(portfolio_entries)");
+      const columns = [];
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        columns.push(row.name);
+      }
+      stmt.free();
+
+      if (columns.includes('FOP')) {
+        this.logDebug("✅ FOP column already exists");
+        return;
+      }
+      this.logDebug("🔧 Adding FOP column to portfolio_entries table...");
+
+      this.db.exec(`
+        ALTER TABLE portfolio_entries
+        ADD COLUMN FOP TEXT;
+      `);
+      this.logDebug("✅ FOP column added successfully");
+    } catch (error) {
+      this.logDebug(`❌ Error adding FOP column: ${error.message}`);
+      throw error;
+    }
+  }
+
+  // Migration: Link price_history entries to portfolio_entries
+  async migratePriceHistoryRelations() {
+    // 1. Check if column exists
+    const pragma = this.db.exec("PRAGMA table_info(price_history)");
+    const cols = pragma.length ? pragma[0].values : [];
+    const hasColumn = cols.some(col => col[1] === "portfolio_entry_id");
+
+    if (!hasColumn) {
+      this.logDebug("🔧 Adding portfolio_entry_id column to price_history table...");
+      this.db.exec(`
+      ALTER TABLE price_history
+      ADD COLUMN portfolio_entry_id INTEGER;
+    `);
+    }
+
+    // 2. Backfill portfolio_entry_id
+    this.db.exec(`
+    UPDATE price_history
+    SET portfolio_entry_id = (
+      SELECT pe.id
+      FROM portfolio_entries pe
+      WHERE pe.exercise_price = price_history.exercise_price
+        AND pe.grant_date = price_history.grant_date
+      LIMIT 1
+    )
+    WHERE portfolio_entry_id IS NULL;
+  `);
+
+    // 3. Enable runtime foreign key checks
+    this.db.exec("PRAGMA foreign_keys = ON;");
+
+    this.logDebug("✅ migratePriceHistoryRelations completed");
+  }
+
 
   // Migration: Add grant_date_price column if it doesn't exist
   async migrateAddGrantDatePriceColumn() {
@@ -550,7 +658,7 @@ class PortfolioDatabase {
         ALTER TABLE portfolio_entries 
         ADD COLUMN grant_date_price DECIMAL(10,2) DEFAULT 10.00;
       `);
-      
+
       this.logDebug("✅ grant_date_price column added successfully");
     } catch (error) {
       this.logDebug(`❌ Error adding grant_date_price column: ${error.message}`);
@@ -567,7 +675,7 @@ class PortfolioDatabase {
         FROM portfolio_entries 
         WHERE grant_date_price IS NULL OR grant_date_price = 10.00
       `);
-      
+
       const entriesToMigrate = [];
       while (selectStmt.step()) {
         entriesToMigrate.push(selectStmt.getAsObject());
@@ -594,7 +702,7 @@ class PortfolioDatabase {
             ORDER BY scraped_at DESC 
             LIMIT 1
           `);
-          
+
           let grantDatePrice = null;
           priceStmt.bind([entry.grant_date, entry.exercise_price]);
           if (priceStmt.step()) {
@@ -961,7 +1069,7 @@ class PortfolioDatabase {
         throw new Error("Sale ID is required");
       }
       if (!updatedSale.sale_date) {
-        throw new Error("Sale date is required");  
+        throw new Error("Sale date is required");
       }
       if (updatedSale.sale_price === undefined || updatedSale.sale_price === null) {
         throw new Error("Sale price is required");
@@ -994,7 +1102,7 @@ class PortfolioDatabase {
       const taxDeducted = currentSale.tax_deducted || 0;
       const targetPercentageQuery = await this.getSetting("target_percentage");
       const targetPercentage = parseFloat(targetPercentageQuery || "65");
-      
+
       // Get grant_date_price from portfolio entry
       const portfolioStmt = this.db.prepare(`
         SELECT grant_date_price FROM portfolio_entries WHERE id = ?
@@ -1006,7 +1114,7 @@ class PortfolioDatabase {
         grantDatePrice = portfolioData.grant_date_price || 10;
       }
       portfolioStmt.free();
-      
+
       const targetValue = currentSale.quantity_sold * grantDatePrice * (targetPercentage / 100);
       const newProfitLossVsTarget = newTotalSaleValue - taxDeducted - targetValue;
 
@@ -1030,9 +1138,9 @@ class PortfolioDatabase {
         updatedSale.notes || null,
         updatedSale.id,
       ];
-      
+
       console.log("🔍 SQL binding parameters:", params);
-      
+
       // Check for undefined values
       params.forEach((param, index) => {
         if (param === undefined) {
@@ -1484,7 +1592,9 @@ class PortfolioDatabase {
     grantDate,
     exercisePrice,
     quantity,
-    taxAmount = null
+    taxAmount = null,
+    isin = null,
+    source = "KBC"
   ) {
     try {
       console.log("Adding portfolio entry:", {
@@ -1546,11 +1656,11 @@ class PortfolioDatabase {
         if (fallbackData) {
           fundName = fallbackData.fund_name || null;
           currentValue = fallbackData.current_value || 0;
-          console.log("Found fallback price data for grant date:", { 
-            fundName, 
-            currentValue, 
+          console.log("Found fallback price data for grant date:", {
+            fundName,
+            currentValue,
             priceDate: fallbackData.price_date,
-            grantDate 
+            grantDate
           });
         } else {
           console.warn(
@@ -1605,6 +1715,8 @@ class PortfolioDatabase {
         grantDatePrice || 10,
         taxAmount || null,
         autoTax || 0,
+        source,
+        isin || null,
       ]);
 
       // FIXED: For sql.js, get the last insert rowid using proper method
@@ -1856,8 +1968,8 @@ ORDER BY pe.grant_date DESC
       for (const row of rows) {
         try {
           row.normalized_price_percentage = await this.calculateNormalizedPricePercentage(
-            row.exercise_price, 
-            row.grant_date, 
+            row.exercise_price,
+            row.grant_date,
             row.current_value
           );
         } catch (error) {
@@ -2049,7 +2161,7 @@ ORDER BY st.sale_date DESC
 
       // Get price history for this option
       const priceHistory = await this.getOptionPriceHistory(exercisePrice, grantDate);
-      
+
       if (!priceHistory || priceHistory.length === 0) {
         return null;
       }
@@ -2058,7 +2170,7 @@ ORDER BY st.sale_date DESC
       const priceValues = priceHistory
         .map(p => p.current_value)
         .filter(v => v !== null && v !== undefined && !isNaN(v) && v > 0);
-      
+
       if (priceValues.length === 0) {
         return null;
       }
@@ -2073,7 +2185,7 @@ ORDER BY st.sale_date DESC
 
       // Calculate normalized percentage (0-100)
       const normalizedPct = ((currentValue - min) / (max - min)) * 100;
-      
+
       // Round to 1 decimal place
       return Math.round(normalizedPct * 10) / 10;
     } catch (error) {
@@ -2105,9 +2217,8 @@ ORDER BY st.sale_date DESC
           date: row.event_date,
           type: "grant",
           label: `Grant: ${row.quantity} options`,
-          description: `Added ${row.quantity} options (${
-            row.fund_name || "Unknown Fund"
-          }) at €${row.exercise_price}`,
+          description: `Added ${row.quantity} options (${row.fund_name || "Unknown Fund"
+            }) at €${row.exercise_price}`,
           color: "#28a745",
         });
       }
@@ -2133,9 +2244,8 @@ ORDER BY st.sale_date DESC
           date: row.event_date,
           type: "sale",
           label: `Sale: ${row.quantity_sold} options`,
-          description: `Sold ${row.quantity_sold} options (${
-            row.fund_name || "Unknown Fund"
-          }) at €${row.sale_price}`,
+          description: `Sold ${row.quantity_sold} options (${row.fund_name || "Unknown Fund"
+            }) at €${row.sale_price}`,
           color: "#dc3545",
         });
       }
@@ -2837,15 +2947,15 @@ ORDER BY st.sale_date DESC
   async storeHistoricalPrices(fundName, exercisePrice, grantDate, priceHistory) {
     try {
       console.log(`💾 Storing ${priceHistory.length} historical prices for ${fundName}`);
-      
+
       const stmt = this.db.prepare(`
         INSERT OR REPLACE INTO price_history 
         (fund_name, exercise_price, grant_date, price_date, current_value) 
         VALUES (?, ?, ?, ?, ?)
       `);
-      
+
       let insertCount = 0;
-      
+
       for (const priceEntry of priceHistory) {
         stmt.run([
           fundName,
@@ -2856,12 +2966,12 @@ ORDER BY st.sale_date DESC
         ]);
         insertCount++;
       }
-      
+
       stmt.free();
       this.saveDatabase();
-      
+
       console.log(`✅ Successfully stored ${insertCount} historical prices`);
-      
+
       return {
         success: true,
         stored: insertCount,
@@ -2869,7 +2979,7 @@ ORDER BY st.sale_date DESC
         exercisePrice: exercisePrice,
         grantDate: grantDate
       };
-      
+
     } catch (error) {
       console.error('❌ Error storing historical prices:', error);
       throw error;
@@ -2956,7 +3066,7 @@ ORDER BY st.sale_date DESC
       const salesForEntry = salesByEntry[portfolioEntry.id];
       const soldQuantity = salesForEntry ? salesForEntry.total_sold : 0;
       const remainingQuantity = portfolioEntry.quantity - soldQuantity;
-      
+
       // Add to totals
       totalOptionsCount += portfolioEntry.quantity;
       activeOptionsCount += remainingQuantity;
@@ -2996,10 +3106,10 @@ ORDER BY st.sale_date DESC
     try {
       // Reset progress tracking
       this._lastReportedPercentage = 0;
-      
+
       if (fromDate) {
         console.log(`🚀 OPTIMIZED: Rebuilding evolution timeline from ${fromDate} forward...`);
-        
+
         // Step 1: Delete only evolution data from the specified date forward
         console.log(`🗑️ Clearing evolution data from ${fromDate} forward...`);
         const deleteStmt = this.db.prepare('DELETE FROM portfolio_evolution WHERE snapshot_date >= ?');
@@ -3008,40 +3118,40 @@ ORDER BY st.sale_date DESC
         deleteStmt.free();
       } else {
         console.log('🔥 Completely rebuilding daily evolution timeline with historical data...');
-        
+
         // Step 1: Drop and recreate the entire evolution table
         console.log('🗑️ Clearing existing evolution data...');
         this.db.exec('DELETE FROM portfolio_evolution');
       }
-      
+
       // Step 2: Get the date range
       const dateRange = await this.getPortfolioDateRange();
       if (!dateRange.firstGrantDate) {
         console.log('ℹ️ No grants found, nothing to rebuild');
         return;
       }
-      
+
       // Determine the actual start date for rebuild
       const startDate = fromDate || dateRange.firstGrantDate;
       const endDate = dateRange.endDate;
-      
+
       console.log(`📅 Building daily evolution from ${startDate} to ${endDate}`);
-      
+
       // Step 3: Get all significant events for notes
       const significantEvents = await this.getAllSignificantEvents();
-      
+
       // Step 4: Generate dates from start date to today
       const allDates = this.generateDateRange(startDate, endDate);
       console.log(`📊 Processing ${allDates.length} daily entries...`);
-      
+
       // Performance warning for large date ranges
       if (allDates.length > 365) {
         console.log(`⚠️ Large date range detected (${allDates.length} days). This may take several minutes...`);
       }
-      
+
       // Step 5: OPTIMIZED - Pre-load all data once and process in memory
       console.log('🚀 PERFORMANCE OPTIMIZATION: Pre-loading all portfolio data...');
-      
+
       // Pre-load all portfolio entries
       const portfolioStmt = this.db.prepare('SELECT * FROM portfolio_entries');
       const portfolioEntries = [];
@@ -3049,7 +3159,7 @@ ORDER BY st.sale_date DESC
         portfolioEntries.push(portfolioStmt.getAsObject());
       }
       portfolioStmt.free();
-      
+
       // Pre-load all sales
       const salesStmt = this.db.prepare('SELECT * FROM sales_transactions ORDER BY sale_date ASC');
       const allSales = [];
@@ -3057,7 +3167,7 @@ ORDER BY st.sale_date DESC
         allSales.push(salesStmt.getAsObject());
       }
       salesStmt.free();
-      
+
       // Pre-load all historical prices
       const pricesStmt = this.db.prepare('SELECT * FROM price_history ORDER BY price_date DESC');
       const allPrices = [];
@@ -3065,40 +3175,40 @@ ORDER BY st.sale_date DESC
         allPrices.push(pricesStmt.getAsObject());
       }
       pricesStmt.free();
-      
+
       // Get target percentage once
       const targetPercentageQuery = await this.getSetting("target_percentage");
       const targetPercentage = parseFloat(targetPercentageQuery || "65");
-      
+
       console.log(`📊 Pre-loaded: ${portfolioEntries.length} entries, ${allSales.length} sales, ${allPrices.length} prices`);
-      
+
       // Create evolution entries only when portfolio value changes
       let processedCount = 0;
       let insertedCount = 0;
       let previousPortfolioValue = null;
-      
+
       const insertStmt = this.db.prepare(`
         INSERT INTO portfolio_evolution 
         (snapshot_date, total_portfolio_value, total_unrealized_gain, total_realized_gain, total_options_count, active_options_count, notes)
         VALUES (?, ?, ?, ?, ?, ?, ?)
       `);
-      
+
       for (const date of allDates) {
         // OPTIMIZED: Calculate portfolio state using pre-loaded data
         const portfolioState = this.calculatePortfolioStateOptimized(
           date, portfolioEntries, allSales, allPrices, targetPercentage
         );
         const currentValue = portfolioState.totalCurrentValue || 0;
-        
+
         // Get events for this specific date
         const dayEvents = significantEvents.get(date) || [];
         const notes = dayEvents.length > 0 ? dayEvents.map(event => `• ${event}`).join('\n') : '';
         const hasEvents = dayEvents.length > 0;
-        
+
         // Check if we should insert this entry
         const valueChanged = previousPortfolioValue === null || Math.abs(currentValue - previousPortfolioValue) > 0.01;
         const shouldInsert = valueChanged || hasEvents;
-        
+
         if (shouldInsert) {
           // Insert evolution entry (using correct bind/step pattern)
           insertStmt.bind([
@@ -3111,10 +3221,10 @@ ORDER BY st.sale_date DESC
             notes
           ]);
           insertStmt.step();
-          
+
           insertedCount++;
           previousPortfolioValue = currentValue;
-          
+
           if (hasEvents) {
             console.log(`📅 Added evolution entry for ${date}: ${dayEvents.length} events, value €${currentValue.toFixed(2)}`);
           }
@@ -3124,15 +3234,15 @@ ORDER BY st.sale_date DESC
             console.log(`⏭️ Skipped ${date}: no value change (€${currentValue.toFixed(2)})`);
           }
         }
-        
+
         processedCount++;
-        
+
         // Log progress more frequently for large datasets
         const progressInterval = allDates.length > 365 ? 30 : 50;
         if (processedCount % progressInterval === 0 || processedCount === allDates.length) {
           const percentage = Math.round((processedCount / allDates.length) * 100);
           console.log(`📊 Processed ${processedCount}/${allDates.length} days (${percentage}%) - inserted ${insertedCount} entries`);
-          
+
           // Send progress update to UI only every 10% to avoid overwhelming the UI
           if (onProgress) {
             const lastPercentage = this._lastReportedPercentage || 0;
@@ -3146,13 +3256,13 @@ ORDER BY st.sale_date DESC
           }
         }
       }
-      
+
       insertStmt.free();
-      
+
       this.saveDatabase();
       console.log(`✅ Evolution timeline optimized: ${insertedCount} entries created from ${processedCount} days processed`);
       console.log(`📊 Efficiency: ${Math.round((insertedCount / processedCount) * 100)}% of days had value changes`);
-      
+
     } catch (error) {
       console.error('❌ Error rebuilding evolution timeline:', error);
       throw error;
@@ -3167,22 +3277,22 @@ ORDER BY st.sale_date DESC
         SELECT MIN(grant_date) as first_grant_date 
         FROM portfolio_entries
       `);
-      
+
       let firstGrantDate = null;
       if (firstGrantStmt.step()) {
         const result = firstGrantStmt.getAsObject();
         firstGrantDate = result.first_grant_date;
       }
       firstGrantStmt.free();
-      
+
       // End date is today
       const today = new Date().toISOString().split('T')[0];
-      
+
       return {
         firstGrantDate: firstGrantDate,
         endDate: today
       };
-      
+
     } catch (error) {
       console.error('❌ Error getting portfolio date range:', error);
       throw error;
@@ -3193,7 +3303,7 @@ ORDER BY st.sale_date DESC
   async getAllSignificantEvents() {
     try {
       const eventsByDate = new Map();
-      
+
       // Get all grant events
       const grantStmt = this.db.prepare(`
         SELECT grant_date, 
@@ -3203,21 +3313,21 @@ ORDER BY st.sale_date DESC
         GROUP BY grant_date 
         ORDER BY grant_date ASC
       `);
-      
+
       while (grantStmt.step()) {
         const grant = grantStmt.getAsObject();
         const date = grant.grant_date;
-        
+
         if (!eventsByDate.has(date)) {
           eventsByDate.set(date, []);
         }
-        
+
         eventsByDate.get(date).push(
           `Grant received: ${grant.total_quantity} options (${grant.grants_summary})`
         );
       }
       grantStmt.free();
-      
+
       // Get all sales events
       const salesStmt = this.db.prepare(`
         SELECT sale_date,
@@ -3228,15 +3338,15 @@ ORDER BY st.sale_date DESC
         GROUP BY sale_date 
         ORDER BY sale_date ASC
       `);
-      
+
       while (salesStmt.step()) {
         const sale = salesStmt.getAsObject();
         const date = sale.sale_date;
-        
+
         if (!eventsByDate.has(date)) {
           eventsByDate.set(date, []);
         }
-        
+
         if (sale.sale_count === 1) {
           eventsByDate.get(date).push(
             `Sale: ${sale.total_sold} options at €${sale.avg_price.toFixed(2)}`
@@ -3248,9 +3358,9 @@ ORDER BY st.sale_date DESC
         }
       }
       salesStmt.free();
-      
+
       return eventsByDate;
-      
+
     } catch (error) {
       console.error('❌ Error getting significant events:', error);
       throw error;
@@ -3258,24 +3368,136 @@ ORDER BY st.sale_date DESC
   }
 
   // Generate array of all dates between start and end (inclusive)
+  // async getAllGrantsNeedingUpdate() {
+  //   const today = new Date().toISOString().split('T')[0];
+  //   const stmt = this.db.prepare(`
+  //     SELECT p.* FROM portfolio_entries p
+  //     WHERE NOT EXISTS (
+  //       SELECT 1 FROM price_history ph
+  //       WHERE ph.exercise_price = p.exercise_price
+  //       AND ph.grant_date = p.grant_date
+  //       AND ph.price_date = ?
+  //     )
+  //   `);
+  //   const grants = [];
+  //   stmt.bind([today]);
+  //   while (stmt.step()) {
+  //     grants.push(stmt.getAsObject());
+  //   }
+  //   stmt.free();
+  //   return grants;
+  // }
+
+  // Store a single price update for a specific grant
+  async storePriceUpdate(grantId, price, timestamp) {
+    try {
+      if (!grantId || isNaN(price)) {
+        throw new Error(`Invalid price update: grantId=${grantId}, price=${price}`);
+      }
+
+      // Normalize timestamps
+      const priceDate = new Date(timestamp).toISOString().split("T")[0];
+      const scrapedAt = new Date().toISOString().replace("T", " ").split(".")[0];
+      // e.g. "2025-09-15 17:52:31"
+
+      // 1. Fetch static info about the grant
+      const stmt = this.db.prepare(`
+      SELECT exercise_price, grant_date, fund_name
+      FROM portfolio_entries
+      WHERE id = :id
+      LIMIT 1;
+    `);
+
+      stmt.bind({ ":id": grantId });
+      let grantInfo = null;
+      while (stmt.step()) {
+        const row = stmt.getAsObject();
+        grantInfo = row;
+      }
+      stmt.free();
+
+      if (!grantInfo) {
+        throw new Error(`Grant ${grantId} not found in portfolio_entries`);
+      }
+
+      // 2. Insert into price_history
+      const insert = this.db.prepare(`
+      INSERT INTO price_history (
+        price_date,
+        exercise_price,
+        current_value,
+        grant_date,
+        fund_name,
+        scraped_at,
+        portfolio_entry_id
+      )
+      VALUES (:price_date, :exercise_price, :current_value, :grant_date, :fund_name, :scraped_at, :portfolio_entry_id);
+    `);
+
+      insert.run({
+        ":price_date": priceDate,
+        ":exercise_price": grantInfo.exercise_price,
+        ":current_value": price,
+        ":grant_date": grantInfo.grant_date,
+        ":fund_name": grantInfo.fund_name,
+        ":scraped_at": scrapedAt,
+        ":portfolio_entry_id": grantId
+      });
+      insert.free();
+
+      // 3. Update portfolio_entries with latest current_value
+      this.db.exec(`
+      UPDATE portfolio_entries
+      SET current_value = ${price}
+      WHERE id = ${grantId};
+    `);
+
+      console.log(`💾 Stored price update for grant ${grantId}: ${price} on ${priceDate}, scraped at ${scrapedAt}`);
+      return true;
+    } catch (err) {
+      console.error("❌ storePriceUpdate failed:", err);
+      return false;
+    }
+  }
+
+
+  async getAllGrantsNeedingUpdate() {
+    const today = new Date().toISOString().split('T')[0];
+    const stmt = this.db.prepare(`
+      SELECT * FROM portfolio_entries
+      WHERE id NOT IN (
+        SELECT portfolio_entry_id
+        FROM price_history
+        WHERE price_date = ?
+      )
+    `);
+    const grants = [];
+    stmt.bind([today]);
+    while (stmt.step()) {
+      grants.push(stmt.getAsObject());
+    }
+    stmt.free();
+    return grants;
+  }
+
   generateDateRange(startDate, endDate) {
     const dates = [];
     const start = new Date(startDate);
     const end = new Date(endDate);
-    
+
     // Make sure we're working with valid dates
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       console.error('❌ Invalid date range:', { startDate, endDate });
       return [];
     }
-    
+
     const currentDate = new Date(start);
-    
+
     while (currentDate <= end) {
       dates.push(currentDate.toISOString().split('T')[0]);
       currentDate.setDate(currentDate.getDate() + 1);
     }
-    
+
     return dates;
   }
 
@@ -3283,7 +3505,7 @@ ORDER BY st.sale_date DESC
   async getAllSignificantDates() {
     try {
       const significantDates = new Map();
-      
+
       // Get all grant dates with details
       const grantStmt = this.db.prepare(`
         SELECT grant_date, 
@@ -3293,21 +3515,21 @@ ORDER BY st.sale_date DESC
         GROUP BY grant_date 
         ORDER BY grant_date ASC
       `);
-      
+
       while (grantStmt.step()) {
         const grant = grantStmt.getAsObject();
         const date = grant.grant_date;
-        
+
         if (!significantDates.has(date)) {
           significantDates.set(date, { date, events: [] });
         }
-        
+
         significantDates.get(date).events.push(
           `Grant received: ${grant.total_quantity} options (${grant.grants_summary})`
         );
       }
       grantStmt.free();
-      
+
       // Get all sales dates with details
       const salesStmt = this.db.prepare(`
         SELECT sale_date,
@@ -3318,15 +3540,15 @@ ORDER BY st.sale_date DESC
         GROUP BY sale_date 
         ORDER BY sale_date ASC
       `);
-      
+
       while (salesStmt.step()) {
         const sale = salesStmt.getAsObject();
         const date = sale.sale_date;
-        
+
         if (!significantDates.has(date)) {
           significantDates.set(date, { date, events: [] });
         }
-        
+
         if (sale.sale_count === 1) {
           significantDates.get(date).events.push(
             `Sale: ${sale.total_sold} options at €${sale.avg_price.toFixed(2)}`
@@ -3338,13 +3560,13 @@ ORDER BY st.sale_date DESC
         }
       }
       salesStmt.free();
-      
+
       // Convert map to array and sort by date
       const sortedDates = Array.from(significantDates.values())
         .sort((a, b) => new Date(a.date) - new Date(b.date));
-      
+
       return sortedDates;
-      
+
     } catch (error) {
       console.error('❌ Error getting significant dates:', error);
       throw error;
@@ -3355,26 +3577,26 @@ ORDER BY st.sale_date DESC
   async getHistoricalPricesForOption(grantDate, exercisePrice) {
     try {
       console.log(`🔍 Querying historical prices for grant date: ${grantDate}, exercise price: €${exercisePrice}`);
-      
+
       const stmt = this.db.prepare(`
         SELECT price_date, current_value 
         FROM price_history 
         WHERE grant_date = ? AND ABS(exercise_price - ?) < 0.01
         ORDER BY price_date DESC
       `);
-      
+
       const prices = [];
       stmt.bind([grantDate, exercisePrice]);
-      
+
       while (stmt.step()) {
         prices.push(stmt.getAsObject());
       }
-      
+
       stmt.free();
-      
+
       console.log(`✅ Found ${prices.length} historical price entries for this option`);
       return prices;
-      
+
     } catch (error) {
       console.error('❌ Error getting historical prices for option:', error);
       throw error;
