@@ -352,15 +352,26 @@ ipcMain.handle("scrape-data", async (event) => {
       // Process grants in parallel with progress updates
       const priceUpdates = grants.map(async (grant) => {
         try {
-          // console.log(grant);
           const priceResult = await getPrice(grant);
 
-          // Store the updated price
-          await portfolioDb.storePriceUpdate(
-            grant.id,
-            priceResult.price,
-            priceResult.timestamp
-          );
+          if (Array.isArray(priceResult)) { // ING case
+            const priceHistory = priceResult.map(p => ({
+              date: new Date(p.timestamp).toISOString().split('T')[0],
+              price: p.price
+            }));
+            await portfolioDb.storeHistoricalPrices(
+              grant.fund_name,
+              grant.exercise_price,
+              grant.grant_date,
+              priceHistory
+            );
+          } else { // KBC case
+            await portfolioDb.storePriceUpdate(
+              grant.id,
+              priceResult.price,
+              priceResult.timestamp
+            );
+          }
 
           // Send progress update
           completedCount++;
@@ -858,7 +869,7 @@ ipcMain.handle(
 );
 
 // Historical Price Fetching IPC Handler
-ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice, grantDate, onProgress) => {
+ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice, grantDate, onProgress, source, isin) => {
   try {
     console.log(`📊 Fetching historical prices for: ${fundName} (€${exercisePrice}, ${grantDate})`);
 
@@ -874,7 +885,9 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
       fundName,
       exercisePrice,
       grantDate,
-      progressCallback
+      progressCallback,
+      source,
+      isin
     );
 
     console.log(`✅ Successfully fetched ${result.priceHistory.length} historical prices`);
@@ -935,7 +948,9 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
         uniqueOptions.set(key, {
           fund_name: entry.fund_name,
           exercise_price: entry.exercise_price,
-          grant_date: entry.grant_date
+          grant_date: entry.grant_date,
+          source: entry.source,
+          isin: entry.isin
         });
       }
     });
@@ -969,7 +984,9 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
           option.fund_name,
           option.exercise_price,
           option.grant_date,
-          progressCallback
+          progressCallback,
+          option.source,
+          option.isin
         );
 
         // Log derived price information if applicable

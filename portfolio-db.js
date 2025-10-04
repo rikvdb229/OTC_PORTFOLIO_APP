@@ -1846,6 +1846,8 @@ SELECT
   pe.fund_name,
   pe.exercise_price,
   pe.quantity,
+  pe.source,
+  pe.isin,
   pe.grant_date_price,
   -- Amount granted = remaining options × grant date price
   ((pe.quantity - pe.total_sold_quantity) * COALESCE(pe.grant_date_price, 10)) as amount_granted,
@@ -3388,7 +3390,7 @@ ORDER BY st.sale_date DESC
 
       // 2. Insert into price_history
       const insert = this.db.prepare(`
-      INSERT INTO price_history (
+      INSERT OR REPLACE INTO price_history (
         price_date,
         exercise_price,
         current_value,

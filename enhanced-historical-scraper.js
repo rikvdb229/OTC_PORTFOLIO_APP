@@ -5,6 +5,7 @@ const { BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
+const ingService = require("./services/ingService");
 
 class EnhancedHistoricalScraper {
   constructor() {
@@ -248,57 +249,95 @@ class EnhancedHistoricalScraper {
   }
 
   // Fetch historical prices for a specific option
-  async fetchHistoricalPricesForOption(fundName, exercisePrice, grantDate, onProgress = null) {
-    try {
-      console.log(`🔍 Starting historical price fetch for ${fundName} - €${exercisePrice} on ${grantDate}`);
-      
-      // Get options list (cached or fresh) and ensure cache is loaded
-      const optionsList = await this.getOptionsList();
-      console.log(`📋 Options list loaded: ${optionsList?.length || 0} options available`);
-      
-      // Double-check that cache is properly set
-      if (!this.optionsListCache || this.optionsListCache.length === 0) {
-        console.log('⚠️ Options cache not properly loaded, setting from fetched list');
-        this.optionsListCache = optionsList;
+  async fetchHistoricalPricesForOption(fundName, exercisePrice, grantDate, onProgress = null, source = 'KBC', isin = null) {
+    if (source === 'ING') {
+      if (!isin) {
+        throw new Error('ISIN is required for fetching historical prices for ING grants');
       }
-      
-      // Find the option using only exercise price and grant date
-      let option = this.findOptionInCache(exercisePrice, grantDate);
-      
-      if (!option || !option.detailUrl) {
-        console.error(`❌ Option not found in ${this.optionsListCache?.length || 0} cached options`);
-        console.log('Available options sample:', this.optionsListCache?.slice(0, 3).map(opt => ({
-          fundName: opt.fundName,
-          exercisePrice: opt.exercisePrice,
-          grantDate: opt.grantDate
-        })));
+      if (onProgress) onProgress({ text: `Fetching ING historical data...`, percentage: 20 });
+
+      const quotes = await ingService.fetchIngQuotes(isin, "ALL");
+
+      if (!quotes || quotes.length === 0) {
+        throw new Error(`No historical price data found for ISIN ${isin}`);
+      }
+
+      if (onProgress) onProgress({ text: `Processing data...`, percentage: 80 });
+
+      const priceHistory = quotes.map(q => ({
+        date: new Date(q.x).toISOString().split('T')[0],
+        price: q.y
+      }));
+
+      const currentPrice = quotes[quotes.length - 1].y;
+      const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, grantDate);
+
+      if (onProgress) onProgress({ text: `Completed!`, percentage: 100 });
+
+      return {
+        fundName: fundName,
+        exercisePrice: exercisePrice,
+        grantDate: grantDate,
+        currentPrice: currentPrice,
+        grantDatePrice: grantDatePriceResult.price,
+        grantDatePriceDerived: grantDatePriceResult.derived,
+        grantDatePriceSource: grantDatePriceResult.source,
+        priceHistory: grantDatePriceResult.updatedHistory,
+        downloadPath: null
+      };
+
+    } else { // KBC logic
+      try {
+        console.log(`🔍 Starting historical price fetch for ${fundName} - €${exercisePrice} on ${grantDate}`);
         
-        // Try force-refreshing the options list from KBC
-        console.log('🔄 Option not found, force-refreshing options list from KBC...');
-        const freshOptionsList = await this.getOptionsList(true);
-        console.log(`📋 Force-refreshed options list: ${freshOptionsList?.length || 0} options`);
+        // Get options list (cached or fresh) and ensure cache is loaded
+        const optionsList = await this.getOptionsList();
+        console.log(`📋 Options list loaded: ${optionsList?.length || 0} options available`);
         
-        // Try to find the option again in the fresh list
-        option = this.findOptionInCache(exercisePrice, grantDate);
+        // Double-check that cache is properly set
+        if (!this.optionsListCache || this.optionsListCache.length === 0) {
+          console.log('⚠️ Options cache not properly loaded, setting from fetched list');
+          this.optionsListCache = optionsList;
+        }
+        
+        // Find the option using only exercise price and grant date
+        let option = this.findOptionInCache(exercisePrice, grantDate);
         
         if (!option || !option.detailUrl) {
-          console.error(`❌ Option still not found after fresh fetch. Available dates:`, 
-            this.optionsListCache?.slice(0, 10).map(opt => opt.grantDate).filter((date, index, arr) => arr.indexOf(date) === index)
-          );
-          throw new Error(`Option not found for €${exercisePrice} on ${grantDate} even after refreshing options list. The option may not exist on the KBC website for this specific date and price combination.`);
-        } else {
-          console.log(`✅ Found option after force refresh: ${option.fundName} (€${option.exercisePrice})`);
+          console.error(`❌ Option not found in ${this.optionsListCache?.length || 0} cached options`);
+          console.log('Available options sample:', this.optionsListCache?.slice(0, 3).map(opt => ({
+            fundName: opt.fundName,
+            exercisePrice: opt.exercisePrice,
+            grantDate: opt.grantDate
+          })));
+          
+          // Try force-refreshing the options list from KBC
+          console.log('🔄 Option not found, force-refreshing options list from KBC...');
+          const freshOptionsList = await this.getOptionsList(true);
+          console.log(`📋 Force-refreshed options list: ${freshOptionsList?.length || 0} options`);
+          
+          // Try to find the option again in the fresh list
+          option = this.findOptionInCache(exercisePrice, grantDate);
+          
+          if (!option || !option.detailUrl) {
+            console.error(`❌ Option still not found after fresh fetch. Available dates:`, 
+              this.optionsListCache?.slice(0, 10).map(opt => opt.grantDate).filter((date, index, arr) => arr.indexOf(date) === index)
+            );
+            throw new Error(`Option not found for €${exercisePrice} on ${grantDate} even after refreshing options list. The option may not exist on the KBC website for this specific date and price combination.`);
+          } else {
+            console.log(`✅ Found option after force refresh: ${option.fundName} (€${option.exercisePrice})`);
+          }
         }
+        
+        console.log(`✅ Found option in cache: ${option.fundName} (€${option.exercisePrice})`);
+        
+        // Fetch historical prices
+        return await this.downloadHistoricalData(option, onProgress);
+        
+      } catch (error) {
+        console.error('❌ Error fetching historical prices:', error);
+        throw error;
       }
-      
-      console.log(`✅ Found option in cache: ${option.fundName} (€${option.exercisePrice})`);
-      
-      // Fetch historical prices
-      return await this.downloadHistoricalData(option, onProgress);
-      
-    } catch (error) {
-      console.error('❌ Error fetching historical prices:', error);
-      throw error;
     }
   }
 

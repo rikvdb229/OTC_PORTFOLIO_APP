@@ -333,7 +333,9 @@ class EnhancedPortfolioApp {
             await window.HistoricalPriceManager.showFetchModal(
               fundName,
               exercisePrice,
-              grantDate
+              grantDate,
+              this.currentGrantSource,
+              document.getElementById('isin').value
             );
           } else {
             console.log('✅ Historical prices already exist, updating current value...');

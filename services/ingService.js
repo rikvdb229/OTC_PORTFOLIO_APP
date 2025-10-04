@@ -43,34 +43,19 @@ function findNearestValidPrice(quotes, targetTs) {
 
 // --- Main: fetch price for an ING grant ---
 async function fetchIngPrice(grant) {
-  if (!grant.isin) {
-    throw new Error("ING grant must have an ISIN");
-  }
+    if (!grant.isin) {
+        throw new Error("ING grant must have an ISIN");
+    }
 
-  const quotes = await fetchIngQuotes(grant.isin, "INTRADAY");
-  if (!quotes || quotes.length === 0) {
-    throw new Error(`No quotes found for ISIN ${grant.isin}`);
-  }
+    let quotes = await fetchIngQuotes(grant.isin, "INTRADAY");
+    if (!quotes || quotes.length === 0) {
+        quotes = await fetchIngQuotes(grant.isin, "ALL");
+        if (!quotes || quotes.length === 0) {
+            throw new Error(`No quotes found for ISIN ${grant.isin}`);
+        }
+    }
 
-  // Target = 09:00 CET today
-  const now = new Date();
-  const target = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    9, 0, 0
-  );
-  const targetTs = Math.floor(target.getTime() / 1000);
-
-  const nearest = findNearestValidPrice(quotes, targetTs);
-  if (!nearest) {
-    throw new Error(`No valid (>0) quotes available for ISIN ${grant.isin}`);
-  }
-
-  return {
-    timestamp: nearest.x,
-    price: nearest.y
-  };
+    return quotes.map(q => ({ timestamp: q.x, price: q.y }));
 }
 
 // Web scraping method to get FOP product info
@@ -282,4 +267,4 @@ async function findFopProductInfo(isin) {
   }
 }
 
-module.exports = { fetchIngPrice, findFopProductInfo };
+module.exports = { fetchIngPrice, findFopProductInfo, fetchIngQuotes };

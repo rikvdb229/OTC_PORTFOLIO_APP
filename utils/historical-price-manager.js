@@ -65,14 +65,16 @@ const HistoricalPriceManager = {
   },
 
   // Show historical price fetch modal for a single option
-  async showFetchModal(fundName, exercisePrice, grantDate) {
+  async showFetchModal(fundName, exercisePrice, grantDate, source, isin) {
     console.log(`📊 Opening historical price fetch modal for: ${fundName}`);
 
     // Store current fetch data
     this.currentFetchData = {
       fundName,
       exercisePrice,
-      grantDate
+      grantDate,
+      source,
+      isin
     };
 
     // Populate modal with option details
@@ -109,7 +111,10 @@ const HistoricalPriceManager = {
         'fetch-historical-prices',
         this.currentFetchData.fundName,
         this.currentFetchData.exercisePrice,
-        this.currentFetchData.grantDate
+        this.currentFetchData.grantDate,
+        null, // onProgress is handled by the main process now
+        this.currentFetchData.source,
+        this.currentFetchData.isin
       );
 
       if (result.success) {
