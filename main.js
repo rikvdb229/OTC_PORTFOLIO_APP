@@ -157,7 +157,7 @@ app.on("window-all-closed", async () => {
   if (portfolioDb) {
     portfolioDb.close();
   }
-  if (process.platform !== "darwin") {
+  if (process.platform === "darwin") {
     app.quit();
   }
 });
@@ -517,21 +517,21 @@ ipcMain.handle(
 
 // FIXED: Updated to match the new database method signature
 ipcMain.handle("add-portfolio-entry", async (event, grantData) => {
-    try {
-      console.log("IPC: Adding portfolio entry with params:", grantData);
+  try {
+    console.log("IPC: Adding portfolio entry with params:", grantData);
 
-      // Validate ING requirements
-      if (grantData.source === 'ING' && !grantData.isin) {
-        throw new Error('ISIN is required for ING grants');
-      }
-
-      const result = await portfolioDb.addPortfolioEntry(grantData);
-      return result;
-    } catch (error) {
-      console.error("Error adding portfolio entry:", error);
-      return { error: error.message };
+    // Validate ING requirements
+    if (grantData.source === 'ING' && !grantData.isin) {
+      throw new Error('ISIN is required for ING grants');
     }
+
+    const result = await portfolioDb.addPortfolioEntry(grantData);
+    return result;
+  } catch (error) {
+    console.error("Error adding portfolio entry:", error);
+    return { error: error.message };
   }
+}
 );
 // Get sale details for editing
 ipcMain.handle("get-sale-details", async (event, saleId) => {
