@@ -243,12 +243,17 @@ async function findFopProductInfo(isin) {
 
       if (quotes && quotes.length > 0) {
         result.current_value = quotes[0].y;
+        const firstValidQuote = quotes.filter(q => q.y > 0).pop();
+        result.first_available_price = firstValidQuote ? firstValidQuote.y : quotes[0].y;
       } else {
         quotes = await fetchIngQuotes(isin, "ALL");
         if (quotes && quotes.length > 0) {
           result.current_value = quotes[0].y;
+          const firstValidQuote = quotes.filter(q => q.y > 0).pop();
+          result.first_available_price = firstValidQuote ? firstValidQuote.y : quotes[0].y;
         } else {
           result.current_value = "N/A";
+          result.first_available_price = "N/A";
         }
       }
 

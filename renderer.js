@@ -434,17 +434,20 @@ class EnhancedPortfolioApp {
           option.textContent = `${productInfo.fund_name} - €${productInfo.exercise_price} (Current Value: €${productInfo.current_value})`;
           option.dataset.fundName = productInfo.fund_name;
           option.dataset.currentValue = productInfo.current_value;
+          option.dataset.firstAvailablePrice = productInfo.first_available_price;
           exercisePriceSelect.appendChild(option);
           exercisePriceSelect.disabled = false;
           document.getElementById('exercisePriceHelp').textContent = 'Product info found';
           exercisePriceGroup.style.display = 'block'; // Show the dropdown
 
-          if (productInfo.current_value !== "N/A") {
+          if (productInfo.first_available_price !== "N/A") {
             currentValueGroup.style.display = 'block';
-            this.updateCurrentValueDisplay(productInfo.current_value);
+            this.updateCurrentValueDisplay(productInfo.first_available_price);
           } else {
             currentValueGroup.style.display = 'none';
           }
+
+          await this.handleExercisePriceSelection();
 
         } else {
           exercisePriceSelect.innerHTML = '<option value="">No product info found...</option>';
@@ -472,12 +475,19 @@ class EnhancedPortfolioApp {
 
   toggleIsinField() {
     console.log('toggleIsinField called');
+    const grantFormFields = document.getElementById('grantFormFields');
     const isinGroup = document.getElementById('isinGroup');
     const isinInput = document.getElementById('isin');
     const exercisePriceGroup = document.getElementById('exercisePrice').parentElement;
     this.currentGrantSource = document.getElementById('grantSource').value;
     console.log('Current source:', this.currentGrantSource);
 
+    if (!this.currentGrantSource) {
+      grantFormFields.style.display = 'none';
+      return;
+    }
+
+    grantFormFields.style.display = 'block';
     window.UIStateManager.Forms.clearaddGrantsForm(this);
 
     if (this.currentGrantSource === 'ING') {

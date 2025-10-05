@@ -1582,6 +1582,7 @@ const GrantOperations = {
         const selectedOption = exercisePriceSelect.options[exercisePriceSelect.selectedIndex];
         data.fundName = selectedOption.dataset.fundName;
         data.currentValue = selectedOption.dataset.currentValue;
+        data.firstAvailablePrice = selectedOption.dataset.firstAvailablePrice;
       }
 
       const result = await window.ipcRenderer.invoke(
@@ -1597,7 +1598,7 @@ const GrantOperations = {
 
       console.log("✅ Grant added successfully:", result);
       window.UIStateManager.Modals.closeAllModals(app);
-      
+
       // Refresh UI
       await app.loadPortfolioData();
       await app.loadEvolutionData("all");

@@ -80,6 +80,7 @@
       "libs/**/*",
       "styles/**/*",
       "assets/**/*",
+      "services/**/*",
       "package.json",
       "node_modules/sql.js/**/*",
       "node_modules/csv-parser/**/*",

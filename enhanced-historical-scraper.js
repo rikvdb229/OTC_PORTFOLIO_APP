@@ -270,7 +270,7 @@ class EnhancedHistoricalScraper {
       }));
 
       const currentPrice = quotes[quotes.length - 1].y;
-      const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, grantDate);
+      const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, grantDate, 'ING');
 
       if (onProgress) onProgress({ text: `Completed!`, percentage: 100 });
 
@@ -434,8 +434,8 @@ class EnhancedHistoricalScraper {
       if (onProgress) onProgress({ text: `Completed!`, percentage: 100 });
       
       // Find grant date price with derivation fallback
-      const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, option.grantDate);
-      
+      const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, option.grantDate, 'KBC');
+
       return {
         fundName: option.fundName,
         exercisePrice: option.exercisePrice,
@@ -490,9 +490,9 @@ class EnhancedHistoricalScraper {
   }
 
   // Find grant date price or derive it from next available day
-  findOrDeriveGrantDatePrice(priceHistory, grantDate) {
-    console.log(`🔍 Looking for grant date price: ${grantDate} in ${priceHistory.length} price entries`);
-    
+  findOrDeriveGrantDatePrice(priceHistory, grantDate, source = 'KBC') {
+    console.log(`🔍 Looking for grant date price: ${grantDate} in ${priceHistory.length} price entries (source: ${source})`);
+
     // Try to find exact grant date price first
     const exactMatch = priceHistory.find(p => p.date === grantDate);
     if (exactMatch) {
@@ -500,29 +500,30 @@ class EnhancedHistoricalScraper {
       return {
         price: exactMatch.price,
         derived: false,
-        source: `Exact price from KBC (${grantDate})`,
+        source: `Exact price from ${source} (${grantDate})`,
         updatedHistory: priceHistory
       };
     }
-    
+
     console.log(`⚠️ No exact price for grant date ${grantDate}, looking for next day's price to derive...`);
-    
+
     // Sort price history by date to find the next available day
     const sortedPrices = priceHistory.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
     const grantDateTime = new Date(grantDate);
-    
+
     // Find the next available price after the grant date
     const nextDayPrice = sortedPrices.find(p => {
       const priceDate = new Date(p.date);
       return priceDate > grantDateTime;
     });
-    
+
     if (nextDayPrice) {
-      // Round to nearest 10 (as per user requirements: 50.41 → 50.00)
-      const derivedPrice = Math.round(nextDayPrice.price / 10) * 10;
-      
-      console.log(`📊 Deriving grant date price: ${nextDayPrice.date} price €${nextDayPrice.price} → rounded to €${derivedPrice}`);
-      
+      // For ING: use actual price without rounding
+      // For KBC: round to nearest 10 (as per user requirements: 50.41 → 50.00)
+      const derivedPrice = source === 'ING' ? nextDayPrice.price : Math.round(nextDayPrice.price / 10) * 10;
+
+      console.log(`📊 Deriving grant date price: ${nextDayPrice.date} price €${nextDayPrice.price} → ${source === 'ING' ? 'using actual' : 'rounded to'} €${derivedPrice}`);
+
       // Create a new price entry for the grant date
       const derivedEntry = {
         date: grantDate,
@@ -531,16 +532,20 @@ class EnhancedHistoricalScraper {
         sourceDate: nextDayPrice.date,
         sourcePrice: nextDayPrice.price
       };
-      
+
       // Add the derived entry to the price history and sort
       const updatedHistory = [...priceHistory, derivedEntry].sort((a, b) => new Date(a.date) - new Date(b.date));
-      
+
       console.log(`✅ Derived grant date price: €${derivedPrice} (from ${nextDayPrice.date}: €${nextDayPrice.price})`);
-      
+
+      const sourceText = source === 'ING'
+        ? `Derived from ${nextDayPrice.date} price €${nextDayPrice.price}`
+        : `Derived from ${nextDayPrice.date} price €${nextDayPrice.price} (rounded to nearest 10)`;
+
       return {
         price: derivedPrice,
         derived: true,
-        source: `Derived from ${nextDayPrice.date} price €${nextDayPrice.price} (rounded to nearest 10)`,
+        source: sourceText,
         updatedHistory: updatedHistory,
         derivationInfo: {
           sourceDate: nextDayPrice.date,
@@ -549,9 +554,9 @@ class EnhancedHistoricalScraper {
         }
       };
     }
-    
+
     console.log(`❌ No price available after grant date ${grantDate} for derivation`);
-    
+
     return {
       price: null,
       derived: false,

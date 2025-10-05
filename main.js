@@ -144,46 +144,17 @@ app.whenReady().then(async () => {
   createWindow();
 });
 
-app.on("window-all-closed", async () => {
-  // Perform cleanup before closing
-  try {
-    const CleanupManager = require('./utils/cleanup-manager');
-    const cleanup = new CleanupManager();
-    await cleanup.performCleanup();
-  } catch (error) {
-    console.error('❌ Error during app cleanup:', error);
-  }
-
+app.on("window-all-closed", () => {
   if (portfolioDb) {
     portfolioDb.close();
   }
-  if (process.platform === "darwin") {
-    app.quit();
-  }
+  app.quit();
 });
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
   }
-});
-
-// Additional cleanup on quit
-app.on("before-quit", async (event) => {
-  event.preventDefault();
-
-  // Perform cleanup
-  try {
-    const CleanupManager = require('./utils/cleanup-manager');
-    const cleanup = new CleanupManager();
-    await cleanup.performCleanup();
-    console.log('✅ App cleanup completed, quitting...');
-  } catch (error) {
-    console.error('❌ Error during app cleanup:', error);
-  }
-
-  // Now actually quit
-  app.exit(0);
 });
 // File selection handler
 ipcMain.handle("select-import-file", async () => {

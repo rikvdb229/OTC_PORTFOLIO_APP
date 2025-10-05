@@ -224,31 +224,37 @@ const HistoricalPriceManager = {
     if (this.currentFetchData && this.currentFetchData.grantDatePrice) {
       const exercisePriceSelect = document.getElementById('exercisePrice');
       const grantDateField = document.getElementById('grantDate');
-      
-      if (exercisePriceSelect && exercisePriceSelect.selectedIndex > 0) {
+      const grantSourceSelect = document.getElementById('grantSource');
+      const isINGGrant = grantSourceSelect?.value === 'ING';
+
+      if (exercisePriceSelect && exercisePriceSelect.selectedIndex >= 0) {
         const selectedOption = exercisePriceSelect.options[exercisePriceSelect.selectedIndex];
         const exercisePrice = parseFloat(selectedOption.value);
         const grantDate = grantDateField?.value;
-        
-        // Update the option's current value data attribute
-        selectedOption.dataset.currentValue = this.currentFetchData.grantDatePrice.toFixed(2);
-        
+
+        if (isINGGrant) {
+          selectedOption.dataset.firstAvailablePrice = this.currentFetchData.grantDatePrice.toFixed(2);
+        } else {
+          selectedOption.dataset.currentValue = this.currentFetchData.grantDatePrice.toFixed(2);
+        }
+
         // Update the display text to show the historical price
         const fundName = selectedOption.dataset.fundName || 'Unknown Fund';
         selectedOption.textContent = `${fundName} - €${exercisePrice} (Grant Date Value: €${this.currentFetchData.grantDatePrice.toFixed(2)})`;
-        
+
         // Update the current value display in the form
         if (app && app.updateCurrentValueDisplay) {
-          app.updateCurrentValueDisplay(this.currentFetchData.grantDatePrice, `Historical price fetched from KBC (${grantDate})`);
+          const source = isINGGrant ? 'ING' : 'KBC';
+          app.updateCurrentValueDisplay(this.currentFetchData.grantDatePrice, `Historical price fetched from ${source} (${grantDate})`);
         }
-        
+
         console.log(`💰 Updated option display with grant date value: €${this.currentFetchData.grantDatePrice.toFixed(2)}`);
       }
     }
 
     // Clear current fetch data
     this.currentFetchData = null;
-    
+
     console.log('✅ Historical price fetch completed, form is ready for grant addition');
   },
 

@@ -484,77 +484,82 @@
         <div class="form-group">
           <label for="grantSource">Grant Source</label>
           <select id="grantSource" class="form-control" onchange="portfolioApp.toggleIsinField()">
-            <option value="KBC" selected>KBC</option>
+            <option value="" selected>-- Select Grant Source --</option>
+            <option value="KBC">KBC</option>
             <option value="ING">ING</option>
           </select>
+          <small class="form-help">Please select grant source (KBC or ING)</small>
         </div>
 
-        <div class="form-group">
-          <label for="grantDate">Grant Date</label>
-          <input type="date" id="grantDate" required />
-          <small class="form-help">Enter the grant date from your option plan</small>
-        </div>
-
-        <!-- ISIN Field (for ING grants) -->
-        <div class="form-group" id="isinGroup" style="display: none;">
-          <label for="isin">ISIN (FOP Number)</label>
-          <input type="text" id="isin" class="form-control" pattern="[A-Z0-9]{12}" title="12-character ISIN format"
-            placeholder="Enter 12-character ISIN" required />
-          <small class="form-help">Required for ING grants</small>
-        </div>
-
-        <div class="form-group">
-          <label for="exercisePrice">Available Options</label>
-          <select id="exercisePrice" required disabled>
-            <option value="">First enter grant date...</option>
-          </select>
-          <small class="form-help" id="exercisePriceHelp">
-            Options will appear after entering grant date
-          </small>
-        </div>
-
-        <div class="form-group">
-          <label for="quantity">Quantity Granted</label>
-          <input type="number" id="quantity" min="1" required />
-          <small class="form-help">Number must be a whole number</small>
-        </div>
-
-        <div class="form-group" id="currentValueGroup" style="display: none;">
-          <label for="currentValue">Current Grant Value</label>
-          <div class="value-display">
-            <div class="value-info">
-              <span class="value-label">Value per option:</span>
-              <span id="currentValuePerOption" class="value-amount">€0.00</span>
-            </div>
-            <div class="value-info">
-              <span class="value-label">Total grant value:</span>
-              <span id="totalGrantValue" class="value-amount highlight">€0.00</span>
-            </div>
+        <!-- Grant Form Fields (hidden until source is selected) -->
+        <div id="grantFormFields" style="display: none;">
+          <div class="form-group">
+            <label for="grantDate">Grant Date</label>
+            <input type="date" id="grantDate" required />
+            <small class="form-help">Enter the grant date from your option plan</small>
           </div>
-          <small class="form-help" id="currentValueHelp">
-            This value will be used for portfolio calculations
-          </small>
-        </div>
 
-        <div class="tax-section">
-          <div class="tax-info">
-            <div class="tax-calculation">
-              <strong>Estimated Tax (Auto):</strong>
-              <span id="estimatedTax" class="tax-amount">€ 0.00</span>
-            </div>
-            <small class="tax-note">💡 This will appear as code 3510 on your payslip</small>
+          <!-- ISIN Field (for ING grants) -->
+          <div class="form-group" id="isinGroup" style="display: none;">
+            <label for="isin">ISIN (FOP Number)</label>
+            <input type="text" id="isin" class="form-control" pattern="[A-Z0-9]{12}" title="12-character ISIN format"
+              placeholder="Enter 12-character ISIN" required />
+            <small class="form-help">Required for ING grants</small>
           </div>
 
           <div class="form-group">
-            <label for="actualTaxAmount">Actual Tax Amount (Optional)</label>
-            <div class="input-group">
-              <span class="input-prefix">€</span>
-              <input type="number" id="actualTaxAmount" step="0.01" min="0"
-                placeholder="Leave empty to use auto-calculated" />
-            </div>
-            <small class="form-help">
-              Override auto-calculated tax if you know the exact amount
+            <label for="exercisePrice">Available Options</label>
+            <select id="exercisePrice" required disabled>
+              <option value="">First enter grant date...</option>
+            </select>
+            <small class="form-help" id="exercisePriceHelp">
+              Options will appear after entering grant date
             </small>
+          </div>
+
+          <div class="form-group">
+            <label for="quantity">Quantity Granted</label>
+            <input type="number" id="quantity" min="1" required />
+            <small class="form-help">Number must be a whole number</small>
+          </div>
+
+          <div class="form-group" id="currentValueGroup" style="display: none;">
+            <label for="currentValue">Current Grant Value</label>
+            <div class="value-display">
+              <div class="value-info">
+                <span class="value-label">Value per option:</span>
+                <span id="currentValuePerOption" class="value-amount">€0.00</span>
+              </div>
+              <div class="value-info">
+                <span class="value-label">Total grant value:</span>
+                <span id="totalGrantValue" class="value-amount highlight">€0.00</span>
+              </div>
+            </div>
+            <small class="form-help" id="currentValueHelp">
+              This value will be used for portfolio calculations
+            </small>
+          </div>
+
+          <div class="tax-section">
+            <div class="tax-info">
+              <div class="tax-calculation">
+                <strong>Estimated Tax (Auto):</strong>
+                <span id="estimatedTax" class="tax-amount">€ 0.00</span>
+              </div>
+              <small class="tax-note">💡 This will appear as code 3510 on your payslip</small>
+            </div>
+
+            <div class="form-group">
+              <label for="actualTaxAmount">Actual Tax Amount (Optional)</label>
+              <div class="input-group">
+                <span class="input-prefix">€</span>
+                <input type="number" id="actualTaxAmount" step="0.01" min="0"
+                  placeholder="Leave empty to use auto-calculated" />
+              </div>
+              <small class="form-help">
+                Override auto-calculated tax if you know the exact amount
+              </small>
+            </div>
           </div>
         </div>
       </div>

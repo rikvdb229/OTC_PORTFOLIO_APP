@@ -1627,6 +1627,7 @@ class PortfolioDatabase {
       isin = null,
       fundName: ingFundName,
       currentValue: ingCurrentValue,
+      firstAvailablePrice: ingFirstAvailablePrice,
     } = grantData;
 
     try {
@@ -1640,6 +1641,7 @@ class PortfolioDatabase {
 
       let fundName = ingFundName;
       let currentValue = ingCurrentValue;
+      let grantDatePrice;
 
       if (source === "KBC") {
         const priceStmt = this.db.prepare(
@@ -1671,9 +1673,11 @@ class PortfolioDatabase {
             currentValue = fallbackData.current_value || 0;
           }
         }
+        grantDatePrice = currentValue && currentValue !== 'N/A' ? currentValue : 10;
+      } else if (source === "ING") {
+        grantDatePrice = ingFirstAvailablePrice && ingFirstAvailablePrice !== 'N/A' ? ingFirstAvailablePrice : 10;
       }
 
-      const grantDatePrice = currentValue && currentValue !== 'N/A' ? currentValue : 10;
       const amountGranted = quantity * grantDatePrice;
       const taxRateSetting = await this.getSetting("tax_auto_rate");
       const taxRate = parseFloat(taxRateSetting || "30");
@@ -3437,7 +3441,8 @@ ORDER BY st.sale_date DESC
     const today = new Date().toISOString().split('T')[0];
     const stmt = this.db.prepare(`
       SELECT * FROM portfolio_entries
-      WHERE id NOT IN (
+      WHERE (quantity - total_sold_quantity) > 0
+      AND id NOT IN (
         SELECT portfolio_entry_id
         FROM price_history
         WHERE price_date = ?

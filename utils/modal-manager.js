@@ -130,14 +130,14 @@ const ModalManager = {
    */
   showaddGrantsModal(app) {
     this.showModal("addGrantsModal", () => {
-      // ✅ REPLACE all the reset code with just this:
+      const grantSourceSelect = document.getElementById('grantSource');
+      const grantFormFields = document.getElementById('grantFormFields');
+
+      if (grantSourceSelect) grantSourceSelect.value = '';
+      if (grantFormFields) grantFormFields.style.display = 'none';
+
       window.UIStateManager.Forms.clearaddGrantsForm(app);
-
-      // ✅ ADD validation setup:
-      // Set up enhanced validation
       window.UIStateManager.Validation.setupValidationListeners(app);
-
-      // Initial button state (should be disabled)
       window.UIStateManager.Validation.validateAddGrantsForm(app);
 
       console.log("✅ Add Grants modal opened with enhanced validation");
