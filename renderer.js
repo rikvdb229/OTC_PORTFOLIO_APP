@@ -478,17 +478,26 @@ class EnhancedPortfolioApp {
     this.currentGrantSource = document.getElementById('grantSource').value;
     console.log('Current source:', this.currentGrantSource);
 
+    window.UIStateManager.Forms.clearaddGrantsForm(this);
+
     if (this.currentGrantSource === 'ING') {
-      console.log('Showing ISIN field');
+      console.log('Showing ISIN field for ING');
       isinGroup.style.display = 'block';
       isinInput.required = true;
-      exercisePriceGroup.style.display = 'none'; // Hide by default for ING
+      exercisePriceGroup.style.display = 'none';
+      const helpText = document.getElementById('exercisePriceHelp');
+      if (helpText) {
+        helpText.textContent = 'Enter ISIN to load product info';
+      }
     } else {
-      console.log('Hiding ISIN field');
+      console.log('Showing grant date field for KBC');
       isinGroup.style.display = 'none';
       isinInput.required = false;
-      isinInput.value = ''; // Clear ISIN when switching back to KBC
-      exercisePriceGroup.style.display = 'block'; // Show for KBC
+      exercisePriceGroup.style.display = 'block';
+      const helpText = document.getElementById('exercisePriceHelp');
+      if (helpText) {
+        helpText.textContent = 'Options will appear after entering grant date';
+      }
     }
   }
 

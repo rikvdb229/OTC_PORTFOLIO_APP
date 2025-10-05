@@ -15,7 +15,6 @@
       base-uri 'self';
     " />
   <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-  <meta http-equiv="X-Frame-Options" content="DENY" />
   <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
 
   <link rel="stylesheet" href="styles/main.css" />
@@ -490,18 +489,18 @@
           </select>
         </div>
 
+        <div class="form-group">
+          <label for="grantDate">Grant Date</label>
+          <input type="date" id="grantDate" required />
+          <small class="form-help">Enter the grant date from your option plan</small>
+        </div>
+
         <!-- ISIN Field (for ING grants) -->
         <div class="form-group" id="isinGroup" style="display: none;">
           <label for="isin">ISIN (FOP Number)</label>
           <input type="text" id="isin" class="form-control" pattern="[A-Z0-9]{12}" title="12-character ISIN format"
             placeholder="Enter 12-character ISIN" required />
           <small class="form-help">Required for ING grants</small>
-        </div>
-
-        <div class="form-group">
-          <label for="grantDate">Grant Date</label>
-          <input type="date" id="grantDate" required />
-          <small class="form-help">Enter the grant date from your option plan</small>
         </div>
 
         <div class="form-group">

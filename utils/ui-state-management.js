@@ -115,6 +115,9 @@ const FormManager = {
       const actualTaxAmountElement = document.getElementById("actualTaxAmount");
       const estimatedTaxElement = document.getElementById("estimatedTax");
       const helpTextElement = document.getElementById("exercisePriceHelp");
+      const isinElement = document.getElementById("isin");
+      const currentValuePerOptionElement = document.getElementById("currentValuePerOption");
+      const totalGrantValueElement = document.getElementById("totalGrantValue");
 
       if (grantDateElement) grantDateElement.value = "";
 
@@ -137,13 +140,21 @@ const FormManager = {
           "Options will appear after entering grant date";
       }
 
-      // Hide the current value group
+      if (isinElement) isinElement.value = "";
+
+      if (currentValuePerOptionElement) {
+        currentValuePerOptionElement.textContent = "€0.00";
+      }
+
+      if (totalGrantValueElement) {
+        totalGrantValueElement.textContent = "€0.00";
+      }
+
       const currentValueGroup = document.getElementById("currentValueGroup");
       if (currentValueGroup) {
         currentValueGroup.style.display = "none";
       }
 
-      // Clear stored form data
       app.currentFormData = null;
       window.UIStateManager.Validation.validateAddGrantsForm(app);
       console.log("✅ Form and stored data cleared");

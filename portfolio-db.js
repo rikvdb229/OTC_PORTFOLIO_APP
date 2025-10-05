@@ -560,11 +560,15 @@ class PortfolioDatabase {
         this.logDebug("🔧 Renaming FOP column to isin...");
         this.db.exec(`ALTER TABLE portfolio_entries RENAME COLUMN FOP TO isin;`);
         this.logDebug("✅ FOP column renamed to isin successfully");
+      } else if (!columns.includes('isin') && !columns.includes('FOP')) {
+        this.logDebug("🔧 Adding isin column to portfolio_entries table...");
+        this.db.exec(`ALTER TABLE portfolio_entries ADD COLUMN isin VARCHAR(50);`);
+        this.logDebug("✅ isin column added successfully");
       } else {
-        this.logDebug("✅ isin column already exists or FOP column does not exist. No rename needed.");
+        this.logDebug("✅ isin column already exists. No migration needed.");
       }
     } catch (error) {
-      this.logDebug(`❌ Error renaming FOP column: ${error.message}`);
+      this.logDebug(`❌ Error migrating isin column: ${error.message}`);
     }
   }
 
