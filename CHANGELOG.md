@@ -5,6 +5,68 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.9] - 2025-10-05
+
+⚠️ **IMPORTANT: Backup your database before installing this release.** While database migrations are tested, we recommend exporting your portfolio data (Settings → Export Database) before updating as a safety precaution.
+
+### 🎉 Major New Feature - ING Grant Support
+- **ING Employee Stock Options Support**: Full support for ING stock option plans alongside KBC
+  - Add ING grants using ISIN (FOP number) from your ING option plan documents
+  - Automatic product info retrieval from ING API using ISIN
+  - Real-time historical price fetching for ING products
+  - Dual-source portfolio management in single application
+  - Separate pricing logic respecting ING vs KBC data structures
+
+### ✨ ING-Specific Features
+- **Improved Grant Addition UX**: Form fields now hidden until KBC/ING source is selected
+  - Cleaner initial interface with two-step process
+  - Clear instructional text: "Please select grant source (KBC or ING)"
+  - Reduces confusion by showing only relevant fields for selected source
+  - Prevents accidental submissions with wrong grant type
+  - ISIN field appears only for ING grants
+
+- **Accurate ING Grant Pricing**: ING grants now use actual first available historical price
+  - Uses real market prices from ING API without artificial rounding
+  - KBC grants retain rounding to nearest €10 as before
+  - More accurate amount granted calculations for ING options
+  - Historical price derivation respects source-specific requirements
+  - First available price used for grant value (not current price)
+
+### 🚀 Performance Optimizations
+- **Smart Price Updates**: Price update process now only fetches for active/partially sold grants
+  - Skips fully sold grants (quantity_remaining = 0)
+  - Significantly faster update times for portfolios with historical sales
+  - Reduces unnecessary API calls and processing time
+
+### 🐛 Bug Fixes
+- **Windows Exit Behavior**: Fixed app not properly closing on Windows
+  - Removed problematic cleanup handlers causing process to hang
+  - App now exits cleanly when all windows are closed
+  - Simplified quit logic for better reliability
+
+- **Build Configuration**: Fixed missing services directory in packaged builds
+  - Added services/**/* to electron-builder files list
+  - Resolves "Cannot find module './services/ingService'" error
+  - Ensures all ING-related functionality works in production builds
+
+### 🔧 Technical Improvements
+- **ING Historical Price Flow**: Enhanced historical price fetching for ING grants
+  - Properly updates `firstAvailablePrice` dataset attribute
+  - Correctly passes price data through grant addition pipeline
+  - Fixed modal display to show ING-specific price information
+  - Automatic historical price fetch triggered on ISIN entry
+
+### 🙏 Special Thanks
+- **@TomGun87**: For the heavy lifting on ING implementation and core architecture
+- All contributors and testers who helped refine the ING grant workflow
+
+### 📦 Upgrade Notes
+1. **Backup First**: Export your database before updating (Settings → Export Database)
+2. Close existing Portfolio Tracker application
+3. Install version 0.3.9
+4. Your data will be preserved, but backup provides safety net for any migration issues
+5. If adding ING grants: Historical prices will auto-fetch when you enter a valid ISIN
+
 ## [0.3.8] - 2025-09-26
 
 ### 🔧 Infrastructure Improvements

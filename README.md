@@ -4,10 +4,10 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 ![Portfolio Tracker](assets/logo.svg)
 
-## Version 0.3.8
+## Version 0.3.9
 
 **Status**: Beta Version
-**Build Date**: September 26, 2025
+**Build Date**: October 5, 2025
 **License**: MIT  
 
 ## ⚠️ Important Disclaimer
@@ -25,9 +25,11 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 ## Features
 
 ### 📊 Portfolio Management
+- **Dual-Source Support**: Track both KBC and ING employee stock option grants in one portfolio *(New in v0.3.9)*
 - **Real-time Portfolio Tracking**: Monitor your total portfolio value, active options, and performance metrics
 - **Grant Management**: Track stock option grants with exercise prices, quantities, and vesting schedules
 - **Performance Analytics**: View portfolio evolution over time with interactive charts and graphs
+- **ING Integration**: Add ING grants using ISIN (FOP number) with automatic price fetching *(New in v0.3.9)*
 
 ### 📈 Evolution Analysis
 - **Period-based Analysis**: View portfolio changes over 30 days, 90 days, 1 year, or all time
@@ -63,14 +65,16 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 
 **No installation required!** Download and run the portable executable:
 
-1. **Download**: Get the latest `Portfolio Tracker 0.3.8.exe` from the [Releases](../../releases) page
+1. **Download**: Get the latest `Portfolio Tracker 0.3.9.exe` from the [Releases](../../releases) page
 2. **Run**: Double-click the .exe file to start the application
 3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
 
-### 🆕 New in Version 0.3.8
-- **GitHub Actions Optimization**: Removed non-functional macOS build from CI/CD pipeline
-- **Streamlined Build Process**: Focused on Windows and Linux support for improved reliability
-- **Infrastructure Improvements**: Enhanced release pipeline with better artifact handling
+### 🆕 New in Version 0.3.9
+- **ING Grant Support**: Full support for ING employee stock option plans alongside KBC
+- **Improved UX**: Cleaner grant addition form with hidden fields until source selection
+- **Accurate Pricing**: ING grants use actual first available prices (no artificial rounding)
+- **Performance**: Price updates only process active/partially sold grants
+- **Windows Fix**: Resolved app exit issues on Windows platform
 
 ### ⚠️ Important for Users Upgrading from Older Versions
 **If upgrading from version 0.3.1 or earlier, please run Settings → Update Historical Prices** to ensure your portfolio evolution calculations are using the latest optimized data processing. This will rebuild your portfolio timeline with the new performance enhancements and ensure all historical data is properly synchronized.
@@ -153,9 +157,13 @@ npm run build:all
 
 **Remember: This app is for tracking only. Use your official platform for actual transactions.**
 
-1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.8.exe`
+1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.9.exe`
 2. **First Run**: The app creates a `portfolio.db` file next to the .exe
-3. **Add Your First Grant**: Click "➕ Add Grants" to input your stock option information for tracking
+3. **Add Your First Grant**:
+   - Click "➕ Add Grants"
+   - Select grant source (KBC or ING)
+   - For ING grants: Enter ISIN (FOP number) from your ING option plan documents
+   - For KBC grants: Enter grant date and select exercise price
 4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
 5. **Monitor Evolution**: Use the Evolution tab to see how your portfolio changes over time
 6. **Execute Transactions**: Use your official brokerage/stock option platform for actual sales
@@ -335,4 +343,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-**Portfolio Tracker v0.3.8** - Professional stock options portfolio management with optimized CI/CD pipeline, streamlined multi-platform builds, and enhanced infrastructure reliability.
+**Portfolio Tracker v0.3.9** - Professional stock options portfolio management with dual-source support (KBC and ING), accurate pricing, and enhanced user experience.
+
+## Contributors
+
+Special thanks to:
+- **[@TomGun87](https://github.com/TomGun87)** - For the heavy lifting on ING implementation and core architecture
+- All contributors and testers who helped refine the application
