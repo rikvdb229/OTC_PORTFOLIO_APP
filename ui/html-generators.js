@@ -32,31 +32,29 @@ class HTMLGenerators {
     <tr class="${this.app.helpers.getRowStatusClass(entry.selling_status)}">
       <td>${new Date(entry.grant_date).toLocaleDateString()}</td>
       <td class="fund-name" title="${entry.fund_name || "Unknown Fund"}">
+        <img src="assets/bank/${entry.source.toLowerCase()}.png" class="source-icon" title="${entry.source}">
         ${this.app.helpers.formatFundName(entry.fund_name)}
       </td>
       <td>${entry.quantity_remaining.toLocaleString()}</td>
       <td class="currency">${this.app.helpers.formatCurrency(
-        entry.amount_granted
-      )}</td>
+      entry.amount_granted
+    )}</td>
       <td class="currency">
-        ${
-          entry.tax_amount
-            ? this.app.helpers.formatCurrency(entry.tax_amount)
-            : `${this.app.helpers.formatCurrency(
-                entry.tax_auto_calculated || 0
-              )} (Auto)`
-        }
+        ${entry.tax_amount
+        ? this.app.helpers.formatCurrency(entry.tax_amount)
+        : `${this.app.helpers.formatCurrency(
+          entry.tax_auto_calculated || 0
+        )} (Auto)`
+      }
       </td>
-      <td class="currency">${
-        entry.current_value
-          ? this.app.helpers.formatCurrency(entry.current_value)
-          : "N/A"
+      <td class="currency">${entry.current_value
+        ? this.app.helpers.formatCurrency(entry.current_value)
+        : "N/A"
       }</td>
       <td class="currency">${this.app.helpers.formatCurrency(
         entry.current_total_value || 0
       )}</td>
-      <td class="currency ${
-        entry.profit_loss_vs_target >= 0 ? "positive" : "negative"
+      <td class="currency ${entry.profit_loss_vs_target >= 0 ? "positive" : "negative"
       }" 
           title="P&L against ${targetPercentage}% target">
         ${this.app.helpers.formatCurrency(entry.profit_loss_vs_target || 0)}
@@ -66,11 +64,10 @@ class HTMLGenerators {
         targetPercentage
       )}" 
           title="Return vs ${targetPercentage}% target">
-        ${
-          entry.current_return_percentage
-            ? entry.current_return_percentage.toFixed(1) + "%"
-            : "N/A"
-        }
+        ${entry.current_return_percentage
+        ? entry.current_return_percentage.toFixed(1) + "%"
+        : "N/A"
+      }
       </td>
       <td class="${this.getNormalizedPriceClassForRow(entry)}" 
           title="Position of current price within historical range">
@@ -78,10 +75,10 @@ class HTMLGenerators {
       </td>
       <td class="status-column">
         ${this.app.helpers.getSellingStatusBadge(
-          entry.selling_status,
-          entry.can_sell_after,
-          entry.expires_on
-        )}
+        entry.selling_status,
+        entry.can_sell_after,
+        entry.expires_on
+      )}
       </td>
       <td>
         ${this.generatePortfolioActions(entry)}
@@ -112,18 +109,15 @@ class HTMLGenerators {
   📊 Info
 </button>
       <button class="btn action-btn edit-btn" 
-              onclick="portfolioApp.editTax(${entry.id}, ${
-                entry.tax_auto_calculated
-              }, ${entry.tax_amount || 0})"
+              onclick="portfolioApp.editTax(${entry.id}, ${entry.tax_auto_calculated
+      }, ${entry.tax_amount || 0})"
               title="Edit the tax amount for this grant">
         ✏️ Edit
       </button>
       <button class="btn action-btn delete-btn" 
-              onclick="portfolioApp.showDeleteConfirmModal(${entry.id}, '${
-                entry.grant_date
-              }', ${entry.quantity_remaining}, ${entry.exercise_price}, ${
-                entry.current_total_value || 0
-              })"
+              onclick="portfolioApp.showDeleteConfirmModal(${entry.id}, '${entry.grant_date
+      }', ${entry.quantity_remaining}, ${entry.exercise_price}, ${entry.current_total_value || 0
+      })"
               title="Permanently delete this portfolio entry">
         🗑️ Delete
       </button>
@@ -216,26 +210,22 @@ class HTMLGenerators {
     <tr>
       <td>${new Date(entry.snapshot_date).toLocaleDateString()}</td>
       <td class="currency">${this.app.helpers.formatCurrency(
-        entry.total_portfolio_value
-      )}</td>
-      <td class="currency ${
-        (entry.change_from_previous || 0) >= 0 ? "positive" : "negative"
-      }">
-        ${
-          entry.change_from_previous !== null &&
-          entry.change_from_previous !== 0
-            ? `${
-                entry.change_from_previous > 0 ? "+" : ""
-              }${this.app.helpers.formatCurrency(entry.change_from_previous)}`
+          entry.total_portfolio_value
+        )}</td>
+      <td class="currency ${(entry.change_from_previous || 0) >= 0 ? "positive" : "negative"
+          }">
+        ${entry.change_from_previous !== null &&
+            entry.change_from_previous !== 0
+            ? `${entry.change_from_previous > 0 ? "+" : ""
+            }${this.app.helpers.formatCurrency(entry.change_from_previous)}`
             : "—"
-        }
+          }
       </td>
       <td class="${percentageChange >= 0 ? "positive" : "negative"}">
-        ${
-          percentageChange !== 0
+        ${percentageChange !== 0
             ? `${percentageChange > 0 ? "+" : ""}${percentageChange.toFixed(1)}%`
             : "—"
-        }
+          }
       </td>
       <td class="text-center">
         ${daysGap > 0 ? `${daysGap} days` : "—"}
@@ -299,7 +289,7 @@ class HTMLGenerators {
     const averageSalePrice =
       salesHistory.length > 0
         ? salesHistory.reduce((sum, sale) => sum + sale.sale_price, 0) /
-          salesHistory.length
+        salesHistory.length
         : 0;
 
     // Update summary cards safely - CHANGED: Update totalSoldValue element instead of totalRealizedGain
@@ -355,9 +345,8 @@ class HTMLGenerators {
     <td class="currency">${this.app.helpers.formatCurrency(
       sale.total_sale_value
     )}</td>
-    <td class="currency ${
-      sale.profit_loss_vs_target >= 0 ? "positive" : "negative"
-    }">
+    <td class="currency ${sale.profit_loss_vs_target >= 0 ? "positive" : "negative"
+      }">
       ${this.app.helpers.formatCurrency(sale.profit_loss_vs_target || 0)}
     </td>
     <td>${sale.notes || "—"}</td>
@@ -477,7 +466,7 @@ class HTMLGenerators {
     if (entry.normalized_price_percentage === null || entry.normalized_price_percentage === undefined) {
       return "N/A";
     }
-    
+
     // Format using existing formatter
     return window.FormatHelpers.formatPercentage(entry.normalized_price_percentage, 1);
   }
@@ -491,9 +480,9 @@ class HTMLGenerators {
     if (entry.normalized_price_percentage === null || entry.normalized_price_percentage === undefined) {
       return ""; // Neutral for N/A
     }
-    
+
     const percentage = entry.normalized_price_percentage;
-    
+
     // Use same thresholds as in modal: 66% = high (green), 33% = low (red)
     if (percentage >= 66) {
       return "positive"; // Green for high position (top third)

@@ -1998,11 +1998,15 @@ textarea {
 }
 .sales-table {
   width: 100%;
-  border-collapse: collapse;
-  background: var(--color-white);
-  font-size: var(--font-size-base);
-  table-layout: auto;
 }
+
+.source-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
 .sales-table thead tr:first-child th.group-header {
   position: sticky;
   top: 0;
