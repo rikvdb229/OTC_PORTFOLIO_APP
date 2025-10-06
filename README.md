@@ -37,7 +37,7 @@ A desktop application for tracking and analyzing stock options portfolios. Built
 
 **Step 2**: macOS shows "damaged file" warning - Click **Cancel** (do NOT delete!)
 
-<img src="screen-shots/Fix.jpg?v=2" alt="Step 3: Terminal Fix" width="600" />
+<img src="screen-shots/Fix-blurred.jpg" alt="Step 3: Terminal Fix" width="600" />
 
 **Step 3**: Open Terminal and run:
 ```bash
