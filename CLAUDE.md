@@ -90,6 +90,9 @@ npm run dev         # Run with dev flag
 ## Version History
 - **v0.1.0** - Initial release
 - **v0.2.0** - Added evolution period statistics, fixed UI bugs
+- **v0.3.0** - Historical price management system
+- **v0.3.9** - ING grant support, improved UX
+- **v0.4.0** - Critical ING bug fixes, price history matching
 
 ## Development Notes
 - Internet required only for price updates

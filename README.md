@@ -1,369 +1,185 @@
-****# Portfolio Tracker
+# Portfolio Tracker
 
-A comprehensive desktop application for **tracking and analyzing** stock options portfolios, built with Electron and designed for monitoring employee stock option plans and investment performance. **This is a tracking tool only - all transactions must be executed through your official brokerage platform.**
+A desktop application for tracking and analyzing stock options portfolios. Built with Electron for monitoring employee stock option plans.
 
-![Portfolio Tracker](assets/logo.svg)
+**Version 0.4.0** | **Build Date**: October 6, 2025 | **Status**: Beta | **License**: MIT
 
-## Version 0.3.9
-
-**Status**: Beta Version
-**Build Date**: October 5, 2025
-**License**: MIT  
-
-## ⚠️ Important Disclaimer
+## Important Disclaimer
 
 **Portfolio Tracker is a TRACKING TOOL ONLY** - it does not execute any financial transactions.
 
-- **📊 For Tracking Only**: Monitor and analyze your portfolio performance
-- **🚫 No Trading**: Cannot buy, sell, or execute any transactions
-- **💼 Official Platform Required**: All sales and transactions must be done through your official brokerage/stock option platform
-- **📈 Analysis Tool**: Provides insights and calculations for informed decision-making
-- **⚖️ No Financial Advice**: This tool does not provide investment or financial advice
+- 📊 For Tracking Only - Monitor and analyze your portfolio performance
+- 🚫 No Trading - Cannot buy, sell, or execute any transactions
+- 💼 Official Platform Required - All sales must be done through your official brokerage
+- ⚖️ No Financial Advice - This tool does not provide investment advice
 
-**Always use your official stock option platform for actual transactions and consult with financial advisors for investment decisions.**
-
-## Features
-
-### 📊 Portfolio Management
-- **Dual-Source Support**: Track both KBC and ING employee stock option grants in one portfolio *(New in v0.3.9)*
-- **Real-time Portfolio Tracking**: Monitor your total portfolio value, active options, and performance metrics
-- **Grant Management**: Track stock option grants with exercise prices, quantities, and vesting schedules
-- **Performance Analytics**: View portfolio evolution over time with interactive charts and graphs
-- **ING Integration**: Add ING grants using ISIN (FOP number) with automatic price fetching *(New in v0.3.9)*
-
-### 📈 Evolution Analysis
-- **Period-based Analysis**: View portfolio changes over 30 days, 90 days, 1 year, or all time
-- **Profit/Loss Calculation**: Real-time calculation of gains/losses with percentage changes
-- **Historical Tracking**: Comprehensive evolution data with snapshot comparisons
-- **Visual Indicators**: Color-coded gains (green) and losses (red) for quick reference
-
-### 🔍 Data Visualization
-- **Interactive Charts**: Multiple chart types for portfolio analysis
-- **Time-series Data**: Historical performance tracking with detailed timelines
-- **Filtering Options**: Flexible date range selections for focused analysis
-- **Export Capabilities**: Export data for external analysis
-
-### 💰 Financial Tools
-- **Tax Calculations**: Automated tax amount calculations with customizable rates
-- **Currency Support**: Multi-currency display with Euro (€) as primary currency
-- **Sales Tracking**: Complete sales history with profit/loss calculations
-- **Target Monitoring**: Track progress against portfolio targets
-
-### 🕐 Historical Price Management *(New in v0.3.0)*
-- **Automatic Historical Price Fetching**: Fetches real grant date prices when adding new grants
-- **Smart Price Derivation**: When exact grant date prices are unavailable, derives accurate prices from next available trading day
-- **Bulk Historical Updates**: Update historical prices for entire portfolio with progress tracking
-- **Data Quality Handling**: Intelligently rounds derived prices to nearest 10 for consistency
-- **Visual Progress Feedback**: Real-time progress bars during historical data processing
-- **Portfolio Recalculation**: Automatically rebuilds evolution timeline with historical data
-
-⚠️ **Performance Note**: Historical price updates can take significant time depending on portfolio size. Large portfolios with many grant dates may require several minutes to complete the full historical data rebuild.
+**Always use your official stock option platform for actual transactions.**
 
 ## Installation
 
-### 🚀 Standalone Portable Version (Recommended)
+### Windows (Portable - No Installation Required)
 
-**No installation required!** Download and run the portable executable:
+1. Download `Portfolio Tracker 0.4.0.exe` from [Releases](../../releases)
+2. Double-click to run - works from anywhere (Desktop, USB stick, network drive)
+3. Your data stays local in `portfolio.db` file next to the .exe
 
-1. **Download**: Get the latest `Portfolio Tracker 0.3.9.exe` from the [Releases](../../releases) page
-2. **Run**: Double-click the .exe file to start the application
-3. **Portable**: No installation needed - run from anywhere (Desktop, USB stick, network drive)
+**Features**: Fully self-contained • Local data storage • Privacy first • No admin rights needed • Optional internet (only for price updates)
 
-### 🆕 New in Version 0.3.9
-- **ING Grant Support**: Full support for ING employee stock option plans alongside KBC
-- **Improved UX**: Cleaner grant addition form with hidden fields until source selection
-- **Accurate Pricing**: ING grants use actual first available prices (no artificial rounding)
-- **Performance**: Price updates only process active/partially sold grants
-- **Windows Fix**: Resolved app exit issues on Windows platform
+### macOS Installation & Fix
 
-### ⚠️ Important for Users Upgrading from Older Versions
-**If upgrading from version 0.3.1 or earlier, please run Settings → Update Historical Prices** to ensure your portfolio evolution calculations are using the latest optimized data processing. This will rebuild your portfolio timeline with the new performance enhancements and ensure all historical data is properly synchronized.
+**IMPORTANT FOR MAC USERS**: macOS may block the app with a "damaged file" warning. Follow these steps:
 
-#### ✨ Portable Features
-- **🗂️ Fully Self-Contained**: All dependencies bundled in single .exe file
-- **💾 Local Data Storage**: Database stored next to .exe file - your data stays local
-- **🔒 Privacy First**: Your portfolio data never leaves your computer
-- **📁 Run Anywhere**: Desktop, Documents, USB stick, network drive - your choice
-- **⚡ Instant Start**: No installation, no admin rights needed
-- **🌐 Optional Internet**: Only needed for fetching current stock prices
+<img src="screen-shots/Install.jpg" alt="Step 1: Install" width="600" />
 
-### Mac only
+**Step 1**: Drag Portfolio Tracker to Applications folder
 
-<img src="screen-shots/Install.jpg" alt="Install" height="120" />
+<img src="screen-shots/Error.jpg" alt="Step 2: Error Message" width="600" />
 
-*First install by dragging to Applications folder.*
+**Step 2**: macOS shows "damaged file" warning - Click **Cancel** (do NOT delete!)
 
-<img src="screen-shots/Error.jpg" alt="Error" height="120" />
+<img src="screen-shots/Fix.jpg" alt="Step 3: Terminal Fix" width="600" />
 
-*Mac os might complain that file is damaged and should be deleted. Click cancel!*
-
-<img src="screen-shots/Fix.jpg" alt="Fix" height="120" />
-
-*Open up Terminal and type in following command:<br />
-xattr -c [Directory-of-Installation/Portfolio Tracker.app]<br />
-You can enter the [Directory-of-Installation/Portfolio Tracker.app] yourself or just drag the Portfolio Tracker from the installation folder (Applications by default) to the Terminal window and press enter.<br/>
-App should now be working!*
-
-### 🛠️ Development Setup (For Developers)
-
-Only needed if you want to modify the application:
-
-#### Prerequisites
-- **Node.js**: Version 18.0.0 or higher
-- **npm**: Version 8.0.0 or higher
-- **Operating System**: Windows, macOS, or Linux
-
-#### Setup Steps
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/rikvdb229/OTC_PORTFOLIO_APP.git
-   cd OTC_PORTFOLIO_APP
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start development version**:
-   ```bash
-   npm start
-   ```
-
-#### Build for Distribution
-
+**Step 3**: Open Terminal and run:
 ```bash
-# Build portable .exe for Windows
-npm run build
-
-# Build for all platforms (development)
-npm run build:all
+xattr -c /Applications/Portfolio\ Tracker.app
 ```
+Or drag the app from Applications into Terminal after typing `xattr -c ` (with space at end), then press Enter.
 
-## 💾 Data Storage & Privacy
+**The app will now work!** This is a one-time fix required for unsigned macOS apps.
 
-### Local Database Storage
-- **Location**: `portfolio.db` file created next to the .exe
-- **Format**: SQLite database (industry standard)
-- **Size**: Typically under 1MB for normal usage
-- **Backup**: Manual backup by copying the .db file
+## Features
+
+### Portfolio Management
+- **Dual-Source Support**: Track both KBC and ING employee stock option grants *(New in v0.3.9)*
+- **Real-time Tracking**: Monitor total portfolio value, active options, and performance metrics
+- **Grant Management**: Track grants with exercise prices, quantities, and vesting schedules
+- **ING Integration**: Add ING grants using ISIN (FOP number) with automatic price fetching *(New in v0.3.9)*
+
+### Evolution Analysis
+- **Period-based Analysis**: View changes over 30 days, 90 days, 1 year, or all time
+- **Profit/Loss Calculation**: Real-time gains/losses with percentage changes
+- **Historical Tracking**: Evolution data with snapshot comparisons
+- **Visual Indicators**: Color-coded gains (green) and losses (red)
+
+### Financial Tools
+- **Tax Calculations**: Automated tax calculations with customizable rates
+- **Currency Support**: Multi-currency display with Euro (€) primary
+- **Sales Tracking**: Complete sales history with profit/loss
+- **Target Monitoring**: Track progress against portfolio targets
+
+### Historical Price Management *(v0.3.0)*
+- **Automatic Historical Prices**: Fetches real grant date prices when adding grants
+- **Smart Price Derivation**: Derives prices from next available trading day when needed
+- **Bulk Updates**: Update historical prices for entire portfolio with progress tracking
+- **Portfolio Recalculation**: Automatically rebuilds evolution timeline
+
+⚠️ **Performance Note**: Historical updates can take several minutes for large portfolios.
+
+## What's New in v0.4.0
+
+### Critical Bug Fixes
+- **Fixed ING Grant Values**: ING grants now display correct values in Portfolio tab
+  - Filters out invalid zero prices from ING API at all levels
+  - Automatic database migration cleans legacy zero prices
+  - ING grants now properly contribute to total portfolio value
+- **Fixed Price History Matching**: Grants with same exercise price now get correct historical prices
+  - Price lookups now match on both exercise_price AND grant_date
+
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
+
+## Quick Start
+
+1. **Launch**: Double-click `Portfolio Tracker 0.4.0.exe`
+2. **First Run**: App creates `portfolio.db` file
+3. **Add Grant**:
+   - Click "➕ Add Grants"
+   - Select source (KBC or ING)
+   - For ING: Enter ISIN from your option plan documents
+   - For KBC: Enter grant date and exercise price
+4. **Track**: Navigate tabs to view portfolio performance
+5. **Execute Sales**: Use your official brokerage platform
+
+### File Management
+- **Database**: `portfolio.db` - Contains all your portfolio data
+- **Backup**: Copy both `.exe` and `.db` files
+- **Privacy**: Your data never leaves your computer (except price updates)
+
+## Data Storage & Privacy
 
 ### Complete Privacy
-- **🔒 Local Data Storage**: All portfolio data stored locally on your machine
-- **🚫 No Data Transmission**: Your personal portfolio data never leaves your computer
-- **🏠 Local Database**: Database stored locally in `portfolio.db` file
-- **👤 Full Control**: You own and control all your portfolio data
-- **🔐 Privacy First**: No cloud storage or external data collection for your portfolio
+- 🔒 Local Data Storage - All data stored on your machine
+- 🚫 No Data Transmission - Portfolio data never transmitted
+- 🏠 Local Database - SQLite `portfolio.db` file
+- 👤 Full Control - You own all your data
 
 ### Internet Connection
-- **📈 Price Updates**: Internet connection required to fetch current stock prices from online platforms
-- **🔄 Optional Updates**: Price fetching can be disabled - app works offline with existing data
-- **⚡ Quick Fetches**: Only fetches price data when you request updates
-- **🔒 Secure**: Only connects to fetch publicly available stock price information
+- 📈 Price Updates - Internet required only for fetching current stock prices
+- 🔄 Optional - App works offline with existing data
+- 🔒 Secure - Only fetches publicly available stock price information
 
 ### Portability
-- **📁 Run from anywhere**: Desktop, USB stick, network drive
-- **💼 Business Use**: Works in corporate environments (requires internet for price updates)
-- **🏃‍♂️ Mobile**: Take your portfolio data with you on USB stick
-- **🔄 Easy Backup**: Just copy the .exe and .db files
-
-## Usage
-
-### Getting Started
-
-**Remember: This app is for tracking only. Use your official platform for actual transactions.**
-
-1. **Launch the Application**: Double-click `Portfolio Tracker 0.3.9.exe`
-2. **First Run**: The app creates a `portfolio.db` file next to the .exe
-3. **Add Your First Grant**:
-   - Click "➕ Add Grants"
-   - Select grant source (KBC or ING)
-   - For ING grants: Enter ISIN (FOP number) from your ING option plan documents
-   - For KBC grants: Enter grant date and select exercise price
-4. **Track Performance**: Navigate between tabs to view different aspects of your portfolio
-5. **Monitor Evolution**: Use the Evolution tab to see how your portfolio changes over time
-6. **Execute Transactions**: Use your official brokerage/stock option platform for actual sales
-
-### 📁 File Management
-- **Database**: `portfolio.db` - Contains all your portfolio data
-- **Backup**: Copy both `.exe` and `.db` files to backup location
-- **Move**: Copy both files to new location and run from there
-- **Share**: Never share the `.db` file (contains your private financial data)
-
-### Navigation
-
-- **Portfolio Tab**: Overview of current holdings and total values
-- **Evolution Tab**: Historical performance and time-based analysis
-- **Chart Tab**: Visual representations of portfolio data
-- **Sales History**: Record and track completed transactions
-- **Grant History**: Manage and monitor stock option grants
-
-### Key Functions
-
-#### Portfolio Overview
-- View total portfolio value and option counts
-- Monitor target achievement and return percentages
-- Track latest price updates and changes
-
-#### Evolution Analysis
-- Select time periods: 30 days, 90 days, 1 year, or all time
-- View profit/loss calculations: "Change since [date]: [amount] ([percentage])"
-- Real-time updates when switching between periods
-
-#### Grant Management
-- Add new grants with exercise prices and quantities
-- Track vesting schedules and sellable quantities
-- Monitor status changes (Active, Partially Sold, Sold)
-- Automatic historical price fetching for accurate grant date valuations
-
-#### Historical Price Management *(New in v0.3.0)*
-- **Settings → Update Historical Prices**: Rebuild historical data for entire portfolio
-- **Automatic Price Derivation**: System intelligently derives missing grant date prices
-- **Progress Tracking**: Visual feedback during historical data processing phases:
-  1. **Fetching Phase**: Downloads historical prices from external sources
-  2. **Processing Phase**: Rebuilds portfolio evolution timeline with new data
-- **Time Requirements**: Processing time varies by portfolio size:
-  - Small portfolios (1-5 grants): 30 seconds - 2 minutes
-  - Medium portfolios (6-15 grants): 2-5 minutes  
-  - Large portfolios (15+ grants): 5-15 minutes
-- **Internet Required**: Historical price fetching requires active internet connection
-- **Data Quality**: System handles missing data points by deriving from nearest available prices
-
-## Configuration
-
-### Database
-- **Type**: SQLite (local file storage)
-- **Location**: `portfolio.db` in application directory
-- **Backup**: Automatic backup creation and restoration
-
-### Settings
-- **Target Percentage**: Customizable portfolio target (default: 65%)
-- **Tax Rate**: Automatic tax calculation rate (default: 30%)
-- **Currency Symbol**: Display currency (default: €)
-- **Auto Price Updates**: Enable/disable automatic price refreshing
-
-## Technical Architecture
-
-### Built With
-- **[Electron](https://www.electronjs.org/)**: Desktop application framework
-- **[SQLite](https://www.sqlite.org/)**: Local database storage
-- **[Chart.js](https://www.chartjs.org/)**: Interactive charts and visualizations
-- **HTML/CSS/JavaScript**: Frontend interface and interactions
-
-### Project Structure
-```
-portfolio-tracker/
-├── main.js              # Electron main process
-├── renderer.js          # Main renderer process
-├── portfolio-db.js      # Database operations
-├── scraper.js           # Data scraping utilities
-├── index.html           # Main application UI
-├── styles/              # CSS stylesheets
-├── utils/               # Utility modules
-├── ui/                  # UI component generators
-├── libs/                # Third-party libraries
-└── assets/              # Icons and images
-```
-
-### Key Modules
-- **DataLoader**: Handles data loading and evolution calculations
-- **StatsManager**: Portfolio statistics and performance metrics
-- **UIStateManager**: Application state and interface management
-- **IPCCommunication**: Inter-process communication handling
-- **PortfolioCalculations**: Business logic for portfolio calculations
-
-## Development
-
-### Requirements
-- Node.js 18+
-- Electron 33+
-- Modern web browser for testing
-
-### Development Commands
-```bash
-# Start in development mode
-npm run dev
-
-# Run with debugging
-npm start --dev
-
-# Install dependencies
-npm install
-
-# Clean build
-npm run clean && npm install
-```
-
-### Contributing
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-- Follow existing code formatting
-- Use meaningful variable and function names
-- Add comments for complex business logic
-- Maintain consistent file organization
+- 📁 Run Anywhere - Desktop, USB stick, network drive
+- 💼 Business Use - Works in corporate environments
+- 🔄 Easy Backup - Just copy .exe and .db files
 
 ## Troubleshooting
 
-### Common Issues
-
+### Windows Issues
 **Portable .exe won't start**:
-- Run from a writable location (not Program Files)
-- Check Windows Defender/antivirus isn't blocking the file
-- Ensure you have sufficient disk space (100MB+ recommended)
-- Try running from Desktop or Documents folder
+- Run from writable location (not Program Files)
+- Check Windows Defender/antivirus isn't blocking
+- Ensure sufficient disk space (100MB+)
+- Try Desktop or Documents folder
 
 **Database errors**:
-- Ensure the folder containing the .exe is writable
-- Check that `portfolio.db` file isn't opened by another program
-- Verify antivirus isn't blocking database file creation
-- Try running from a different location (Desktop, Documents)
+- Ensure folder containing .exe is writable
+- Check `portfolio.db` isn't opened by another program
+- Verify antivirus isn't blocking database creation
+
+### macOS Issues
+**"Damaged file" warning**:
+- See installation instructions above
+- Run `xattr -c` command in Terminal
+- This is required for unsigned apps on macOS
 
 **Performance issues**:
-- Close other applications to free up memory
+- Close other applications to free memory
 - Reduce chart data range for large datasets
-- Ensure adequate disk space for database operations
-- Try running from local drive instead of network drive
-
-### Development Issues (npm/Node.js)
-
-**Development version won't start**:
-- Delete `node_modules` folder and run `npm install`
-- Check that Node.js and npm versions meet requirements
-- Verify no other instances are running
+- Run from local drive instead of network drive
 
 ### Support
-For issues and feature requests, please:
-1. Check the troubleshooting section above
-2. Review existing issues in the repository
-3. Create a new issue with detailed information
+For issues and feature requests:
+1. Check troubleshooting section above
+2. Review existing issues in repository
+3. Create new issue with detailed information
+
+## Technical Details
+
+**Built With**: Electron, SQLite, Chart.js, HTML/CSS/JavaScript
+
+**Requirements**:
+- Windows 10+ or macOS 10.13+
+- 512MB RAM minimum
+- 150MB disk space
+
+For developer documentation, see [DEVELOPER.md](DEVELOPER.md)
 
 ## Changelog
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and release notes.
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- Built with [Electron](https://www.electronjs.org/) framework
+- Built with [Electron](https://www.electronjs.org/)
 - Charts powered by [Chart.js](https://www.chartjs.org/)
-- Icons and UI components designed for modern desktop interfaces
-- Database functionality provided by [SQLite](https://www.sqlite.org/)
+- Database by [SQLite](https://www.sqlite.org/)
+
+**Special thanks to [@TomGun87](https://github.com/TomGun87)** for heavy lifting on ING implementation and core architecture.
 
 ---
 
-**Portfolio Tracker v0.3.9** - Professional stock options portfolio management with dual-source support (KBC and ING), accurate pricing, and enhanced user experience.
-
-## Contributors
-
-Special thanks to:
-- **[@TomGun87](https://github.com/TomGun87)** - For the heavy lifting on ING implementation and core architecture
-- All contributors and testers who helped refine the application
+**Portfolio Tracker v0.4.0** - Professional stock options portfolio management with dual-source support (KBC and ING).

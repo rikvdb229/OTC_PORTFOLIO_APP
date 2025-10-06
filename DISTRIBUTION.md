@@ -2,14 +2,14 @@
 
 ## 📦 Standalone Portable Distribution
 
-Portfolio Tracker v0.2.0 is distributed as a **completely standalone portable executable** that requires no installation and runs entirely offline.
+Portfolio Tracker v0.4.0 is distributed as a **completely standalone portable executable** that requires no installation and works with optional internet connectivity.
 
 ### 🎯 Distribution Details
 
-- **File**: `Portfolio Tracker 0.2.0.exe`
-- **Size**: ~76MB (includes all dependencies)
-- **Platform**: Windows (x64)
-- **Requirements**: Windows 10 or later
+- **File**: `Portfolio Tracker 0.4.0.exe`
+- **Size**: ~80MB (includes all dependencies)
+- **Platform**: Windows (x64), macOS (DMG)
+- **Requirements**: Windows 10+ or macOS 10.13+
 - **Dependencies**: None (fully self-contained)
 
 ### ✨ Key Features
@@ -21,9 +21,9 @@ Portfolio Tracker v0.2.0 is distributed as a **completely standalone portable ex
 - **Run Anywhere**: Desktop, USB stick, network drive, cloud sync folder
 
 #### 🔒 Privacy & Security
-- **100% Offline**: No internet connection required
+- **Optional Internet**: Only for fetching current stock prices
 - **Local Data Only**: Database stored next to .exe file
-- **No Data Transmission**: Your data never leaves your computer
+- **No Data Transmission**: Your portfolio data never leaves your computer
 - **No Registry Changes**: No system modifications
 - **No Temp Files**: Clean execution environment
 
@@ -55,11 +55,11 @@ Portfolio Tracker v0.2.0 is distributed as a **completely standalone portable ex
 
 ### 🚀 Getting Started
 
-1. **Download**: Get `Portfolio Tracker 0.2.0.exe` from GitHub releases
+1. **Download**: Get `Portfolio Tracker 0.4.0.exe` from GitHub releases
 2. **Place**: Put it in your preferred location (Desktop, Documents, USB stick)
 3. **Run**: Double-click the .exe file
 4. **First Launch**: App creates `portfolio.db` in the same folder
-5. **Start Using**: Add your first stock grant and begin tracking
+5. **Start Using**: Add your first stock grant (KBC or ING) and begin tracking
 
 ### 🛡️ Security Considerations
 
@@ -131,4 +131,6 @@ For distribution-related issues:
 
 ---
 
-**Portfolio Tracker v0.2.0** - Complete portfolio management in a single, portable file.
+**Portfolio Tracker v0.4.0** - Complete portfolio management in a single, portable file.
+
+**Build Date**: October 6, 2025
