@@ -21,6 +21,7 @@ gh.zip
 # Claude Code local settings
 .claude/settings.local.json
 
-# Exclude all dotfiles and dotfolders (except .gitignore itself if uncommented)
+# Exclude all dotfiles and dotfolders (except .gitignore and .github)
 .*
-# !.gitignore
+!.gitignore
+!.github
