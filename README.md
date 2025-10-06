@@ -1,4 +1,4 @@
-# Portfolio Tracker
+****# Portfolio Tracker
 
 A comprehensive desktop application for **tracking and analyzing** stock options portfolios, built with Electron and designed for monitoring employee stock option plans and investment performance. **This is a tracking tool only - all transactions must be executed through your official brokerage platform.**
 
@@ -86,6 +86,23 @@ A comprehensive desktop application for **tracking and analyzing** stock options
 - **📁 Run Anywhere**: Desktop, Documents, USB stick, network drive - your choice
 - **⚡ Instant Start**: No installation, no admin rights needed
 - **🌐 Optional Internet**: Only needed for fetching current stock prices
+
+### Mac only
+
+<img src="screen-shots/Install.jpg" alt="Install" height="120" />
+
+*First install by dragging to Applications folder.*
+
+<img src="screen-shots/Error.jpg" alt="Error" height="120" />
+
+*Mac os might complain that file is damaged and should be deleted. Click cancel!*
+
+<img src="screen-shots/Fix.jpg" alt="Fix" height="120" />
+
+*Open up Terminal and type in following command:<br />
+xattr -c [Directory-of-Installation/Portfolio Tracker.app]<br />
+You can enter the [Directory-of-Installation/Portfolio Tracker.app] yourself or just drag the Portfolio Tracker from the installation folder (Applications by default) to the Terminal window and press enter.<br/>
+App should now be working!*
 
 ### 🛠️ Development Setup (For Developers)
 
