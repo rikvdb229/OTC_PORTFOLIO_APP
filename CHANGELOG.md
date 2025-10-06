@@ -5,6 +5,54 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-10-06
+
+⚠️ **IMPORTANT: Backup your database before installing this release.** While database migrations are tested, we recommend exporting your portfolio data (Settings → Export Database) before updating as a safety precaution.
+
+### 🐛 Critical Bug Fixes - ING Grants
+
+- **Fixed ING Grant Value Calculation**: ING grants now display correct total values in Portfolio tab
+  - Root cause: ING API was returning price quotes with value = 0, which were being stored in database
+  - Added filtering to exclude zero/null prices at all levels: API fetch, historical scraper, and database storage
+  - Implemented database migration to automatically clean existing zero prices on app startup
+  - ING grants now correctly contribute to total portfolio value calculations
+
+- **Fixed Price History Matching**: Corrected price lookup for grants with same exercise price
+  - Updated price_history JOIN to match on both `exercise_price` AND `grant_date` (previously only exercise_price)
+  - Ensures grants with identical exercise prices but different grant dates get correct historical prices
+  - Aligns portfolio overview calculation with evolution timeline logic
+  - Particularly important for ING grants where multiple grants can share same underlying value
+
+### 🔧 Technical Improvements
+
+- **Enhanced ING Quote Validation**:
+  - `fetchIngQuotes()` now filters out quotes with price ≤ 0 before processing
+  - Historical scraper validates and reports filtered zero prices
+  - Database storage layer prevents zero prices from being persisted
+  - Clear error messages when all prices for an ISIN are zero
+
+- **Database Migration System**:
+  - Added `migrateRemoveZeroPrices()` migration to clean legacy data
+  - Automatically removes zero/null prices from price_history table
+  - Logs count of cleaned entries for transparency
+  - Runs on app startup via existing migration framework
+
+- **Improved Error Handling**:
+  - Better error messages for ING grants with no valid price data
+  - Prevents crashes when ING API returns invalid data
+  - Graceful fallbacks for edge cases
+
+### 📦 Upgrade Notes
+
+1. **Automatic Migration**: On first launch of v0.4.0, zero prices will be automatically removed from your database
+2. **Re-fetch ING Prices**: After upgrade, update prices for ING grants to fetch clean historical data
+3. **Portfolio Values**: ING grant values should now display correctly in Portfolio tab and contribute to total portfolio value
+4. **Evolution Timeline**: ING grants now properly appear in evolution timeline with "Grant received" notes (same as KBC grants)
+
+### 🙏 Acknowledgments
+
+Thanks to users who reported the ING grant value issue and helped identify the zero price root cause.
+
 ## [0.3.9] - 2025-10-05
 
 ⚠️ **IMPORTANT: Backup your database before installing this release.** While database migrations are tested, we recommend exporting your portfolio data (Settings → Export Database) before updating as a safety precaution.

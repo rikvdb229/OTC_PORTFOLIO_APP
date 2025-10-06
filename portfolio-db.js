@@ -538,6 +538,8 @@ class PortfolioDatabase {
       // Populate grant_date_price for existing entries
       await this.migratePopulateGrantDatePrices();
 
+      // Remove zero prices from price_history
+      await this.migrateRemoveZeroPrices();
 
       this.logDebug("✅ All migrations completed successfully");
     } catch (error) {
@@ -777,6 +779,37 @@ class PortfolioDatabase {
     } catch (error) {
       this.logDebug(`❌ Error populating grant_date_price: ${error.message}`);
       throw error;
+    }
+  }
+
+  // Migration: Remove zero prices from price_history
+  async migrateRemoveZeroPrices() {
+    try {
+      this.logDebug("🔄 Checking for zero prices in price_history...");
+
+      const countStmt = this.db.prepare("SELECT COUNT(*) as count FROM price_history WHERE current_value = 0 OR current_value IS NULL");
+      let zeroCount = 0;
+      if (countStmt.step()) {
+        const result = countStmt.getAsObject();
+        zeroCount = result.count;
+      }
+      countStmt.free();
+
+      if (zeroCount === 0) {
+        this.logDebug("✅ No zero prices found in price_history");
+        return;
+      }
+
+      this.logDebug(`🔧 Removing ${zeroCount} zero/null prices from price_history...`);
+
+      const deleteStmt = this.db.prepare("DELETE FROM price_history WHERE current_value = 0 OR current_value IS NULL");
+      deleteStmt.step();
+      deleteStmt.free();
+
+      await this.saveDatabase();
+      this.logDebug(`✅ Removed ${zeroCount} zero/null prices from price_history`);
+    } catch (error) {
+      this.logDebug(`❌ Error removing zero prices: ${error.message}`);
     }
   }
 
@@ -1918,14 +1951,15 @@ SELECT
   
 FROM portfolio_entries pe
 LEFT JOIN (
-  SELECT 
+  SELECT
     exercise_price,
+    grant_date,
     current_value,
     price_date,
     fund_name,
-    ROW_NUMBER() OVER (PARTITION BY exercise_price ORDER BY price_date DESC) as rn
+    ROW_NUMBER() OVER (PARTITION BY exercise_price, grant_date ORDER BY price_date DESC) as rn
   FROM price_history
-) ph ON pe.exercise_price = ph.exercise_price AND ph.rn = 1
+) ph ON pe.exercise_price = ph.exercise_price AND pe.grant_date = ph.grant_date AND ph.rn = 1
 WHERE (pe.quantity - pe.total_sold_quantity) > 0
 ORDER BY pe.grant_date DESC
       `);
@@ -2922,17 +2956,24 @@ ORDER BY st.sale_date DESC
   // Store historical prices in price_history table (INSERT OR REPLACE to avoid duplicates)
   async storeHistoricalPrices(fundName, exercisePrice, grantDate, priceHistory) {
     try {
-      console.log(`💾 Storing ${priceHistory.length} historical prices for ${fundName}`);
+      const validPrices = priceHistory.filter(p => p.price > 0);
+      const filteredCount = priceHistory.length - validPrices.length;
+
+      if (filteredCount > 0) {
+        console.log(`💾 Storing ${validPrices.length} historical prices for ${fundName} (filtered out ${filteredCount} zero prices)`);
+      } else {
+        console.log(`💾 Storing ${validPrices.length} historical prices for ${fundName}`);
+      }
 
       const stmt = this.db.prepare(`
-        INSERT OR REPLACE INTO price_history 
-        (fund_name, exercise_price, grant_date, price_date, current_value) 
+        INSERT OR REPLACE INTO price_history
+        (fund_name, exercise_price, grant_date, price_date, current_value)
         VALUES (?, ?, ?, ?, ?)
       `);
 
       let insertCount = 0;
 
-      for (const priceEntry of priceHistory) {
+      for (const priceEntry of validPrices) {
         stmt.run([
           fundName,
           exercisePrice,

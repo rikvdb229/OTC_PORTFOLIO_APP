@@ -55,7 +55,12 @@ async function fetchIngPrice(grant) {
         }
     }
 
-    return quotes.map(q => ({ timestamp: q.x, price: q.y }));
+    const validQuotes = quotes.filter(q => q.y > 0);
+    if (validQuotes.length === 0) {
+        throw new Error(`No valid price data for ISIN ${grant.isin} (all prices were zero)`);
+    }
+
+    return validQuotes.map(q => ({ timestamp: q.x, price: q.y }));
 }
 
 // Web scraping method to get FOP product info

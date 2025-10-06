@@ -264,12 +264,18 @@ class EnhancedHistoricalScraper {
 
       if (onProgress) onProgress({ text: `Processing data...`, percentage: 80 });
 
-      const priceHistory = quotes.map(q => ({
-        date: new Date(q.x).toISOString().split('T')[0],
-        price: q.y
-      }));
+      const priceHistory = quotes
+        .filter(q => q.y > 0)
+        .map(q => ({
+          date: new Date(q.x).toISOString().split('T')[0],
+          price: q.y
+        }));
 
-      const currentPrice = quotes[quotes.length - 1].y;
+      if (priceHistory.length === 0) {
+        throw new Error(`No valid price data found for ISIN ${isin} (all prices were zero)`);
+      }
+
+      const currentPrice = priceHistory[priceHistory.length - 1].price;
       const grantDatePriceResult = this.findOrDeriveGrantDatePrice(priceHistory, grantDate, 'ING');
 
       if (onProgress) onProgress({ text: `Completed!`, percentage: 100 });
