@@ -198,15 +198,16 @@ class KBCScraper {
 
   setupDownloadHandler(window) {
     const ses = window.webContents.session;
-    
-    ses.on('will-download', (event, item, webContents) => {
+
+    // Use 'once' instead of 'on' to automatically remove listener after first download
+    ses.once('will-download', (event, item, webContents) => {
       const originalFilename = item.getFilename();
       const downloadPath = path.join(this.downloadDir, originalFilename);
-      
+
       item.setSavePath(downloadPath);
       this.downloadPath = downloadPath;
       this.fileName = originalFilename;
-      
+
       item.once('done', (event, state) => {
         if (state === 'completed') {
           this.downloadComplete = true;
