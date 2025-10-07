@@ -471,11 +471,8 @@ ipcMain.handle("has-updated-today", async () => {
 
 ipcMain.handle("get-belgian-time", async () => {
   try {
-    console.log("🔄 IPC: get-belgian-time called, fetching from NTP...");
     const { getBelgianTime } = require('./services/timeService');
-    const result = await getBelgianTime();
-    console.log(`✅ IPC: NTP time retrieved - ${result.hour}:${String(result.minute).padStart(2, '0')} (offset: ${result.offset}ms)`);
-    return result;
+    return await getBelgianTime();
   } catch (error) {
     console.error("❌ Error getting Belgian time:", error);
     return { isAfter9AM: true, hour: 9, minute: 0 };
