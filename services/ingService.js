@@ -47,11 +47,11 @@ async function fetchIngPrice(grant, fetchFullHistory = false) {
         throw new Error("ING grant must have an ISIN");
     }
 
-    let quotes = await fetchIngQuotes(grant.isin, "INTRADAY");
+    // For daily updates, use "ALL" timeframe (faster, returns only daily close prices)
+    // For full history, use "INTRADAY" to get detailed price movements
+    const timeframe = fetchFullHistory ? "INTRADAY" : "ALL";
 
-    if ((!quotes || quotes.length === 0) && fetchFullHistory) {
-        quotes = await fetchIngQuotes(grant.isin, "ALL");
-    }
+    let quotes = await fetchIngQuotes(grant.isin, timeframe);
 
     if (!quotes || quotes.length === 0) {
         throw new Error(`No quotes found for ISIN ${grant.isin}`);
@@ -63,10 +63,12 @@ async function fetchIngPrice(grant, fetchFullHistory = false) {
     }
 
     if (!fetchFullHistory) {
+        // For daily updates, return just the latest price
         const latest = validQuotes[0];
         return [{ timestamp: latest.x, price: latest.y }];
     }
 
+    // For full history, return all quotes
     return validQuotes.map(q => ({ timestamp: q.x, price: q.y }));
 }
 
