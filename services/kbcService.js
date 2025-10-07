@@ -9,6 +9,9 @@ let csvCache = {
     filePath: null
 };
 
+// Promise to track ongoing download (prevents parallel downloads)
+let downloadPromise = null;
+
 // Download and parse KBC CSV once, cache for subsequent calls
 async function getKbcCsvData() {
     const now = Date.now();
@@ -20,32 +23,49 @@ async function getKbcCsvData() {
         return csvCache;
     }
 
-    console.log("⬇️ Downloading fresh KBC CSV data");
-    const scraper = new KBCScraper();
-
-    // Get latest CSV data
-    const result = await scraper.scrapeData();
-    if (!result.success || !result.filePath) {
-        throw new Error(result.error || "Failed to fetch KBC data");
+    // If a download is already in progress, wait for it
+    if (downloadPromise) {
+        console.log("⏳ Waiting for ongoing KBC CSV download...");
+        await downloadPromise;
+        return csvCache;
     }
 
-    // Parse CSV content
-    const csvContent = fs.readFileSync(result.filePath, "utf-8");
-    const parsedData = Papa.parse(csvContent, {
-        header: false,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        delimiter: ","
-    });
+    // Start new download
+    console.log("⬇️ Downloading fresh KBC CSV data");
+    downloadPromise = (async () => {
+        try {
+            const scraper = new KBCScraper();
 
-    // Update cache
-    csvCache = {
-        data: parsedData.data,
-        timestamp: now,
-        filePath: result.filePath
-    };
+            // Get latest CSV data
+            const result = await scraper.scrapeData();
+            if (!result.success || !result.filePath) {
+                throw new Error(result.error || "Failed to fetch KBC data");
+            }
 
-    console.log(`✅ KBC CSV cached with ${parsedData.data.length} rows`);
+            // Parse CSV content
+            const csvContent = fs.readFileSync(result.filePath, "utf-8");
+            const parsedData = Papa.parse(csvContent, {
+                header: false,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                delimiter: ","
+            });
+
+            // Update cache
+            csvCache = {
+                data: parsedData.data,
+                timestamp: now,
+                filePath: result.filePath
+            };
+
+            console.log(`✅ KBC CSV cached with ${parsedData.data.length} rows`);
+        } finally {
+            // Clear the download promise when done
+            downloadPromise = null;
+        }
+    })();
+
+    await downloadPromise;
     return csvCache;
 }
 
