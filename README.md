@@ -62,10 +62,15 @@ Or drag the app from Applications into Terminal after typing `xattr -c ` (with s
 - **Visual Indicators**: Color-coded gains (green) and losses (red)
 
 ### Financial Tools
-- **Smart Price Updates**: Once-per-day price updates after 09:00 Belgian time *(New in v0.4.1)*
+- **Smart Price Updates**: Once-per-day price updates after 09:00 Belgian time *(Enhanced in v0.4.1)*
+  - NTP-based time verification (industry standard, tamper-resistant)
   - Automatic timezone and DST handling
   - Smart scheduling with auto-enable
-  - No dependency on local system clock
+  - Significantly faster updates with KBC CSV caching
+  - 16% faster ING price fetching
+- **Platform-Specific Links**: Sell modal shows correct trading platform *(New in v0.4.1)*
+  - ING grants: Direct link to ING MyLeo platform
+  - KBC grants: Direct link to KBC ESOP platform
 - **Tax Calculations**: Automated tax calculations with customizable rates
 - **Currency Support**: Multi-currency display with Euro (€) primary
 - **Sales Tracking**: Complete sales history with profit/loss

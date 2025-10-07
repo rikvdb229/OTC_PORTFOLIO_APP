@@ -8,34 +8,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.1] - 2025-10-07
 
 ### ✨ New Features
-- **Belgian Time-Based Updates**: Price updates now enforced after 09:00 Belgian time using external time API
-  - No dependency on user's local system clock
-  - Automatic DST handling via WorldTimeAPI and TimeAPI.io
+- **Belgian Time-Based Updates**: Price updates now enforced after 09:00 Belgian time using NTP
+  - Industry-standard NTP (Network Time Protocol) for reliable time synchronization
+  - No dependency on user's local system clock (tamper-resistant)
+  - Automatic DST handling
   - Smart scheduling: auto-enables update button when time reached
   - Hybrid reliability: setTimeout + polling backup (handles computer sleep)
   - One update per day enforcement
 
+- **Dynamic Platform Links**: Sell modal now shows correct trading platform based on grant source
+  - ING grants: https://www.ingdefi.myleo.com/
+  - KBC grants: https://esop.kbc.be
+
+### 🚀 Performance Improvements
+- **ING API Optimization**: 16% faster price updates using "ALL" timeframe
+  - Reduced data transfer: ~4 quotes instead of ~162 per grant
+  - Faster response times for daily updates
+
+- **KBC CSV Caching**: Massive performance boost for multiple KBC grants
+  - Downloads CSV once and caches for 5 minutes (was downloading once per grant)
+  - Prevents race conditions with mutex-based download lock
+  - Eliminates redundant browser automation sessions
+
+### 🐛 Bug Fixes
+- **Memory Leak Fixed**: Resolved EventEmitter memory leak in KBC scraper
+  - Changed `session.on('will-download')` to `session.once()`
+  - Prevents accumulation of event listeners across multiple scraper calls
+  - No more MaxListenersExceededWarning
+
 ### 🔧 Technical Improvements
-- **New Time Service**: `services/timeService.js` provides Belgian time verification
-  - Primary: WorldTimeAPI (http://worldtimeapi.org)
-  - Fallback: TimeAPI.io (https://timeapi.io)
-  - 2-minute buffer (09:02) ensures bank data is published
+- **NTP Time Service**: `services/timeService.js` now uses NTP instead of HTTP APIs
+  - Primary servers: time.google.com, time.cloudflare.com
+  - Fallback: 0.europe.pool.ntp.org, pool.ntp.org
+  - 5-second timeout per server, 4 samples for accuracy
+  - Provides time offset for detecting clock tampering
+  - Uses `ntp-time-sync` package (industry standard)
+
 - **Smart Update Scheduler**: Auto-schedules update if app opens before 09:00
-  - Primary timer to exact time (09:02)
+  - Primary timer to exact time (09:02 with 2-minute buffer)
   - Polling backup every 10 minutes (catches timer failures)
   - Both canceled once update completes
+
 - **Enhanced Auto-Update**: Works correctly even if app starts before 09:00
 
 ### 🔒 Enforcement Rules
 - Updates blocked before 09:00 Belgian time (clear user message with current time)
 - Updates blocked if already updated today
 - Applies to all grant types (KBC, ING, mixed portfolios)
+- Time verification via NTP (cannot be bypassed by changing system clock)
 
 ### 🎯 User Experience
 - Button states: "Available after 09:00" / "Update available" / "✅ Updated Today"
 - Auto-enables at 09:00 (no manual refresh needed)
 - Respects auto-update setting
 - Works offline after initial time check
+- Platform-specific links in sell modal for easier navigation
 
 ## [0.4.0] - 2025-10-06
 

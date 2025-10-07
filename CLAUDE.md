@@ -22,9 +22,10 @@ portfolio-tracker/
 ├── enhanced-historical-scraper.js   # Historical price data scraper
 ├── index.html                       # Main UI
 ├── services/
-│   ├── kbcService.js               # KBC bank scraping logic
-│   ├── ingService.js               # ING bank scraping logic
-│   └── priceService.js             # Stock price fetching
+│   ├── kbcService.js               # KBC bank scraping logic (with CSV caching)
+│   ├── ingService.js               # ING bank scraping logic (GraphQL API)
+│   ├── priceService.js             # Stock price fetching
+│   └── timeService.js              # NTP time verification (v0.4.1)
 ├── utils/                           # Utility modules (formatters, managers)
 ├── ui/                              # UI generators
 ├── styles/                          # CSS stylesheets
@@ -36,6 +37,8 @@ portfolio-tracker/
 - **sql.js** - Local SQLite storage
 - **Chart.js** - Data visualizations
 - **PapaParse** - CSV parsing
+- **node-fetch** - HTTP requests for ING GraphQL API
+- **ntp-time-sync** - NTP time synchronization (v0.4.1)
 - **electron-builder** - Build and distribution
 
 ### Database
@@ -59,6 +62,7 @@ npm start                              # Run in development
 npm run dev                            # Run with dev flag
 npm run test:parse-table              # Test options table parser
 npm run test:historical               # Test historical scraper
+npm run test:time-api                 # Test NTP time service (v0.4.1)
 npm run download:all-historical       # Download all historical data
 npm run analyze:portfolio-historical  # Analyze portfolio historical data
 ```
@@ -88,4 +92,4 @@ npm run analyze:portfolio-historical  # Analyze portfolio historical data
 - Maintain consistency with existing structure
 
 ## Current Version
-**v0.4.1** - Belgian time-based price updates (Build: 07-10-2025, Beta)
+**v0.4.1** - NTP time verification, performance improvements, platform-specific links (Build: 07-10-2025, Beta)
