@@ -42,7 +42,7 @@ function findNearestValidPrice(quotes, targetTs) {
 }
 
 // --- Main: fetch price for an ING grant ---
-async function fetchIngPrice(grant) {
+async function fetchIngPrice(grant, fetchFullHistory = false) {
     if (!grant.isin) {
         throw new Error("ING grant must have an ISIN");
     }
@@ -58,6 +58,11 @@ async function fetchIngPrice(grant) {
     const validQuotes = quotes.filter(q => q.y > 0);
     if (validQuotes.length === 0) {
         throw new Error(`No valid price data for ISIN ${grant.isin} (all prices were zero)`);
+    }
+
+    if (!fetchFullHistory) {
+        const latest = validQuotes[0];
+        return { timestamp: latest.x, price: latest.y };
     }
 
     return validQuotes.map(q => ({ timestamp: q.x, price: q.y }));

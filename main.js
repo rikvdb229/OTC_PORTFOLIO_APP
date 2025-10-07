@@ -353,9 +353,9 @@ ipcMain.handle("scrape-data", async (event) => {
       // Process grants in parallel with progress updates
       const priceUpdates = grants.map(async (grant) => {
         try {
-          const priceResult = await getPrice(grant);
+          const priceResult = await getPrice(grant, false);
 
-          if (Array.isArray(priceResult)) { // ING case
+          if (Array.isArray(priceResult)) {
             const priceHistory = priceResult.map(p => ({
               date: new Date(p.timestamp).toISOString().split('T')[0],
               price: p.price
@@ -366,7 +366,7 @@ ipcMain.handle("scrape-data", async (event) => {
               grant.grant_date,
               priceHistory
             );
-          } else { // KBC case
+          } else {
             await portfolioDb.storePriceUpdate(
               grant.id,
               priceResult.price,
