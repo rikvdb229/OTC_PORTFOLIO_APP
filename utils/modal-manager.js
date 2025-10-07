@@ -1322,6 +1322,19 @@ updateProgress(app, progressData) {
           quantityInput.placeholder = `1 to ${entry.quantity_remaining.toLocaleString()}`;
         }
 
+        // Update platform link based on grant source
+        const platformLink = document.getElementById("platformLink");
+        if (platformLink) {
+          if (entry.source === "ING") {
+            platformLink.href = "https://www.ingdefi.myleo.com/";
+            platformLink.textContent = "https://www.ingdefi.myleo.com/";
+          } else {
+            // Default to KBC
+            platformLink.href = "https://esop.kbc.be";
+            platformLink.textContent = "https://esop.kbc.be";
+          }
+        }
+
         // Set up date restrictions
         window.UIStateManager.Validation.setupSellDateRestrictions(app);
 
