@@ -331,10 +331,23 @@ class AppHelpers {
 
       try {
         time = await window.IPCCommunication.Price.getBelgianTime();
-        console.log(`🕐 Belgian time: ${time.hour}:${String(time.minute).padStart(2, '0')}`);
+        const timeStr = `${time.hour}:${String(time.minute).padStart(2, '0')}`;
+        console.log(`🕐 Belgian time (NTP): ${timeStr}`);
+
+        // Update button tooltip to show verified time
+        const button = document.getElementById('updatePricesBtn');
+        if (button && time.offset !== undefined) {
+          const offsetSeconds = Math.round(time.offset / 1000);
+          button.title = `Belgian time (NTP verified): ${timeStr}\nSystem clock offset: ${offsetSeconds}s`;
+        }
       } catch (error) {
         console.warn('⚠️ Cannot verify time, assuming after 09:00');
         time = { isAfter9AM: true, hour: 9, minute: 0 };
+
+        const button = document.getElementById('updatePricesBtn');
+        if (button) {
+          button.title = 'Time verification unavailable - using system time';
+        }
       }
 
       if (time.isAfter9AM) {
