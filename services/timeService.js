@@ -26,7 +26,7 @@ async function getBelgianTime() {
       };
     }
   } catch (error) {
-    console.warn('⚠️ WorldTimeAPI failed, trying fallback:', error.message);
+    console.warn('⚠️ WorldTimeAPI failed, trying fallback 1:', error.message);
   }
 
   // Try TimeAPI.io fallback
@@ -39,6 +39,26 @@ async function getBelgianTime() {
         hour: data.hour,
         minute: data.minute,
         datetime: data.dateTime
+      };
+    }
+  } catch (error) {
+    console.warn('⚠️ TimeAPI.io failed, trying fallback 2:', error.message);
+  }
+
+  // Try WorldClockAPI as final fallback (no API key required)
+  try {
+    const response = await fetchWithTimeout('http://worldclockapi.com/api/json/cet/now', 5000);
+    if (response.ok) {
+      const data = await response.json();
+      // WorldClockAPI returns currentDateTime in format "2025-10-07T12:34:00+02:00"
+      const dateTime = data.currentDateTime;
+      const hour = parseInt(dateTime.substring(11, 13));
+      const minute = parseInt(dateTime.substring(14, 16));
+      return {
+        isAfter9AM: hour >= 9,
+        hour,
+        minute,
+        datetime: dateTime
       };
     }
   } catch (error) {
