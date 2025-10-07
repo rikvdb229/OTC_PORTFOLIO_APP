@@ -62,7 +62,7 @@ async function fetchIngPrice(grant, fetchFullHistory = false) {
 
     if (!fetchFullHistory) {
         const latest = validQuotes[0];
-        return { timestamp: latest.x, price: latest.y };
+        return [{ timestamp: latest.x, price: latest.y }];
     }
 
     return validQuotes.map(q => ({ timestamp: q.x, price: q.y }));
