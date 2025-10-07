@@ -1,11 +1,11 @@
 {
   "name": "portfolio-tracker",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Portfolio Tracker - Stock Options Management App",
   "main": "main.js",
   "author": "Portfolio Manager",
   "license": "MIT",
-  "buildDate": "06-10-2025",
+  "buildDate": "07-10-2025",
   "status": "Beta Version",
   "scripts": {
     "start": "electron .",

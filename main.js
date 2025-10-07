@@ -299,9 +299,39 @@ ipcMain.handle("window-close", () => {
 // IPC handlers for scraping functionality
 ipcMain.handle("scrape-data", async (event) => {
   const { getPrice } = require('./services/priceService');
+  const { getBelgianTime } = require('./services/timeService');
 
   return new Promise(async (resolve) => {
     try {
+      const hasUpdated = await portfolioDb.hasUpdatedToday();
+      if (hasUpdated) {
+        mainWindow.webContents.send("scrape-progress", "✅ Already updated today");
+        return resolve({
+          success: true,
+          message: "Already updated today. Next update available tomorrow after 09:00.",
+          priceEntriesUpdated: 0
+        });
+      }
+
+      let time;
+      try {
+        time = await getBelgianTime();
+      } catch (error) {
+        console.warn('⚠️ Cannot verify time, allowing update attempt');
+        time = { isAfter9AM: true };
+      }
+
+      if (!time.isAfter9AM) {
+        const timeStr = `${time.hour}:${String(time.minute).padStart(2, '0')}`;
+        mainWindow.webContents.send("scrape-progress",
+          `⏰ Prices available after 09:00 (current: ${timeStr})`);
+        return resolve({
+          success: false,
+          message: `Prices available after 09:00 Belgian time (current: ${timeStr})`,
+          priceEntriesUpdated: 0
+        });
+      }
+
       // Get all grants that need price updates
       const grants = await portfolioDb.getAllGrantsNeedingUpdate();
 
@@ -428,6 +458,27 @@ ipcMain.handle("get-latest-price-date", async () => {
     return null;
   }
 });
+
+ipcMain.handle("has-updated-today", async () => {
+  try {
+    if (!portfolioDb) return false;
+    return await portfolioDb.hasUpdatedToday();
+  } catch (error) {
+    console.error("❌ Error checking if updated today:", error);
+    return false;
+  }
+});
+
+ipcMain.handle("get-belgian-time", async () => {
+  try {
+    const { getBelgianTime } = require('./services/timeService');
+    return await getBelgianTime();
+  } catch (error) {
+    console.error("❌ Error getting Belgian time:", error);
+    return { isAfter9AM: true, hour: 9, minute: 0 };
+  }
+});
+
 // FIXED: Check for existing grants before adding
 ipcMain.handle(
   "check-existing-grant",

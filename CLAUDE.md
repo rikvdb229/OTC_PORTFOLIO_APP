@@ -1,104 +1,91 @@
 # Portfolio Tracker - Claude Code Instructions
 
 ## Project Overview
-Portfolio Tracker is an Electron-based desktop application for managing stock options portfolios. Built for tracking employee stock option plans with offline data storage and optional price updates.
+Electron-based desktop application for tracking employee stock options portfolios. Supports multi-bank data scraping (KBC, ING) with local SQLite storage and historical price tracking.
 
-## Key Project Principles
+## Key Principles
 - **Prefer editing** existing files over creating new ones
 - **Minimal file creation** - only create files when absolutely necessary
 - **No proactive documentation** - don't create README files unless explicitly requested
-- **Local-first approach** - all portfolio data stays on user's machine
+- **Local-first** - all portfolio data stays on user's machine
+- **Privacy-focused** - no cloud sync, standalone executable
 
-## Development Guidelines
+## Architecture
 
-### Code Style
-- Follow existing patterns and conventions in the codebase
-- Use the same libraries and frameworks already present
-- Never add comments unless specifically requested
-- Maintain consistency with existing file structure
-
-### File Organization
+### File Structure
 ```
 portfolio-tracker/
-├── main.js              # Electron main process
-├── renderer.js          # Main renderer process  
-├── portfolio-db.js      # Database operations
-├── index.html           # Main UI
-├── styles/main.css      # Primary stylesheet
-├── utils/               # Utility modules
-├── ui/                  # UI generators
-└── assets/              # Icons and images
+├── main.js                          # Electron main process
+├── renderer.js                      # Main renderer process
+├── portfolio-db.js                  # SQLite database operations
+├── scraper.js                       # Multi-bank data scraper
+├── enhanced-historical-scraper.js   # Historical price data scraper
+├── index.html                       # Main UI
+├── services/
+│   ├── kbcService.js               # KBC bank scraping logic
+│   ├── ingService.js               # ING bank scraping logic
+│   └── priceService.js             # Stock price fetching
+├── utils/                           # Utility modules (formatters, managers)
+├── ui/                              # UI generators
+├── styles/                          # CSS stylesheets
+└── assets/                          # Icons and images
 ```
 
 ### Key Dependencies
 - **Electron 33.4.11** - Desktop app framework
-- **SQLite** (via sql.js) - Local database storage
+- **sql.js** - Local SQLite storage
 - **Chart.js** - Data visualizations
+- **PapaParse** - CSV parsing
 - **electron-builder** - Build and distribution
 
-### Database Schema
-- SQLite database stored in `portfolio.db`
-- Contains grants, prices, evolution snapshots, settings
-- All data stored locally - no cloud sync
+### Database
+- SQLite database (`portfolio.db`) stored locally
+- Tables: grants, prices, evolution snapshots, settings, price_history
+- All data stored offline - no cloud sync
 
-### Build Configuration
-- **Windows**: Portable .exe (primary target)
-- **macOS**: DMG format (requires Mac to build)
-- **Linux**: AppImage format (untested)
+## Build & Development
 
-## Common Tasks
-
-### Building
+### Build Commands
 ```bash
-npm run build        # Windows portable .exe
-npm run build:win    # Windows portable .exe  
+npm run build        # Windows portable .exe (primary target)
+npm run build:win    # Windows portable .exe
 npm run build:mac    # macOS DMG (requires Mac)
-npm run build:linux  # Linux AppImage
+npm run build:linux  # Linux AppImage (untested)
 ```
 
-### Development
+### Development Commands
 ```bash
-npm start           # Run in development
-npm run dev         # Run with dev flag
+npm start                              # Run in development
+npm run dev                            # Run with dev flag
+npm run test:parse-table              # Test options table parser
+npm run test:historical               # Test historical scraper
+npm run download:all-historical       # Download all historical data
+npm run analyze:portfolio-historical  # Analyze portfolio historical data
 ```
+
+## Bank Scraper Integration
+
+### Supported Banks
+- **KBC** - `services/kbcService.js`
+- **ING** - `services/ingService.js`
+
+### Scraper Architecture
+- Main scraper: `scraper.js`
+- Bank-specific services in `services/` directory
+- Historical data: `enhanced-historical-scraper.js`
+- Price updates: `services/priceService.js`
 
 ### Testing
-- Manual testing preferred
-- Focus on Evolution tab functionality
-- Test price update features
-- Verify offline capabilities
+- Manual testing required after implementations
+- Do not run app, ask user to test
+- Focus on scraper functionality and data accuracy
+- Verify offline capabilities with existing data
 
-## UI Components
+## Code Style
+- Follow existing patterns and conventions
+- Use existing libraries and frameworks
+- Never add comments unless specifically requested
+- Maintain consistency with existing structure
 
-### Evolution Tab
-- Period statistics with profit/loss calculations
-- Filter buttons (30 days, 90 days, 1 year, all time)
-- Hide stats when no data available
-- Uses CSS Grid for layout alignment
-
-### Key Modules
-- **DataLoader** (`utils/data-loader.js`) - Evolution calculations
-- **StatsManager** (`utils/stats-manager.js`) - Portfolio metrics
-- **ChartUtils** - Chart rendering and data processing
-
-## Privacy & Distribution
-- **Standalone executable** - no installation required
-- **Local data only** - portfolio data never transmitted
-- **Price updates** - requires internet for stock price fetching
-- **Portable** - runs from any location (USB, network drive)
-
-## Version History
-- **v0.1.0** - Initial release
-- **v0.2.0** - Added evolution period statistics, fixed UI bugs
-- **v0.3.0** - Historical price management system
-- **v0.3.9** - ING grant support, improved UX
-- **v0.4.0** - Critical ING bug fixes, price history matching
-
-## Development Notes
-- Internet required only for price updates
-- App works offline with existing data
-- Database automatically created on first run
-- All user data stored in portfolio.db file
-
-## Implementation Guidelines
-- Do not run app, ask user to test implementations
+## Current Version
+**v0.4.1** - Belgian time-based price updates (Build: 07-10-2025, Beta)

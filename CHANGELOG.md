@@ -5,6 +5,38 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1] - 2025-10-07
+
+### ✨ New Features
+- **Belgian Time-Based Updates**: Price updates now enforced after 09:00 Belgian time using external time API
+  - No dependency on user's local system clock
+  - Automatic DST handling via WorldTimeAPI and TimeAPI.io
+  - Smart scheduling: auto-enables update button when time reached
+  - Hybrid reliability: setTimeout + polling backup (handles computer sleep)
+  - One update per day enforcement
+
+### 🔧 Technical Improvements
+- **New Time Service**: `services/timeService.js` provides Belgian time verification
+  - Primary: WorldTimeAPI (http://worldtimeapi.org)
+  - Fallback: TimeAPI.io (https://timeapi.io)
+  - 2-minute buffer (09:02) ensures bank data is published
+- **Smart Update Scheduler**: Auto-schedules update if app opens before 09:00
+  - Primary timer to exact time (09:02)
+  - Polling backup every 10 minutes (catches timer failures)
+  - Both canceled once update completes
+- **Enhanced Auto-Update**: Works correctly even if app starts before 09:00
+
+### 🔒 Enforcement Rules
+- Updates blocked before 09:00 Belgian time (clear user message with current time)
+- Updates blocked if already updated today
+- Applies to all grant types (KBC, ING, mixed portfolios)
+
+### 🎯 User Experience
+- Button states: "Available after 09:00" / "Update available" / "✅ Updated Today"
+- Auto-enables at 09:00 (no manual refresh needed)
+- Respects auto-update setting
+- Works offline after initial time check
+
 ## [0.4.0] - 2025-10-06
 
 ⚠️ **IMPORTANT: Backup your database before installing this release.** While database migrations are tested, we recommend exporting your portfolio data (Settings → Export Database) before updating as a safety precaution.

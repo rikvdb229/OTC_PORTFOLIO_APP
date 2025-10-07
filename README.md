@@ -2,7 +2,7 @@
 
 A desktop application for tracking and analyzing stock options portfolios. Built with Electron for monitoring employee stock option plans.
 
-**Version 0.4.0** | **Build Date**: October 6, 2025 | **Status**: Beta | **License**: MIT
+**Version 0.4.1** | **Build Date**: October 7, 2025 | **Status**: Beta | **License**: MIT
 
 ## Important Disclaimer
 
@@ -19,7 +19,7 @@ A desktop application for tracking and analyzing stock options portfolios. Built
 
 ### Windows (Portable - No Installation Required)
 
-1. Download `Portfolio Tracker 0.4.0.exe` from [Releases](../../releases)
+1. Download `Portfolio Tracker 0.4.1.exe` from [Releases](../../releases)
 2. Double-click to run - works from anywhere (Desktop, USB stick, network drive)
 3. Your data stays local in `portfolio.db` file next to the .exe
 
@@ -62,6 +62,10 @@ Or drag the app from Applications into Terminal after typing `xattr -c ` (with s
 - **Visual Indicators**: Color-coded gains (green) and losses (red)
 
 ### Financial Tools
+- **Smart Price Updates**: Once-per-day price updates after 09:00 Belgian time *(New in v0.4.1)*
+  - Automatic timezone and DST handling
+  - Smart scheduling with auto-enable
+  - No dependency on local system clock
 - **Tax Calculations**: Automated tax calculations with customizable rates
 - **Currency Support**: Multi-currency display with Euro (€) primary
 - **Sales Tracking**: Complete sales history with profit/loss
@@ -75,21 +79,21 @@ Or drag the app from Applications into Terminal after typing `xattr -c ` (with s
 
 ⚠️ **Performance Note**: Historical updates can take several minutes for large portfolios.
 
-## What's New in v0.4.0
+## What's New in v0.4.1
 
-### Critical Bug Fixes
-- **Fixed ING Grant Values**: ING grants now display correct values in Portfolio tab
-  - Filters out invalid zero prices from ING API at all levels
-  - Automatic database migration cleans legacy zero prices
-  - ING grants now properly contribute to total portfolio value
-- **Fixed Price History Matching**: Grants with same exercise price now get correct historical prices
-  - Price lookups now match on both exercise_price AND grant_date
+### New Features
+- **Belgian Time-Based Updates**: Price updates now enforced after 09:00 Belgian time
+  - Uses external time API (no local clock dependency)
+  - Automatic DST handling
+  - Smart scheduling: auto-enables update button when time reached
+  - One update per day enforcement
+  - Works even if app starts before 09:00
 
 See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Quick Start
 
-1. **Launch**: Double-click `Portfolio Tracker 0.4.0.exe`
+1. **Launch**: Double-click `Portfolio Tracker 0.4.1.exe`
 2. **First Run**: App creates `portfolio.db` file
 3. **Add Grant**:
    - Click "➕ Add Grants"

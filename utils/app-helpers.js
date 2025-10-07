@@ -11,7 +11,9 @@
 
 class AppHelpers {
   constructor(app) {
-    this.app = app; // Reference to main portfolio app for accessing properties
+    this.app = app;
+    this.updateTimer = null;
+    this.pollingTimer = null;
   }
   // Removed duplicate confirmEditSale - using IPCCommunication.Sales.confirmEditSale instead
   /**
@@ -311,29 +313,150 @@ class AppHelpers {
    * UPDATED: Only auto-update if prices are not current to avoid annoying users
    * RISK LEVEL: LOW - Simple setting check and conditional action
    */
+  minutesUntil902AM(hour, minute) {
+    if (hour >= 9) return 0;
+    const minutesUntil9 = (9 - hour) * 60 - minute;
+    return minutesUntil9 + 2;
+  }
+
   async checkAutoUpdate() {
     try {
-      const autoUpdate =
-        await window.IPCCommunication.Settings.getSetting("auto_update_prices");
-      if (autoUpdate === "true") {
-        console.log('🔍 Auto-update enabled, checking if prices need updating...');
+      const hasUpdated = await window.IPCCommunication.Price.hasUpdatedToday();
+      if (hasUpdated) {
+        this.setButtonState('updated');
+        return;
+      }
 
-        // Check if prices are current before auto-updating
-        const priceStatus = await window.IPCCommunication.Price.getPriceUpdateStatus();
+      let time;
 
-        if (priceStatus && !priceStatus.isCurrent && this.isBankWorkDay(new Date())) {
-          console.log('📊 Prices are not current, starting auto-update...');
+      try {
+        time = await window.IPCCommunication.Price.getBelgianTime();
+        console.log(`🕐 Belgian time: ${time.hour}:${String(time.minute).padStart(2, '0')}`);
+      } catch (error) {
+        console.warn('⚠️ Cannot verify time, assuming after 09:00');
+        time = { isAfter9AM: true, hour: 9, minute: 0 };
+      }
+
+      if (time.isAfter9AM) {
+        this.setButtonState('ready');
+
+        const autoUpdate = await window.IPCCommunication.Settings.getSetting("auto_update_prices");
+        if (autoUpdate === "true" && this.isBankWorkDay(new Date())) {
+          console.log('📊 Triggering immediate auto-update');
           setTimeout(() => this.app.updatePrices(), 2000);
-        } else {
-          if (!this.isBankWorkDay(new Date())) {
-            console.warn('⚠️ Auto-update skipped: Today is NOT a bank work day');
+        }
+      } else {
+        this.setButtonState('waiting');
+
+        const autoUpdate = await window.IPCCommunication.Settings.getSetting("auto_update_prices");
+        if (autoUpdate === "true") {
+          const minutes = this.minutesUntil902AM(time.hour, time.minute);
+
+          if (minutes < 180) {
+            this.scheduleUpdateAt902(minutes);
           } else {
-            console.log('✅ Prices are already current, skipping auto-update');
+            console.log(`⏰ Update in ${minutes} min (>3h), skipping schedule`);
           }
         }
       }
     } catch (error) {
-      console.error("Error checking auto-update setting:", error);
+      console.error("❌ Error in checkAutoUpdate:", error);
+    }
+  }
+
+  scheduleUpdateAt902(minutesUntil) {
+    const ms = minutesUntil * 60 * 1000;
+    console.log(`⏰ Scheduling update in ${minutesUntil} minutes (at 09:02)`);
+
+    this.updateTimer = setTimeout(async () => {
+      console.log('⏰ Scheduled timer fired');
+      await this.handleScheduledUpdate();
+    }, ms);
+
+    this.pollingTimer = setInterval(async () => {
+      console.log('🔄 Polling check');
+      await this.checkTimeAndUpdateIfReady();
+    }, 10 * 60 * 1000);
+
+    console.log('✅ Timer and polling backup active');
+  }
+
+  async checkTimeAndUpdateIfReady() {
+    try {
+      const time = await window.IPCCommunication.Price.getBelgianTime();
+      console.log(`🕐 Poll: ${time.hour}:${String(time.minute).padStart(2, '0')}`);
+
+      if (time.isAfter9AM) {
+        console.log('✅ Poll detected time passed, triggering update');
+        await this.handleScheduledUpdate();
+      }
+    } catch (error) {
+      console.warn('⚠️ Polling time check failed:', error.message);
+    }
+  }
+
+  async handleScheduledUpdate() {
+    this.cancelAllTimers();
+
+    const hasUpdated = await window.IPCCommunication.Price.hasUpdatedToday();
+    if (hasUpdated) {
+      this.setButtonState('updated');
+      return;
+    }
+
+    this.setButtonState('ready');
+
+    const autoUpdate = await window.IPCCommunication.Settings.getSetting("auto_update_prices");
+    if (autoUpdate === "true" && this.isBankWorkDay(new Date())) {
+      console.log('🚀 Auto-triggering price update');
+      setTimeout(() => this.app.updatePrices(), 1000);
+    }
+  }
+
+  cancelAllTimers() {
+    if (this.updateTimer) {
+      clearTimeout(this.updateTimer);
+      this.updateTimer = null;
+    }
+    if (this.pollingTimer) {
+      clearInterval(this.pollingTimer);
+      this.pollingTimer = null;
+    }
+  }
+
+  setButtonState(state) {
+    const button = this.app.updatePricesBtn;
+    const notification = document.getElementById('priceUpdateNotification');
+
+    switch(state) {
+      case 'updated':
+        button.disabled = true;
+        button.textContent = "✅ Updated Today";
+        button.title = "Next update available tomorrow after 09:00";
+        if (notification) notification.style.display = 'none';
+        break;
+
+      case 'waiting':
+        button.disabled = false;
+        button.textContent = "📊 Update Prices";
+        button.title = "Prices available after 09:00 Belgian time";
+        window.UIStateManager.Notifications.showNotification(
+          "priceUpdateNotification",
+          "Available after 09:00",
+          "info"
+        );
+        break;
+
+      case 'ready':
+        button.disabled = false;
+        button.textContent = "📊 Update Prices";
+        button.title = "Click to update prices";
+        window.UIStateManager.Notifications.showNotification(
+          "priceUpdateNotification",
+          "New prices available",
+          "warning"
+        );
+        break;
     }
   }
 

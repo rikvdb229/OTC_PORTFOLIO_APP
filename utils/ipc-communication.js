@@ -696,6 +696,24 @@ Note: KBC doesn't update on bank holidays.`;
     }
   },
 
+  async hasUpdatedToday() {
+    try {
+      return await window.ipcRenderer.invoke("has-updated-today");
+    } catch (error) {
+      console.error("❌ Error checking if updated today:", error);
+      return false;
+    }
+  },
+
+  async getBelgianTime() {
+    try {
+      return await window.ipcRenderer.invoke("get-belgian-time");
+    } catch (error) {
+      console.error("❌ Error getting Belgian time:", error);
+      return { isAfter9AM: true, hour: 9, minute: 0 };
+    }
+  },
+
   async testConnection() {
     try {
       return await window.ipcRenderer.invoke("test-connection");

@@ -2897,8 +2897,8 @@ ORDER BY st.sale_date DESC
   async getLatestPriceDate() {
     try {
       const stmt = this.db.prepare(`
-      SELECT MAX(price_date) as latest_price_date 
-      FROM price_history 
+      SELECT MAX(price_date) as latest_price_date
+      FROM price_history
       WHERE price_date IS NOT NULL
     `);
 
@@ -2913,6 +2913,22 @@ ORDER BY st.sale_date DESC
       return Promise.resolve(result);
     } catch (error) {
       console.error("Error getting latest price date:", error);
+      return Promise.reject(error);
+    }
+  }
+
+  async hasUpdatedToday() {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const stmt = this.db.prepare(`
+        SELECT COUNT(*) as count FROM price_history WHERE price_date = ?
+      `);
+      stmt.bind([today]);
+      const result = stmt.step() ? stmt.getAsObject().count > 0 : false;
+      stmt.free();
+      return Promise.resolve(result);
+    } catch (error) {
+      console.error("❌ Error checking if updated today:", error);
       return Promise.reject(error);
     }
   }
