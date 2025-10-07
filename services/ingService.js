@@ -48,11 +48,13 @@ async function fetchIngPrice(grant, fetchFullHistory = false) {
     }
 
     let quotes = await fetchIngQuotes(grant.isin, "INTRADAY");
-    if (!quotes || quotes.length === 0) {
+
+    if ((!quotes || quotes.length === 0) && fetchFullHistory) {
         quotes = await fetchIngQuotes(grant.isin, "ALL");
-        if (!quotes || quotes.length === 0) {
-            throw new Error(`No quotes found for ISIN ${grant.isin}`);
-        }
+    }
+
+    if (!quotes || quotes.length === 0) {
+        throw new Error(`No quotes found for ISIN ${grant.isin}`);
     }
 
     const validQuotes = quotes.filter(q => q.y > 0);
