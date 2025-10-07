@@ -18,6 +18,7 @@
     "postinstall": "electron-builder install-app-deps",
     "test:parse-table": "electron test-scripts/test-parse-options-table.js",
     "test:historical": "electron test-scripts/test-historical-scraper.js",
+    "test:time-api": "node test-scripts/test-time-api.js",
     "download:all-historical": "electron test-scripts/download-all-historical-data.js",
     "analyze:portfolio-historical": "electron test-scripts/download-portfolio-historical-data.js"
   },
@@ -29,6 +30,7 @@
   "dependencies": {
     "csv-parser": "^3.2.0",
     "node-fetch": "^2.6.7",
+    "ntp-time-sync": "^0.5.0",
     "papaparse": "^5.5.3",
     "sql.js": "^1.13.0"
   },

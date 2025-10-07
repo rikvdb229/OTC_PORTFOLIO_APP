@@ -1,68 +1,45 @@
-const fetch = require('node-fetch');
+const NtpTimeSync = require('ntp-time-sync').NtpTimeSync;
 
-// Helper to add timeout to fetch using Promise.race
-async function fetchWithTimeout(url, timeout = 5000) {
-  return Promise.race([
-    fetch(url),
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), timeout)
-    )
-  ]);
-}
+// Initialize NTP client with reliable NTP servers
+const ntpClient = NtpTimeSync.getInstance({
+  servers: [
+    'time.google.com',      // Google's NTP (very reliable)
+    'time.cloudflare.com',  // Cloudflare NTP (very reliable)
+    '0.europe.pool.ntp.org', // European NTP pool
+    'pool.ntp.org'          // NTP Pool Project
+  ],
+  sampleCount: 4,           // Fewer samples for faster response
+  replyTimeout: 5000        // 5 second timeout per server
+});
 
 async function getBelgianTime() {
-  // Try WorldTimeAPI first
   try {
-    const response = await fetchWithTimeout('http://worldtimeapi.org/api/timezone/Europe/Brussels', 5000);
-    if (response.ok) {
-      const data = await response.json();
-      const hour = parseInt(data.datetime.substring(11, 13));
-      const minute = parseInt(data.datetime.substring(14, 16));
-      return {
-        isAfter9AM: hour >= 9,
-        hour,
-        minute,
-        datetime: data.datetime
-      };
-    }
-  } catch (error) {
-    console.warn('⚠️ WorldTimeAPI failed, trying fallback 1:', error.message);
-  }
+    // Get current time from NTP servers
+    const ntpTime = await ntpClient.getTime();
 
-  // Try TimeAPI.io fallback
-  try {
-    const response = await fetchWithTimeout('https://timeapi.io/api/Time/current/zone?timeZone=Europe/Brussels', 5000);
-    if (response.ok) {
-      const data = await response.json();
-      return {
-        isAfter9AM: data.hour >= 9,
-        hour: data.hour,
-        minute: data.minute,
-        datetime: data.dateTime
-      };
-    }
-  } catch (error) {
-    console.warn('⚠️ TimeAPI.io failed, trying fallback 2:', error.message);
-  }
+    // NTP returns UTC time, convert to Belgian time (CET/CEST)
+    // Belgium is UTC+1 (CET) in winter, UTC+2 (CEST) in summer
+    const utcDate = ntpTime.now;
 
-  // Try WorldClockAPI as final fallback (no API key required)
-  try {
-    const response = await fetchWithTimeout('http://worldclockapi.com/api/json/cet/now', 5000);
-    if (response.ok) {
-      const data = await response.json();
-      // WorldClockAPI returns currentDateTime in format "2025-10-07T12:34:00+02:00"
-      const dateTime = data.currentDateTime;
-      const hour = parseInt(dateTime.substring(11, 13));
-      const minute = parseInt(dateTime.substring(14, 16));
-      return {
-        isAfter9AM: hour >= 9,
-        hour,
-        minute,
-        datetime: dateTime
-      };
-    }
+    // Use Intl API to get Belgian local time with proper DST handling
+    const belgianTime = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'Europe/Brussels',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }).format(utcDate);
+
+    const [hour, minute] = belgianTime.split(':').map(Number);
+
+    return {
+      isAfter9AM: hour >= 9,
+      hour,
+      minute,
+      datetime: utcDate.toISOString(),
+      offset: ntpTime.offset // Time difference between system and NTP (useful for tamper detection)
+    };
   } catch (error) {
-    console.error('❌ All time APIs failed:', error.message);
+    console.error('❌ NTP time sync failed:', error.message);
     throw new Error('Cannot verify Belgian time');
   }
 }
