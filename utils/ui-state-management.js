@@ -297,10 +297,6 @@ const FormManager = {
       const modal = document.getElementById("updatePricesModal");
       if (modal) modal.style.zIndex = "";
       window.UIStateManager.Modals.closeAllModals(app);
-    } finally {
-      if (progressListener) {
-        window.ipcRenderer.removeListener('kbc-initialization-progress', progressListener);
-      }
     }
   },
 

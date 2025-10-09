@@ -1635,13 +1635,7 @@ updateProgress(app, progressData) {
         }
 
         // Reset stats
-        window.UIStateManager.Stats.updateHeaderStats(app, {
-          totalValue: 0,
-          totalCost: 0,
-          totalReturn: 0,
-          returnPercentage: 0,
-          entriesCount: 0,
-        });
+        window.UIStateManager.Stats.updateHeaderStats(app, []);
 
         // CRITICAL: This will update all button states including "Update Prices" button
         await app.checkDataAvailability();
