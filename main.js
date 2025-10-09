@@ -406,6 +406,16 @@ ipcMain.handle("scrape-data", async (event) => {
         );
       }
 
+      // Rebuild evolution timeline to sync with new prices
+      if (successfulUpdates > 0) {
+        mainWindow.webContents.send(
+          "scrape-progress",
+          "🔄 Updating evolution timeline..."
+        );
+        const today = new Date().toISOString().split('T')[0];
+        await portfolioDb.rebuildCompleteEvolutionTimeline(null, today);
+      }
+
       resolve({
         success: failedUpdates === 0,
         priceEntriesUpdated: successfulUpdates,

@@ -47,9 +47,9 @@ async function fetchIngPrice(grant, fetchFullHistory = false) {
         throw new Error("ING grant must have an ISIN");
     }
 
-    // For daily updates, use "ALL" timeframe (faster, returns only daily close prices)
-    // For full history, use "INTRADAY" to get detailed price movements
-    const timeframe = fetchFullHistory ? "INTRADAY" : "ALL";
+    // For daily updates, use "INTRADAY" to get detailed price movements
+    // For full history, use "ALL" (faster, returns only daily close prices)
+    const timeframe = fetchFullHistory ? "ALL" : "INTRADAY";
 
     let quotes = await fetchIngQuotes(grant.isin, timeframe);
 
