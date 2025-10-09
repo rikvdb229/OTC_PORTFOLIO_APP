@@ -7,7 +7,6 @@ const ActionButtonManager = {
   updateActionButtons(app, hasData) {
     if (!app.addGrantsBtn) {
       console.warn("⚠️ addGrantsBtn not found, retrying...");
-      // Retry after a short delay
       setTimeout(() => {
         app.addGrantsBtn = document.getElementById("addGrantsBtn");
         if (app.addGrantsBtn) {
@@ -17,17 +16,16 @@ const ActionButtonManager = {
       return;
     }
 
-    app.addGrantsBtn.disabled = !hasData;
+    app.addGrantsBtn.disabled = false;
+    app.addGrantsBtn.classList.remove("btn-disabled");
 
     if (!hasData) {
       app.addGrantsBtn.textContent = "➕ Add Grants";
       app.addGrantsBtn.title =
-        "Please update prices first to enable adding options";
-      app.addGrantsBtn.classList.add("btn-disabled");
+        "Add new option grants (select KBC to initialize from CSV or ING with ISIN)";
     } else {
       app.addGrantsBtn.textContent = "➕ Add Grants";
       app.addGrantsBtn.title = "Add new option grants to your portfolio";
-      app.addGrantsBtn.classList.remove("btn-disabled");
     }
   },
 

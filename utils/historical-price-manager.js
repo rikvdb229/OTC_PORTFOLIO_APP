@@ -66,7 +66,7 @@ const HistoricalPriceManager = {
 
   // Show historical price fetch modal for a single option
   async showFetchModal(fundName, exercisePrice, grantDate, source, isin) {
-    console.log(`📊 Opening historical price fetch modal for: ${fundName}`);
+    console.log(`📊 Fetching historical prices for: ${fundName}`);
 
     // Store current fetch data
     this.currentFetchData = {
@@ -77,24 +77,18 @@ const HistoricalPriceManager = {
       isin
     };
 
-    // Populate modal with option details
-    document.getElementById('fetchOptionName').textContent = fundName;
-    document.getElementById('fetchOptionDetails').textContent = 
-      `Exercise Price: €${exercisePrice} | Grant Date: ${grantDate}`;
+    // Show simplified progress modal
+    window.UIStateManager.Modals.showModal("updatePricesModal", () => {
+      const modal = document.getElementById("updatePricesModal");
+      const progressBar = document.getElementById("updateProgressBar");
+      const progressText = document.getElementById("updateProgressText");
+      const statusOutput = document.getElementById("updateStatusOutput");
 
-    // Reset modal state
-    this.resetFetchModalState();
-
-    // Update modal for manual fetching workflow
-    document.querySelector('#historicalPriceFetchModal .modal-header h3').textContent = '📊 Fetching Historical Prices';
-    document.getElementById('confirmHistoricalFetch').textContent = 'Please wait...';
-    document.getElementById('confirmHistoricalFetch').disabled = true;
-    
-    // Hide cancel button during fetch - user should wait for completion
-    document.getElementById('cancelHistoricalFetch').style.display = 'none';
-
-    // Show modal
-    window.ModalManager.showModal('historicalPriceFetchModal');
+      if (modal) modal.style.zIndex = "10001";
+      if (progressBar) progressBar.style.width = "0%";
+      if (progressText) progressText.textContent = "Fetching historical prices...";
+      if (statusOutput) statusOutput.textContent = `Loading prices for ${fundName}`;
+    });
 
     // Start fetching historical prices automatically
     await this.startHistoricalFetch();
@@ -104,35 +98,95 @@ const HistoricalPriceManager = {
   async startHistoricalFetch() {
     try {
       console.log('🔄 Starting historical price fetch...');
-      
-      this.updateFetchProgress({ text: 'Connecting to price server...', percentage: 0 });
+
+      this.updateFetchProgress({ text: 'Connecting to price server...', percentage: 10 });
 
       const result = await window.ipcRenderer.invoke(
         'fetch-historical-prices',
         this.currentFetchData.fundName,
         this.currentFetchData.exercisePrice,
         this.currentFetchData.grantDate,
-        null, // onProgress is handled by the main process now
+        null,
         this.currentFetchData.source,
         this.currentFetchData.isin
       );
 
       if (result.success) {
-        this.showFetchResults(result);
+        this.updateFetchProgress({ text: `Loaded ${result.priceCount} price points`, percentage: 100 });
+        this.closeProgressModal();
+        await this.applyHistoricalPriceToForm(result);
       } else {
-        this.showFetchError(result.error);
+        this.updateFetchProgress({ text: `Error: ${result.error}`, percentage: 0 });
+        setTimeout(() => this.closeProgressModal(), 2000);
+        alert('Error fetching historical prices: ' + result.error);
       }
 
     } catch (error) {
       console.error('❌ Error fetching historical prices:', error);
-      this.showFetchError(error.message);
+      this.updateFetchProgress({ text: `Error: ${error.message}`, percentage: 0 });
+      setTimeout(() => this.closeProgressModal(), 2000);
+      alert('Error fetching historical prices: ' + error.message);
+    }
+  },
+
+  // Close progress modal only
+  closeProgressModal() {
+    setTimeout(() => {
+      const modal = document.getElementById("updatePricesModal");
+      if (modal) {
+        modal.style.zIndex = "";
+        modal.classList.remove("active");
+      }
+    }, 1500);
+  },
+
+  // Apply historical price results to form
+  async applyHistoricalPriceToForm(result) {
+    console.log('✅ Applying historical prices to form:', result);
+
+    // Store the grant date price for use in grant addition
+    this.currentFetchData.grantDatePrice = result.grantDatePrice;
+
+    // Update the exercise price option with the fetched grant date price
+    const exercisePriceSelect = document.getElementById('exercisePrice');
+    const grantDateField = document.getElementById('grantDate');
+    const grantSourceSelect = document.getElementById('grantSource');
+    const isINGGrant = grantSourceSelect?.value === 'ING';
+
+    if (exercisePriceSelect && this.currentFetchData.grantDatePrice) {
+      const selectedOption = exercisePriceSelect.options[exercisePriceSelect.selectedIndex];
+      if (selectedOption) {
+        selectedOption.dataset.currentValue = this.currentFetchData.grantDatePrice;
+        if (isINGGrant) {
+          selectedOption.dataset.firstAvailablePrice = this.currentFetchData.grantDatePrice;
+        }
+      }
+
+      const currentValuePerOption = document.getElementById('currentValuePerOption');
+      if (currentValuePerOption) {
+        currentValuePerOption.textContent = `€${this.currentFetchData.grantDatePrice.toFixed(2)}`;
+      }
+
+      const helpTextElement = document.getElementById('currentValueHelp');
+      if (helpTextElement) {
+        if (result.grantDatePriceDerived) {
+          helpTextElement.textContent = `${result.grantDatePriceSource}`;
+          helpTextElement.className = 'form-help warning';
+        } else {
+          helpTextElement.textContent = `Price for grant date ${grantDateField?.value || ''}`;
+          helpTextElement.className = 'form-help';
+        }
+      }
+
+      console.log(`✅ Updated form with grant date price: €${this.currentFetchData.grantDatePrice.toFixed(2)}`);
     }
   },
 
   // Update fetch progress
   updateFetchProgress(progress) {
-    const progressBar = document.getElementById('historicalFetchProgressBar');
-    const statusText = document.getElementById('historicalFetchStatus');
+    const progressBar = document.getElementById('updateProgressBar');
+    const statusText = document.getElementById('updateProgressText');
+    const statusOutput = document.getElementById('updateStatusOutput');
 
     if (progressBar) {
       progressBar.style.width = `${progress.percentage}%`;
@@ -140,6 +194,10 @@ const HistoricalPriceManager = {
 
     if (statusText) {
       statusText.textContent = progress.text;
+    }
+
+    if (statusOutput) {
+      statusOutput.textContent = progress.text;
     }
   },
 

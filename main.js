@@ -629,6 +629,27 @@ ipcMain.handle("delete-portfolio-entry", async (event, entryId) => {
   }
 });
 
+ipcMain.handle("check-needs-initialization", async () => {
+  try {
+    return await portfolioDb.checkNeedsInitialization();
+  } catch (error) {
+    console.error("Error checking initialization status:", error);
+    return false;
+  }
+});
+
+ipcMain.handle("initialize-kbc-database", async (event) => {
+  try {
+    const onProgress = (progressData) => {
+      event.sender.send('kbc-initialization-progress', progressData);
+    };
+    return await portfolioDb.initializeKbcData(onProgress);
+  } catch (error) {
+    console.error("Error initializing KBC database:", error);
+    return { error: error.message };
+  }
+});
+
 ipcMain.handle("get-options-by-grant-date", async (event, grantDate) => {
   try {
     return await portfolioDb.getOptionsByGrantDate(grantDate);
@@ -927,7 +948,6 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
         grantDate,
         result.priceHistory
       );
-      console.log(`💾 Stored ${result.priceHistory.length} prices in database`);
     }
 
     return {

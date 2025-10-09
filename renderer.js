@@ -473,7 +473,7 @@ class EnhancedPortfolioApp {
     window.UIStateManager.Validation.validateAddGrantsForm(this);
   }
 
-  toggleIsinField() {
+  async toggleIsinField() {
     console.log('toggleIsinField called');
     const grantFormFields = document.getElementById('grantFormFields');
     const isinGroup = document.getElementById('isinGroup');
@@ -499,14 +499,20 @@ class EnhancedPortfolioApp {
       if (helpText) {
         helpText.textContent = 'Enter ISIN to load product info';
       }
-    } else {
-      console.log('Showing grant date field for KBC');
+    } else if (this.currentGrantSource === 'KBC') {
+      console.log('KBC selected - checking if initialization needed...');
       isinGroup.style.display = 'none';
       isinInput.required = false;
       exercisePriceGroup.style.display = 'block';
       const helpText = document.getElementById('exercisePriceHelp');
       if (helpText) {
         helpText.textContent = 'Options will appear after entering grant date';
+      }
+
+      const needsInit = await window.ipcRenderer.invoke("check-needs-initialization");
+      if (needsInit) {
+        console.log('🔔 Database empty - showing initialization modal...');
+        await window.UIStateManager.Forms.initializeKbcDatabase(this);
       }
     }
   }

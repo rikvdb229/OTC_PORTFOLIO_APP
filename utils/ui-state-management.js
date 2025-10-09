@@ -164,13 +164,67 @@ const FormManager = {
   },
 
   /**
+   * Initialize KBC database with progress modal
+   */
+  async initializeKbcDatabase(app) {
+    console.log("🔔 Showing initialization modal...");
+    window.UIStateManager.Modals.showModal("updatePricesModal", () => {
+      const modal = document.getElementById("updatePricesModal");
+      const progressBar = document.getElementById("updateProgressBar");
+      const progressText = document.getElementById("updateProgressText");
+      const statusOutput = document.getElementById("updateStatusOutput");
+
+      if (modal) modal.style.zIndex = "10001";
+      if (progressBar) progressBar.style.width = "10%";
+      if (progressText) progressText.textContent = "Initializing database from KBC...";
+      if (statusOutput) statusOutput.textContent = "Starting initialization...";
+
+      console.log("✅ Initialization modal shown");
+    });
+
+    const progressListener = (event, progressData) => {
+      const progressBar = document.getElementById("updateProgressBar");
+      const progressText = document.getElementById("updateProgressText");
+      const statusOutput = document.getElementById("updateStatusOutput");
+
+      if (progressBar) progressBar.style.width = progressData.percentage + "%";
+      if (progressText) progressText.textContent = progressData.text;
+      if (statusOutput) statusOutput.textContent = progressData.text;
+    };
+
+    window.ipcRenderer.on('kbc-initialization-progress', progressListener);
+
+    try {
+      await ipcRenderer.invoke("initialize-kbc-database");
+
+      setTimeout(() => {
+        const modal = document.getElementById("updatePricesModal");
+        if (modal) {
+          modal.style.zIndex = "";
+          modal.classList.remove("active");
+        }
+      }, 1500);
+    } catch (error) {
+      console.error("Error initializing KBC database:", error);
+      const modal = document.getElementById("updatePricesModal");
+      if (modal) {
+        modal.style.zIndex = "";
+        modal.classList.remove("active");
+      }
+      alert("Error initializing database: " + error.message);
+    } finally {
+      window.ipcRenderer.removeListener('kbc-initialization-progress', progressListener);
+    }
+  },
+
+  /**
    * Handle grant date selection - loads available options for the selected date
    * MIGRATED FROM: config.js FormManager.handleGrantDateSelection()
    */
   async handleGrantDateSelection(app) {
     const grantSource = document.getElementById('grantSource')?.value;
     if (grantSource === 'ING') {
-      return; // Do not perform KBC lookup for ING grants
+      return;
     }
     const grantDate = document.getElementById("grantDate").value;
     const exercisePriceSelect = document.getElementById("exercisePrice");
@@ -213,7 +267,6 @@ const FormManager = {
         optionElement.dataset.currentValue = option.current_value;
         optionElement.dataset.fundName = option.fund_name;
 
-        // Show fund name prominently with price and current value
         const fundName = app.helpers.formatFundName(option.fund_name);
         optionElement.textContent = `${fundName} - €${
           option.exercise_price
@@ -228,7 +281,6 @@ const FormManager = {
 
       if (options.length === 1) {
         exercisePriceSelect.selectedIndex = 1;
-        // Trigger the full exercise price selection flow (includes tax calculation AND historical price fetching)
         console.log("🔄 Auto-selected single option, triggering handleExercisePriceSelection");
         if (app.handleExercisePriceSelection) {
           await app.handleExercisePriceSelection();
@@ -241,6 +293,14 @@ const FormManager = {
       exercisePriceSelect.disabled = true;
       helpText.textContent = "Error loading options for this date";
       helpText.className = "form-help error";
+
+      const modal = document.getElementById("updatePricesModal");
+      if (modal) modal.style.zIndex = "";
+      window.UIStateManager.Modals.closeAllModals(app);
+    } finally {
+      if (progressListener) {
+        window.ipcRenderer.removeListener('kbc-initialization-progress', progressListener);
+      }
     }
   },
 

@@ -9,6 +9,8 @@ class PortfolioDatabase {
     this.dbPath = null;
     this.dbDirectory = null;
     this.debugLog = [];
+    this.initializationInProgress = false;
+    this.initializationPromise = null;
     this.initializeDatabasePath();
   }
   // Enhanced logging for debugging
@@ -2808,18 +2810,31 @@ ORDER BY st.sale_date DESC
     }
   }
 
+  async checkNeedsInitialization() {
+    try {
+      const countStmt = this.db.prepare("SELECT COUNT(*) as count FROM price_history");
+      countStmt.step();
+      const count = countStmt.getAsObject().count;
+      countStmt.free();
+      return count === 0;
+    } catch (error) {
+      console.error("Error checking initialization status:", error);
+      return false;
+    }
+  }
+
   async getOptionsByGrantDate(grantDate) {
     try {
       const stmt = this.db.prepare(`
-        SELECT DISTINCT 
-          exercise_price, 
-          current_value, 
+        SELECT DISTINCT
+          exercise_price,
+          current_value,
           fund_name,
           price_date as last_update_date
         FROM price_history
-        WHERE grant_date = ? 
+        WHERE grant_date = ?
         AND price_date = (
-          SELECT MAX(price_date) FROM price_history ph2 
+          SELECT MAX(price_date) FROM price_history ph2
           WHERE ph2.exercise_price = price_history.exercise_price
         )
         ORDER BY exercise_price ASC
@@ -2837,6 +2852,85 @@ ORDER BY st.sale_date DESC
     } catch (error) {
       return Promise.reject(error);
     }
+  }
+
+  async initializeKbcData(onProgress = null) {
+    if (this.initializationInProgress) {
+      console.log("⏳ Initialization already in progress, waiting...");
+      return await this.initializationPromise;
+    }
+
+    this.initializationInProgress = true;
+    this.initializationPromise = (async () => {
+      try {
+        console.log("📦 Initializing KBC data from CSV...");
+        if (onProgress) onProgress({ text: "Initializing database from KBC...", percentage: 10 });
+
+        const KBCScraper = require('./scraper');
+        const fs = require('fs');
+        const Papa = require('papaparse');
+
+        const scraper = new KBCScraper();
+        const result = await scraper.scrapeData(onProgress);
+
+        if (!result.success || !result.filePath) {
+          throw new Error(result.error || "Failed to fetch KBC data");
+        }
+
+        if (onProgress) onProgress({ text: "Parsing CSV data...", percentage: 75 });
+
+        const csvContent = fs.readFileSync(result.filePath, "utf-8");
+        const parsedData = Papa.parse(csvContent, {
+          header: false,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          delimiter: ","
+        });
+
+        console.log(`📊 Parsing ${parsedData.data.length} rows from KBC CSV...`);
+        if (onProgress) onProgress({ text: `Importing ${parsedData.data.length} price entries...`, percentage: 85 });
+
+        const stmt = this.db.prepare(`
+          INSERT OR REPLACE INTO price_history
+          (fund_name, exercise_price, grant_date, price_date, current_value)
+          VALUES (?, ?, ?, ?, ?)
+        `);
+
+        let insertCount = 0;
+        for (const row of parsedData.data) {
+          if (row.length >= 8 && row[2] && row[3] && row[5] && row[7]) {
+            const fundName = row[7]?.trim();
+            const exercisePrice = parseFloat(row[3]);
+            const grantDate = row[2];
+            const priceDate = row[6] || grantDate;
+            const currentValue = parseFloat(row[5]);
+
+            if (fundName && !isNaN(exercisePrice) && !isNaN(currentValue) && currentValue > 0) {
+              stmt.bind([fundName, exercisePrice, grantDate, priceDate, currentValue]);
+              stmt.step();
+              stmt.reset();
+              insertCount++;
+            }
+          }
+        }
+        stmt.free();
+        this.saveDatabase();
+
+        console.log(`✅ Initialized database with ${insertCount} price entries from KBC CSV`);
+        if (onProgress) onProgress({ text: `Database initialized with ${insertCount} entries!`, percentage: 100 });
+
+        return insertCount;
+      } catch (error) {
+        console.error("❌ Error initializing KBC data:", error);
+        if (onProgress) onProgress({ text: `Error: ${error.message}`, percentage: 0 });
+        throw error;
+      } finally {
+        this.initializationInProgress = false;
+        this.initializationPromise = null;
+      }
+    })();
+
+    return await this.initializationPromise;
   }
 
   async getAvailableExercisePrices() {
