@@ -5,9 +5,9 @@ const { BrowserWindow } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const { app } = require("electron");
-const ingService = require("./services/ingService");
+const ingService = require("./ingService");
 
-class EnhancedHistoricalScraper {
+class HistoricalService {
   constructor() {
     this.downloadDir = this.getDataDirectory();
     this.cacheDir = path.join(this.downloadDir, 'cache');
@@ -582,4 +582,4 @@ class EnhancedHistoricalScraper {
   }
 }
 
-module.exports = EnhancedHistoricalScraper;
+module.exports = HistoricalService;

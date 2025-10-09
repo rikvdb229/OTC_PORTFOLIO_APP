@@ -1,4 +1,4 @@
-const KBCScraper = require("../scraper");
+const KBCScraper = require("./kbcScraperService");
 const fs = require("fs");
 const Papa = require("papaparse");
 

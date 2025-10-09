@@ -1,7 +1,7 @@
 const { app, BrowserWindow, ipcMain, dialog, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
-const KBCScraper = require("./scraper");
+const KBCScraper = require("./services/kbcScraperService");
 const PortfolioDatabase = require("./portfolio-db");
 const ingService = require("./services/ingService");
 
@@ -926,8 +926,8 @@ ipcMain.handle("fetch-historical-prices", async (event, fundName, exercisePrice,
   try {
     console.log(`📊 Fetching historical prices for: ${fundName} (€${exercisePrice}, ${grantDate})`);
 
-    const EnhancedHistoricalScraper = require('./enhanced-historical-scraper');
-    const scraper = new EnhancedHistoricalScraper();
+    const HistoricalService = require('./services/historicalService');
+    const scraper = new HistoricalService();
 
     // Progress callback to update frontend
     const progressCallback = (progress) => {
@@ -1010,8 +1010,8 @@ ipcMain.handle("update-portfolio-historical-prices", async (event) => {
     const optionsToUpdate = Array.from(uniqueOptions.values());
     console.log(`📊 Found ${optionsToUpdate.length} unique options to update`);
 
-    const EnhancedHistoricalScraper = require('./enhanced-historical-scraper');
-    const scraper = new EnhancedHistoricalScraper();
+    const HistoricalService = require('./services/historicalService');
+    const scraper = new HistoricalService();
 
     let successCount = 0;
     let errorCount = 0;
