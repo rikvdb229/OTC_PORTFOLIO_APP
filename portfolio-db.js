@@ -2316,13 +2316,38 @@ ORDER BY st.sale_date DESC
     }
   }
 
+  async deleteTodaysPrices() {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      console.log(`🔄 Deleting prices for today: ${today}`);
+
+      const deleteStmt = this.db.prepare(`
+        DELETE FROM price_history
+        WHERE price_date = ?
+      `);
+
+      deleteStmt.bind([today]);
+      deleteStmt.step();
+      const deletedCount = this.db.getRowsModified();
+      deleteStmt.free();
+
+      this.saveDatabase();
+
+      console.log(`✅ Deleted ${deletedCount} price records for ${today}`);
+      return { deletedCount };
+    } catch (error) {
+      console.error("❌ Error deleting today's prices:", error);
+      throw error;
+    }
+  }
+
   async recalculateEntireEvolutionTimeline() {
     try {
       console.log("🔄 Manually recalculating entire evolution timeline...");
 
       // Get the earliest evolution entry date
       const earliestStmt = this.db.prepare(`
-      SELECT MIN(snapshot_date) as earliest_date 
+      SELECT MIN(snapshot_date) as earliest_date
       FROM portfolio_evolution
     `);
 

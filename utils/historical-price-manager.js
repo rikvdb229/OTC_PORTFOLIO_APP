@@ -11,6 +11,14 @@ const HistoricalPriceManager = {
   },
 
   setupEventListeners(app) {
+    // Settings button - Force Price Update
+    const forcePriceUpdateBtn = document.getElementById('forcePriceUpdateBtn');
+    if (forcePriceUpdateBtn) {
+      forcePriceUpdateBtn.addEventListener('click', () => {
+        this.forcePriceUpdate(app);
+      });
+    }
+
     // Settings button - Update Historical Prices
     const updateHistoricalBtn = document.getElementById('updateHistoricalPricesBtn');
     if (updateHistoricalBtn) {
@@ -314,6 +322,32 @@ const HistoricalPriceManager = {
     this.currentFetchData = null;
 
     console.log('✅ Historical price fetch completed, form is ready for grant addition');
+  },
+
+  // Force price update - delete today's prices and re-scrape
+  async forcePriceUpdate(app) {
+    console.log('🔄 Force price update initiated...');
+
+    try {
+      const result = await window.ipcRenderer.invoke('force-price-update');
+
+      if (result.success) {
+        console.log(`✅ Deleted ${result.deletedCount} price records for today`);
+
+        if (app && app.updatePrices) {
+          await app.updatePrices();
+        } else {
+          console.error('❌ App context not available for price update');
+          alert('Error: Cannot trigger price update. Please try using the "Update Prices" button in the header.');
+        }
+      } else {
+        console.error('❌ Force price update failed:', result.error);
+        alert('Error deleting today\'s prices: ' + result.error);
+      }
+    } catch (error) {
+      console.error('❌ Error in force price update:', error);
+      alert('Error in force price update: ' + error.message);
+    }
   },
 
   // Show bulk historical price update modal

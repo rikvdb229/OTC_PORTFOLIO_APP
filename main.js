@@ -609,6 +609,17 @@ ipcMain.handle("recalculate-evolution-timeline", async () => {
     return { error: error.message };
   }
 });
+
+ipcMain.handle("force-price-update", async () => {
+  try {
+    const result = await portfolioDb.deleteTodaysPrices();
+    return { success: true, deletedCount: result.deletedCount };
+  } catch (error) {
+    console.error("Error in force price update:", error);
+    return { success: false, error: error.message };
+  }
+});
+
 // Update sale details
 ipcMain.handle("update-sale", async (event, updatedSale) => {
   try {
