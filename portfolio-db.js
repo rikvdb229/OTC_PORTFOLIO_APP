@@ -2891,7 +2891,7 @@ ORDER BY st.sale_date DESC
         console.log("📦 Initializing KBC data from CSV...");
         if (onProgress) onProgress({ text: "Initializing database from KBC...", percentage: 10 });
 
-        const KBCScraper = require('./scraper');
+        const KBCScraper = require('./services/kbcScraperService');
         const fs = require('fs');
         const Papa = require('papaparse');
 
