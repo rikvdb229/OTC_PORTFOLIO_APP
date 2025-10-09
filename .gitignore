@@ -18,6 +18,9 @@ portfolio-db.js
 *.msi
 gh.zip
 
+# Test output files
+parsed-options.json
+
 # Claude Code local settings
 .claude/settings.local.json
 
