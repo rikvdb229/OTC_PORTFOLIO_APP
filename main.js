@@ -297,14 +297,15 @@ ipcMain.handle("window-close", () => {
 });
 
 // IPC handlers for scraping functionality
-ipcMain.handle("scrape-data", async (event) => {
+ipcMain.handle("scrape-data", async (event, options = {}) => {
   const { getPrice } = require('./services/priceService');
   const { getBelgianTime } = require('./services/timeService');
+  const forceUpdate = options.force || false;
 
   return new Promise(async (resolve) => {
     try {
       const hasUpdated = await portfolioDb.hasUpdatedToday();
-      if (hasUpdated) {
+      if (hasUpdated && !forceUpdate) {
         mainWindow.webContents.send("scrape-progress", "✅ Already updated today");
         return resolve({
           success: true,
@@ -313,23 +314,28 @@ ipcMain.handle("scrape-data", async (event) => {
         });
       }
 
-      let time;
-      try {
-        time = await getBelgianTime();
-      } catch (error) {
-        console.warn('⚠️ Cannot verify time, allowing update attempt');
-        time = { isAfter9AM: true };
-      }
+      if (forceUpdate) {
+        console.log('🔄 Force update requested - bypassing time checks');
+        mainWindow.webContents.send("scrape-progress", "🔄 Force update - bypassing time restrictions");
+      } else {
+        let time;
+        try {
+          time = await getBelgianTime();
+        } catch (error) {
+          console.warn('⚠️ Cannot verify time, allowing update attempt');
+          time = { isAfter9AM: true };
+        }
 
-      if (!time.isAfter9AM) {
-        const timeStr = `${time.hour}:${String(time.minute).padStart(2, '0')}`;
-        mainWindow.webContents.send("scrape-progress",
-          `⏰ Prices available after 09:00 (current: ${timeStr})`);
-        return resolve({
-          success: false,
-          message: `Prices available after 09:00 Belgian time (current: ${timeStr})`,
-          priceEntriesUpdated: 0
-        });
+        if (!time.isAfter9AM) {
+          const timeStr = `${time.hour}:${String(time.minute).padStart(2, '0')}`;
+          mainWindow.webContents.send("scrape-progress",
+            `⏰ Prices available after 09:00 (current: ${timeStr})`);
+          return resolve({
+            success: false,
+            message: `Prices available after 09:00 Belgian time (current: ${timeStr})`,
+            priceEntriesUpdated: 0
+          });
+        }
       }
 
       // Get all grants that need price updates

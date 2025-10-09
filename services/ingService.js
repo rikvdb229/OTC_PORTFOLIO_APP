@@ -53,8 +53,14 @@ async function fetchIngPrice(grant, fetchFullHistory = false) {
 
     let quotes = await fetchIngQuotes(grant.isin, timeframe);
 
+    // If INTRADAY fails, fallback to ALL timeframe
+    if ((!quotes || quotes.length === 0) && timeframe === "INTRADAY") {
+        console.warn(`⚠️ No INTRADAY quotes for ${grant.isin}, falling back to ALL timeframe`);
+        quotes = await fetchIngQuotes(grant.isin, "ALL");
+    }
+
     if (!quotes || quotes.length === 0) {
-        throw new Error(`No quotes found for ISIN ${grant.isin}`);
+        throw new Error(`No quotes found for ISIN ${grant.isin} (tried both INTRADAY and ALL timeframes)`);
     }
 
     const validQuotes = quotes.filter(q => q.y > 0);

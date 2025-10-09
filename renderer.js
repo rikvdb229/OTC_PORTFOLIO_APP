@@ -132,8 +132,8 @@ class EnhancedPortfolioApp {
   }
 
   // UPDATED: After successful price update, recheck status
-  async updatePrices() {
-    await this.helpers.updatePrices(this);
+  async updatePrices(force = false) {
+    await this.helpers.updatePrices(this, force);
   }
 
   async checkAutoUpdate() {

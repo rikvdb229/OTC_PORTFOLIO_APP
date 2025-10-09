@@ -559,7 +559,7 @@ class AppHelpers {
       }
     }
   }
-  async updatePrices(app) {
+  async updatePrices(app, force = false) {
     if (app.isScrapingInProgress) return;
 
     app.isScrapingInProgress = true;
@@ -580,13 +580,13 @@ class AppHelpers {
         app.updateStatusOutput || document.getElementById("updateStatusOutput");
 
       if (progressBar) progressBar.style.width = "0%";
-      if (progressText) progressText.textContent = "Starting price update...";
+      if (progressText) progressText.textContent = force ? "Force updating prices..." : "Starting price update...";
       if (statusOutput)
-        statusOutput.textContent = "Connecting to KBC servers...";
+        statusOutput.textContent = force ? "Bypassing time restrictions..." : "Connecting to KBC servers...";
     });
 
     try {
-      const result = await window.IPCCommunication.Price.updatePrices();
+      const result = await window.IPCCommunication.Price.updatePrices(force);
 
       // SAFE: Get elements fresh from DOM
       const progressBar =
@@ -596,22 +596,28 @@ class AppHelpers {
       const statusOutput =
         app.updateStatusOutput || document.getElementById("updateStatusOutput");
 
-      if (result.success) {
+      if (result.success || (result.priceEntriesUpdated && result.priceEntriesUpdated > 0)) {
         if (progressBar) progressBar.style.width = "100%";
-        if (progressText) progressText.textContent = "Update Complete!";
-        if (statusOutput)
-          statusOutput.textContent = "✅ Successfully updated prices";
 
-        console.log("🔄 Refreshing data after successful price update...");
+        if (result.errors && result.errors.length > 0) {
+          if (progressText) progressText.textContent = `Updated ${result.priceEntriesUpdated} grant(s) - ${result.errors.length} failed`;
+          if (statusOutput) statusOutput.textContent = `⚠️ ${result.message}`;
+          console.warn('⚠️ Some grants failed to update:', result.errors);
+        } else {
+          if (progressText) progressText.textContent = "Update Complete!";
+          if (statusOutput) statusOutput.textContent = "✅ Successfully updated prices";
+        }
+
+        console.log("🔄 Refreshing data after price update...");
         await app.loadPortfolioData();
         await app.checkDataAvailability();
         await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
 
         setTimeout(() => {
           window.UIStateManager.Modals.closeAllModals(app);
-        }, 2000);
+        }, 3000);
       } else {
-        throw new Error(result.error || "Price update failed");
+        throw new Error(result.error || result.message || "Price update failed");
       }
     } catch (error) {
       console.error("❌ Price update error:", error);

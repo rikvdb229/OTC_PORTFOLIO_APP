@@ -335,7 +335,7 @@ const HistoricalPriceManager = {
         console.log(`✅ Deleted ${result.deletedCount} price records for today`);
 
         if (app && app.updatePrices) {
-          await app.updatePrices();
+          await app.updatePrices(true);
         } else {
           console.error('❌ App context not available for price update');
           alert('Error: Cannot trigger price update. Please try using the "Update Prices" button in the header.');

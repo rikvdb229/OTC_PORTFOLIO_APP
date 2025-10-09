@@ -678,9 +678,9 @@ Note: KBC doesn't update on bank holidays.`;
       }
     }
   },
-  async updatePrices() {
+  async updatePrices(force = false) {
     try {
-      return await window.ipcRenderer.invoke("scrape-data");
+      return await window.ipcRenderer.invoke("scrape-data", { force });
     } catch (error) {
       console.error("❌ Error updating prices:", error);
       throw error;

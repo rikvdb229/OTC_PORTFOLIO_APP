@@ -2,7 +2,7 @@
 
 Developer guide for building, modifying, and contributing to Portfolio Tracker.
 
-**Version 0.4.0** | **Build Date**: October 6, 2025
+**Version 0.4.2** | **Build Date**: October 10, 2025
 
 ## Prerequisites
 
@@ -52,9 +52,9 @@ npm run build:all
 
 ### Build Outputs
 
-- **Windows**: `dist/Portfolio Tracker 0.4.0.exe` (~76MB)
-- **macOS**: `dist/Portfolio Tracker-0.4.0.dmg`
-- **Linux**: `dist/Portfolio Tracker-0.4.0.AppImage`
+- **Windows**: `dist/Portfolio Tracker 0.4.2.exe` (~76MB)
+- **macOS**: `dist/Portfolio Tracker-0.4.2.dmg` (64-bit/x64)
+- **Linux**: `dist/Portfolio Tracker-0.4.2.AppImage`
 
 ## Technical Architecture
 
@@ -379,8 +379,8 @@ npm run build
 
 3. **Create Git Tag**
    ```bash
-   git tag v0.4.0
-   git push origin v0.4.0
+   git tag v0.4.2
+   git push origin v0.4.2
    ```
 
 4. **GitHub Release**
@@ -397,4 +397,4 @@ npm run build
 
 ---
 
-**Portfolio Tracker v0.4.0** - Developer documentation for building and contributing to the project.
+**Portfolio Tracker v0.4.2** - Developer documentation for building and contributing to the project.

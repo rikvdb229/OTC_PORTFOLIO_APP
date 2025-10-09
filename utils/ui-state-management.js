@@ -27,7 +27,7 @@ const FooterManager = {
           if (version && version !== "Loading...") {
             appVersionElement.textContent = `${appName} v${version}`;
           } else {
-            appVersionElement.textContent = "Portfolio Tracker v0.3.4"; // Fallback
+            appVersionElement.textContent = "Portfolio Tracker v0.4.2"; // Fallback
           }
         }
 
@@ -38,7 +38,7 @@ const FooterManager = {
 
         if (buildDateElement) {
           const buildDate = window.AppConfig.APP_CONFIG.BUILD_DATE;
-          buildDateElement.textContent = `Build: ${buildDate && buildDate !== "Loading..." ? buildDate : "10-08-2025"}`;
+          buildDateElement.textContent = `Build: ${buildDate && buildDate !== "Loading..." ? buildDate : "10-10-2025"}`;
         }
 
         // Update window title too
@@ -47,7 +47,7 @@ const FooterManager = {
         if (currentVersion && currentVersion !== "Loading...") {
           document.title = `${currentAppName || "Portfolio Tracker"} v${currentVersion}`;
         } else {
-          document.title = "Portfolio Tracker v0.3.4";
+          document.title = "Portfolio Tracker v0.4.2";
         }
       };
 

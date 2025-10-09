@@ -2,13 +2,13 @@
 
 ## 📦 Standalone Portable Distribution
 
-Portfolio Tracker v0.4.0 is distributed as a **completely standalone portable executable** that requires no installation and works with optional internet connectivity.
+Portfolio Tracker v0.4.2 is distributed as a **completely standalone portable executable** that requires no installation and works with optional internet connectivity.
 
 ### 🎯 Distribution Details
 
-- **File**: `Portfolio Tracker 0.4.0.exe`
+- **File**: `Portfolio Tracker 0.4.2.exe`
 - **Size**: ~80MB (includes all dependencies)
-- **Platform**: Windows (x64), macOS (DMG)
+- **Platform**: Windows (x64/64-bit), macOS (x64/64-bit DMG)
 - **Requirements**: Windows 10+ or macOS 10.13+
 - **Dependencies**: None (fully self-contained)
 
@@ -55,7 +55,7 @@ Portfolio Tracker v0.4.0 is distributed as a **completely standalone portable ex
 
 ### 🚀 Getting Started
 
-1. **Download**: Get `Portfolio Tracker 0.4.0.exe` from GitHub releases
+1. **Download**: Get `Portfolio Tracker 0.4.2.exe` from GitHub releases
 2. **Place**: Put it in your preferred location (Desktop, Documents, USB stick)
 3. **Run**: Double-click the .exe file
 4. **First Launch**: App creates `portfolio.db` in the same folder
@@ -131,6 +131,6 @@ For distribution-related issues:
 
 ---
 
-**Portfolio Tracker v0.4.0** - Complete portfolio management in a single, portable file.
+**Portfolio Tracker v0.4.2** - Complete portfolio management in a single, portable file.
 
-**Build Date**: October 6, 2025
+**Build Date**: October 10, 2025

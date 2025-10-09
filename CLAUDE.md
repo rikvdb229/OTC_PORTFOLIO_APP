@@ -92,4 +92,4 @@ npm run analyze:portfolio-historical  # Analyze portfolio historical data
 - Maintain consistency with existing structure
 
 ## Current Version
-**v0.4.1** - NTP time verification, performance improvements, platform-specific links (Build: 07-10-2025, Beta)
+**v0.4.2** - Documentation updates, version consistency (Build: 10-10-2025, Beta)

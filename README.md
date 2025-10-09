@@ -2,7 +2,7 @@
 
 A desktop application for tracking and analyzing stock options portfolios. Built with Electron for monitoring employee stock option plans.
 
-**Version 0.4.1** | **Build Date**: October 7, 2025 | **Status**: Beta | **License**: MIT
+**Version 0.4.2** | **Build Date**: October 10, 2025 | **Status**: Beta | **License**: MIT
 
 ## Important Disclaimer
 
@@ -19,15 +19,15 @@ A desktop application for tracking and analyzing stock options portfolios. Built
 
 ### Windows (Portable - No Installation Required)
 
-1. Download `Portfolio Tracker 0.4.1.exe` from [Releases](../../releases)
+1. Download `Portfolio Tracker 0.4.2.exe` from [Releases](../../releases)
 2. Double-click to run - works from anywhere (Desktop, USB stick, network drive)
 3. Your data stays local in `portfolio.db` file next to the .exe
 
 **Features**: Fully self-contained • Local data storage • Privacy first • No admin rights needed • Optional internet (only for price updates)
 
-### macOS Installation & Fix
+### macOS Installation & Fix (64-bit / x64)
 
-**IMPORTANT FOR MAC USERS**: macOS may block the app with a "damaged file" warning. Follow these steps:
+**IMPORTANT FOR MAC USERS**: macOS may block the app with a "damaged file" warning. The macOS version is 64-bit (x64). Follow these steps:
 
 <img src="screen-shots/Install.jpg" alt="Step 1: Install" width="600" />
 
@@ -98,7 +98,7 @@ See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 ## Quick Start
 
-1. **Launch**: Double-click `Portfolio Tracker 0.4.1.exe`
+1. **Launch**: Double-click `Portfolio Tracker 0.4.2.exe`
 2. **First Run**: App creates `portfolio.db` file
 3. **Add Grant**:
    - Click "➕ Add Grants"
@@ -191,4 +191,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Portfolio Tracker v0.4.0** - Professional stock options portfolio management with dual-source support (KBC and ING).
+**Portfolio Tracker v0.4.2** - Professional stock options portfolio management with dual-source support (KBC and ING).

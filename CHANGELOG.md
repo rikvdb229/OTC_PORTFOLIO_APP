@@ -5,6 +5,61 @@ All notable changes to Portfolio Tracker will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2025-10-10
+
+### ✨ New Features
+- **Force Price Update Button**: Added troubleshooting feature in Settings → Price Management
+  - Deletes today's prices from database and re-downloads fresh data
+  - Bypasses 9:00 AM Belgian time restriction and "already updated today" check
+  - Shows "Force update - bypassing time restrictions" message during update
+  - Useful for correcting incorrect prices, testing, or manual refresh outside market hours
+  - Located below "Update Historical Prices" button in settings
+
+### 🐛 Bug Fixes
+- **Force Update Time Restrictions**: Fixed Force Price Update being blocked by time checks (commit e6039fa)
+  - Originally added in previous commit but was still respecting 9 AM and daily update limits
+  - Now properly bypasses all time restrictions when force flag is set
+  - Added `force` parameter throughout update chain (IPC handler → helpers → renderer)
+  - Force updates now work at any time of day, regardless of previous updates
+
+- **ING API Fallback**: Fixed ING price updates failing when INTRADAY data unavailable
+  - Added automatic fallback from INTRADAY to ALL timeframe if no quotes found
+  - Prevents "No quotes found for ISIN" errors when intraday data isn't available yet
+  - Improves reliability for ING grants during early trading hours or off-market times
+
+- **Partial Success Handling**: Fixed price update showing "failed" when some grants succeeded
+  - Now treats partial success as acceptable (e.g., 1 out of 2 grants updated = success)
+  - Shows detailed message: "Updated X grant(s) - Y failed" instead of generic error
+  - Portfolio data refreshes even when some grants fail to update
+  - Better user feedback with warning icon (⚠️) and extended modal timeout (3s) for partial failures
+
+- **Grant Addition with Empty Database**: Fixed inability to add grants to empty database (commit 05c0c69)
+  - Modal now properly appears even when no existing grants in database
+  - Improved error handling for initial portfolio setup
+
+- **Evolution Timeline Sync**: Fixed evolution timeline not updating after price refresh (commit 8e11489)
+  - Evolution data now properly rebuilds after every price update
+  - Switched ING from ALL to INTRADAY timeframe for more frequent updates
+
+### 📝 Documentation Updates
+- **Complete Documentation Refresh**: Updated all documentation to version 0.4.2
+  - Updated version references across all files (README, CHANGELOG, DEVELOPER, DISTRIBUTION, CLAUDE)
+  - Updated build date to October 10, 2025
+  - Clarified macOS version is 64-bit (x64) architecture in README
+  - Added x64 architecture specifications to distribution documentation
+  - Ensured 100% consistency across all documentation files
+
+### 🔧 Technical Improvements
+- **Enhanced ING Service**: `fetchIngPrice()` now tries both INTRADAY and ALL timeframes
+- **Improved Error Handling**: Price update flow now distinguishes between total and partial failures
+- **Better User Feedback**: Update modal shows appropriate warnings for partial success
+- **Services Directory Refactor**: Moved scrapers to services/ directory with clearer naming (commit 07d4144)
+- **Version Consistency**: All fallback version strings updated to 0.4.2
+- **Build Date Synchronization**: Unified build date across all documentation and code
+
+### 🧹 Code Quality
+- **Removed Test Artifacts**: Cleaned up parsed-options.json from repository (commit 1c492ac)
+
 ## [0.4.1] - 2025-10-07
 
 ### ✨ New Features
