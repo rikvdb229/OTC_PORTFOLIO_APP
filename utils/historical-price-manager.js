@@ -454,7 +454,10 @@ const HistoricalPriceManager = {
         
         await this.updateRecalculationProgress('Updating data availability...', 75);
         await app.checkDataAvailability();
-        
+
+        await this.updateRecalculationProgress('Checking price update status...', 90);
+        await window.IPCCommunication.Price.checkPriceUpdateStatus(app);
+
         await this.updateRecalculationProgress('Finalizing...', 100);
         
         console.log('✅ UI data refreshed');
