@@ -169,10 +169,10 @@ jobs:
           ${{ steps.changelog.outputs.BODY }}
           
           ### Downloads
-          - **Windows**: `Portfolio Tracker ${{ steps.get_version.outputs.VERSION }}.exe` - Portable executable
-          - **macOS (ARM)**: `Portfolio Tracker-${{ steps.get_version.outputs.VERSION }}.dmg` - DMG installer
-          - **macOS (Intel)**: `Portfolio Tracker-Intel-${{ steps.get_version.outputs.VERSION }}.dmg` - DMG installer
-          - **Linux**: `Portfolio Tracker-${{ steps.get_version.outputs.VERSION }}.AppImage` - AppImage package
+            - 🪟 **Windows:** [Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}.exe](https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/Portfolio.Tracker.${{ steps.get_version.outputs.VERSION }}.exe)
+            - 🍏 **macOS (Intel):** [Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}.dmg](https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}.dmg)
+            - 🍎 **macOS (ARM64):** [Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}-arm64.dmg](https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}-arm64.dmg)
+            - 🐧 **Linux:** [Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}.AppImage](https://github.com/${{ github.repository }}/releases/download/v${{ steps.get_version.outputs.VERSION }}/Portfolio.Tracker-${{ steps.get_version.outputs.VERSION }}.AppImage)
 
           ### Installation
           - **Windows**: Download and run the .exe file - no installation needed
